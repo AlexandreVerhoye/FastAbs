@@ -58,7 +58,7 @@ struct TodayView: View {
                     .textCase(.uppercase)
                     .font(.caption.weight(.bold))
                     .foregroundStyle(Color.fastCoral)
-                Text(records.containsCompletedWorkoutToday ? "Objectif du jour atteint" : "Prêt à renforcer votre centre ?")
+                Text(records.containsCompletedWorkoutToday ? "Objectif du jour atteint" : "Prêt à renforcer vos abdos ?")
                     .font(.title2.bold())
             }
             Spacer()
@@ -94,7 +94,7 @@ struct TodayView: View {
                     Label("PROGRAMME DU JOUR", systemImage: "sparkles")
                         .font(.caption.weight(.heavy))
                         .foregroundStyle(.white.opacity(0.72))
-                    Text("Un centre fort.\nEn quelques minutes.")
+                    Text("Des abdos solides.\nEn quelques minutes.")
                         .font(.system(.largeTitle, design: .rounded, weight: .bold))
                         .foregroundStyle(.white)
                     HStack(spacing: 18) {

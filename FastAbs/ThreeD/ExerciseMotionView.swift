@@ -7,9 +7,8 @@ import UIKit
 struct ExerciseMotionView: View {
     let motion: MotionKind
     var isPlaying: Bool
-    var highlightedZones: Set<MuscleZone>
+    var focusZones: Set<MuscleZone>
     var accessibilityName: String?
-    var accent: Color
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
@@ -17,24 +16,21 @@ struct ExerciseMotionView: View {
     init(
         motion: MotionKind,
         isPlaying: Bool = true,
-        highlightedZones: Set<MuscleZone> = [.fullCore],
-        accessibilityName: String? = nil,
-        accent: Color = .fastCoral
+        focusZones: Set<MuscleZone> = [.fullCore],
+        accessibilityName: String? = nil
     ) {
         self.motion = motion
         self.isPlaying = isPlaying
-        self.highlightedZones = highlightedZones
+        self.focusZones = focusZones
         self.accessibilityName = accessibilityName
-        self.accent = accent
     }
 
-    init(exercise: Exercise, isPlaying: Bool = true, accent: Color = .fastCoral) {
+    init(exercise: Exercise, isPlaying: Bool = true) {
         self.init(
             motion: exercise.motion,
             isPlaying: isPlaying,
-            highlightedZones: exercise.zones,
-            accessibilityName: exercise.name,
-            accent: accent
+            focusZones: exercise.zones,
+            accessibilityName: exercise.name
         )
     }
 
@@ -44,8 +40,7 @@ struct ExerciseMotionView: View {
             motion: motion,
             isPlaying: isPlaying,
             reduceMotion: reduceMotion,
-            highlightedZones: highlightedZones,
-            accent: accent,
+            focusZones: focusZones,
             colorScheme: colorScheme
         )
         .allowsHitTesting(false)
@@ -54,8 +49,8 @@ struct ExerciseMotionView: View {
         .accessibilityValue(metadata.accessibilityDescription)
         .accessibilityHint(
             reduceMotion
-                ? "Illustration fixe affichée selon votre réglage Réduire les animations."
-                : "Le mouvement est présenté en boucle."
+                ? "Image fixe sur la contraction maximale, selon votre réglage Réduire les animations."
+                : "Le mouvement est présenté en boucle. Les muscles sollicités passent du blanc au rouge."
         )
     }
 }
@@ -65,8 +60,7 @@ private struct ExerciseRealityView: UIViewRepresentable {
     let motion: MotionKind
     let isPlaying: Bool
     let reduceMotion: Bool
-    let highlightedZones: Set<MuscleZone>
-    let accent: Color
+    let focusZones: Set<MuscleZone>
     let colorScheme: ColorScheme
 
     func makeCoordinator() -> Coordinator {
@@ -82,13 +76,12 @@ private struct ExerciseRealityView: UIViewRepresentable {
         context.coordinator.install(
             in: view,
             motion: motion,
-            zones: highlightedZones,
-            accent: UIColor(accent),
+            focusZones: focusZones,
             colorScheme: colorScheme
         )
         context.coordinator.update(
             motion: motion,
-            zones: highlightedZones,
+            focusZones: focusZones,
             isPlaying: isPlaying,
             reduceMotion: reduceMotion,
             colorScheme: colorScheme
@@ -99,7 +92,7 @@ private struct ExerciseRealityView: UIViewRepresentable {
     func updateUIView(_ uiView: RealityKit.ARView, context: Context) {
         context.coordinator.update(
             motion: motion,
-            zones: highlightedZones,
+            focusZones: focusZones,
             isPlaying: isPlaying,
             reduceMotion: reduceMotion,
             colorScheme: colorScheme
@@ -117,29 +110,27 @@ private struct ExerciseRealityView: UIViewRepresentable {
         func install(
             in view: RealityKit.ARView,
             motion: MotionKind,
-            zones: Set<MuscleZone>,
-            accent: UIColor,
+            focusZones: Set<MuscleZone>,
             colorScheme: ColorScheme
         ) {
             renderer = ExerciseRealityRenderer(
                 view: view,
                 motion: motion,
-                highlightedZones: zones,
-                accent: accent,
+                focusZones: focusZones,
                 colorScheme: colorScheme
             )
         }
 
         func update(
             motion: MotionKind,
-            zones: Set<MuscleZone>,
+            focusZones: Set<MuscleZone>,
             isPlaying: Bool,
             reduceMotion: Bool,
             colorScheme: ColorScheme
         ) {
             renderer?.update(
                 motion: motion,
-                highlightedZones: zones,
+                focusZones: focusZones,
                 isPlaying: isPlaying,
                 reduceMotion: reduceMotion,
                 colorScheme: colorScheme

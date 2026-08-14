@@ -120,7 +120,9 @@ private struct DailyBadgeHero: View {
     }
 }
 
-private struct RewardStatsStrip: View {
+/// Presentation components below are internal rather than file-private so
+/// `BadgeVisualTests` and `ProgressVisualTests` can rasterise them directly.
+struct RewardStatsStrip: View {
     let summary: RewardsSummary
 
     var body: some View {
@@ -137,7 +139,7 @@ private struct RewardStatsStrip: View {
     }
 }
 
-private struct ChallengeCard: View {
+struct ChallengeCard: View {
     let challenge: ChallengeProgress
     let tint: Color
 
@@ -189,7 +191,7 @@ private struct ChallengeCard: View {
     }
 }
 
-private struct BadgeGallery: View {
+struct BadgeGallery: View {
     let badges: [DailyBadge]
 
     private let columns = [GridItem(.adaptive(minimum: 72, maximum: 92), spacing: 14)]
@@ -222,7 +224,7 @@ private struct BadgeGallery: View {
     }
 }
 
-private struct MiniBadgeView: View {
+struct MiniBadgeView: View {
     let badge: DailyBadge
 
     var body: some View {
@@ -257,7 +259,7 @@ private struct MiniBadgeView: View {
     }
 }
 
-private extension DailyBadgeTier {
+extension DailyBadgeTier {
     var tint: Color {
         switch self {
         case .bronze: .fastOrange

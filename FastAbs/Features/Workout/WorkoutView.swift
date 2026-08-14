@@ -113,7 +113,8 @@ struct WorkoutView: View {
             ExerciseMotionView(
                 motion: session.currentStep.motion,
                 isPlaying: session.phase == .running,
-                highlightedZones: session.currentStep.exercise?.zones ?? [.deepCore]
+                focusZones: session.currentStep.exercise?.zones ?? [.deepCore],
+                accessibilityName: session.currentStep.exercise?.name
             )
             .id(session.currentStep.id)
 

@@ -84,7 +84,9 @@ private enum ProgressRange: Int, CaseIterable, Identifiable {
     }
 }
 
-private struct ProgressHero: View {
+/// Presentation components below are internal rather than file-private so
+/// `BadgeVisualTests` and `ProgressVisualTests` can rasterise them directly.
+struct ProgressHero: View {
     let overview: WorkoutHistoryOverview
 
     var body: some View {
@@ -139,7 +141,7 @@ private struct ProgressHero: View {
     }
 }
 
-private struct HeroMetric: View {
+struct HeroMetric: View {
     let value: String
     let label: String
 
@@ -263,7 +265,7 @@ private struct ChartSelectionLabel: View {
     }
 }
 
-private struct WeeklyComparisonCard: View {
+struct WeeklyComparisonCard: View {
     let overview: WorkoutHistoryOverview
 
     private var currentMinutes: Int { overview.currentWeekSeconds / 60 }
@@ -316,7 +318,7 @@ private struct WeeklyComparisonCard: View {
     }
 }
 
-private struct ActivityGridCard: View {
+struct ActivityGridCard: View {
     let days: [WorkoutHistoryDay]
     let calendar: Calendar
 
@@ -376,7 +378,7 @@ private struct ActivityGridCard: View {
     }
 }
 
-private struct FocusDistributionCard: View {
+struct FocusDistributionCard: View {
     let items: [WorkoutFocusBreakdown]
 
     var body: some View {

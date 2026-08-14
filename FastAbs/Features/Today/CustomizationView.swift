@@ -118,7 +118,7 @@ struct CustomizationView: View {
 
     private var focusCard: some View {
         VStack(alignment: .leading, spacing: 16) {
-            SectionHeader(title: "Zones prioritaires", subtitle: "Le reste du centre reste toujours sollicité")
+            SectionHeader(title: "Zones prioritaires", subtitle: "Le reste de la sangle abdominale reste sollicité")
             LazyVGrid(columns: [.init(.flexible()), .init(.flexible())], spacing: 11) {
                 ForEach(MuscleZone.allCases.filter { $0 != .lowerBack }) { zone in
                     let isSelected = draft.focusZones.contains(zone)

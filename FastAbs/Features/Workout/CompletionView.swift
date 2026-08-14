@@ -15,7 +15,7 @@ struct CompletionView: View {
                         .foregroundStyle(Color.fastMint)
                     Text("Magnifique élan !")
                         .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                    Text("Votre centre a travaillé sous plusieurs angles.")
+                    Text("Votre sangle abdominale a travaillé sous plusieurs angles.")
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.68))
                 }

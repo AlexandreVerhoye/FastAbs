@@ -9,7 +9,7 @@ struct WelcomeView: View {
         WelcomePage(
             symbol: "bolt.heart.fill",
             colors: [.fastCoral, .fastOrange],
-            title: "Votre centre, chaque jour",
+            title: "Vos abdos, chaque jour",
             message: "Une séance courte, complète et différente, pensée pour tenir dans votre quotidien."
         ),
         WelcomePage(

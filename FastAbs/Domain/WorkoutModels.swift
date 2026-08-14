@@ -9,11 +9,11 @@ enum MuscleZone: String, CaseIterable, Codable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .fullCore: "Centre complet"
-        case .upperAbs: "Haut des abdos"
-        case .lowerAbs: "Bas des abdos"
+        case .fullCore: "Sangle abdominale"
+        case .upperAbs: "Abdos supérieurs"
+        case .lowerAbs: "Abdos inférieurs"
         case .obliques: "Obliques"
-        case .deepCore: "Gainage profond"
+        case .deepCore: "Transverse"
         case .lowerBack: "Lombaires"
         }
     }
@@ -25,7 +25,7 @@ enum MuscleZone: String, CaseIterable, Codable, Identifiable, Sendable {
         case .lowerAbs: "Bas"
         case .obliques: "Obliques"
         case .deepCore: "Profond"
-        case .lowerBack: "Dos"
+        case .lowerBack: "Lombaires"
         }
     }
 
@@ -192,7 +192,7 @@ struct WorkoutPlan: Identifiable, Hashable, Codable, Sendable {
     var exerciseCount: Int { steps.filter { $0.kind == .exercise }.count }
     var focusDescription: String {
         let zones = preferences.focusZones.filter { $0 != .fullCore }
-        return zones.isEmpty ? "Centre complet" : zones.map(\.shortTitle).sorted().joined(separator: " · ")
+        return zones.isEmpty ? "Sangle abdominale" : zones.map(\.shortTitle).sorted().joined(separator: " · ")
     }
 }
 
