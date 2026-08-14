@@ -273,7 +273,11 @@ private extension MotionLibrary {
 
 // MARK: - Choreography
 
-private extension MotionLibrary {
+// Internal rather than private so tests can inspect the authored pose. The
+// solver rescales bones to canonical length, which quietly repairs a sketch
+// that moved one joint without the joints attached to it — the mistake only
+// shows up before that repair.
+extension MotionLibrary {
     /// A pose before it has been made anatomically rigid, plus the joint that
     /// must stay planted while the solver works.
     struct PoseSketch {
@@ -302,7 +306,7 @@ private extension MotionLibrary {
         case .reverseCrunch:
             var pose = supineBentKnees()
             tuckLegs(&pose, amount: effort)
-            pose.pelvis.y += effort * 0.1
+            moveHips(&pose, by: SIMD3<Float>(0, effort * 0.1, 0), carryingTorso: false)
             return PoseSketch(pose, anchor: \.chest)
 
         case .toeReach:
@@ -327,7 +331,7 @@ private extension MotionLibrary {
         case .hipRaise:
             var pose = supineBentKnees()
             tuckLegs(&pose, amount: effort * 0.85)
-            pose.pelvis.y += effort * 0.14
+            moveHips(&pose, by: SIMD3<Float>(0, effort * 0.14, 0), carryingTorso: false)
             return PoseSketch(pose, anchor: \.chest)
 
         case .flutter:
@@ -403,7 +407,7 @@ private extension MotionLibrary {
             var pose = forearmPlank()
             let ripple = breath * 0.012
             pose.chest.y += ripple
-            pose.pelvis.y += ripple * 0.6
+            moveHips(&pose, by: SIMD3<Float>(0, ripple * 0.6, 0), carryingTorso: false)
             return PoseSketch(pose)
 
         case .sidePlank:
@@ -516,7 +520,8 @@ private extension MotionLibrary {
         case .bridgeMarch:
             var pose = supineBentKnees()
             // The bridge is already up and stays there; only a knee travels.
-            pose.pelvis.y += 0.4
+            moveHips(&pose, by: SIMD3<Float>(0, 0.4, 0), carryingTorso: false)
+            plantFeet(&pose)
             let lift = abs(swing)
             if swing >= 0 {
                 pose.leftKnee = mix(pose.leftKnee, SIMD3<Float>(0.24, 0.86, -0.17), t: lift)
@@ -574,7 +579,10 @@ private extension MotionLibrary {
 
         case .bridge:
             var pose = supineBentKnees()
-            pose.pelvis.y += effort * 0.42
+            moveHips(&pose, by: SIMD3<Float>(0, effort * 0.42, 0), carryingTorso: false)
+            // The feet stay planted, so the thigh has to rotate to follow the
+            // hips. Left un-aimed it stretches instead and drags the foot up.
+            plantFeet(&pose)
             return PoseSketch(pose, anchor: \.chest)
 
         case .squat:
@@ -582,7 +590,7 @@ private extension MotionLibrary {
             let drop = effort * 0.44
             // Hips travel back as well as down — a squat that only sinks reads
             // as a knee bend and puts the load in the wrong place.
-            pose.pelvis += SIMD3<Float>(-drop * 0.42, -drop, 0)
+            moveHips(&pose, by: SIMD3<Float>(-drop * 0.42, -drop, 0))
             pose.leftKnee = aimLimb(
                 from: pose.leftHip, to: pose.leftAnkle, bend: SIMD3<Float>(1, 0, 0), offset: 0.2
             )
@@ -599,7 +607,7 @@ private extension MotionLibrary {
             let drop = effort * 0.42
             pose.leftAnkle = SIMD3<Float>(0.36, 0.11, -0.17)
             pose.rightAnkle = SIMD3<Float>(-0.44, 0.11 + drop * 0.28, 0.17)
-            pose.pelvis += SIMD3<Float>(-0.02, -drop, 0)
+            moveHips(&pose, by: SIMD3<Float>(-0.02, -drop, 0))
             pose.leftKnee = aimLimb(
                 from: pose.leftHip, to: pose.leftAnkle, bend: SIMD3<Float>(1, 0, 0), offset: 0.2
             )
@@ -641,15 +649,15 @@ private extension MotionLibrary {
             let rise = effort * 0.13
             pose.leftAnkle.y += rise
             pose.rightAnkle.y += rise
-            pose.pelvis.y += rise
+            moveHips(&pose, by: SIMD3<Float>(0, rise, 0))
             return PoseSketch(pose)
 
         case .pushUp:
             var pose = highPlank()
             // Hands a little ahead of and wider than the shoulders, so the two
             // arms separate in profile and the bend actually shows.
-            pose.leftHand = SIMD3<Float>(-0.62, 0.13, -0.32)
-            pose.rightHand = SIMD3<Float>(-0.62, 0.13, 0.32)
+            pose.leftHand = SIMD3<Float>(-0.62, 0.13, 0.32)
+            pose.rightHand = SIMD3<Float>(-0.62, 0.13, -0.32)
             // The body turns as one about the toes; the hands are planted, so
             // the arms bend to take it. Lowering the hips instead folds the
             // athlete in half.
@@ -660,25 +668,44 @@ private extension MotionLibrary {
                 pose[keyPath: joint] = rotate(pose[keyPath: joint], around: pivot, axis: axis, angle: dip)
             }
             pose.pelvis = rotate(pose.pelvis, around: pivot, axis: axis, angle: dip)
+            pose.leftHip = rotate(pose.leftHip, around: pivot, axis: axis, angle: dip)
+            pose.rightHip = rotate(pose.rightHip, around: pivot, axis: axis, angle: dip)
+            // Re-aimed after the rotation, not before: the hands are planted, so
+            // it is the descent itself that has to bend the arms.
+            pose.leftElbow = aimLimb(
+                from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(0, 0, 1)
+            )
+            pose.rightElbow = aimLimb(
+                from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(0, 0, -1)
+            )
             return PoseSketch(pose)
 
         case .pikePushUp:
             var pose = highPlank()
-            // Hips pike up and the head travels down between the hands.
-            pose.pelvis = SIMD3<Float>(0.3, 1.24, 0)
-            pose.chest = SIMD3<Float>(-0.24, 0.86 - effort * 0.26, 0)
-            pose.leftShoulder = pose.chest + SIMD3<Float>(0, 0, -0.25)
-            pose.rightShoulder = pose.chest + SIMD3<Float>(0, 0, 0.25)
-            pose.neck = pose.chest + SIMD3<Float>(-0.26, -0.1, 0)
-            pose.head = pose.chest + SIMD3<Float>(-0.4, -0.2, 0)
-            pose.leftHand = SIMD3<Float>(-0.58, 0.13, -0.3)
-            pose.rightHand = SIMD3<Float>(-0.58, 0.13, 0.3)
-            pose.leftAnkle = SIMD3<Float>(0.94, 0.13, -0.2)
-            pose.rightAnkle = SIMD3<Float>(0.94, 0.13, 0.2)
+            // Hands and feet walk toward each other, then the hips ride up into
+            // an inverted V and the torso pitches down between the hands. Pitch
+            // is a rotation about the pelvis rather than a new chest position,
+            // so the spine keeps its length instead of stretching into a slab.
+            pose.leftHand = SIMD3<Float>(-0.58, 0.13, 0.3)
+            pose.rightHand = SIMD3<Float>(-0.58, 0.13, -0.3)
+            pose.leftAnkle = SIMD3<Float>(0.94, 0.13, 0.2)
+            pose.rightAnkle = SIMD3<Float>(0.94, 0.13, -0.2)
+            // Hip height is bounded by the legs: raised any further and the
+            // pelvis sits more than a leg's length from the planted feet, which
+            // leaves the solver to invent the difference.
+            moveHips(&pose, by: SIMD3<Float>(0.31, 0.29, 0))
+
+            let pikeAxis = safeAxis(pose.leftHip - pose.rightHip, fallback: SIMD3<Float>(0, 0, 1))
+            let pitch = 1.02 + effort * 0.2
+            for joint in upperBodyJoints where joint != \.leftHand && joint != \.rightHand {
+                pose[keyPath: joint] = rotate(
+                    pose[keyPath: joint], around: pose.pelvis, axis: pikeAxis, angle: pitch
+                )
+            }
             pose.leftKnee = aimLimb(from: pose.leftHip, to: pose.leftAnkle, bend: SIMD3<Float>(0, -1, 0))
             pose.rightKnee = aimLimb(from: pose.rightHip, to: pose.rightAnkle, bend: SIMD3<Float>(0, -1, 0))
-            pose.leftElbow = aimLimb(from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(0, 0, -1))
-            pose.rightElbow = aimLimb(from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(0, 0, 1))
+            pose.leftElbow = aimLimb(from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(0, 0, 1))
+            pose.rightElbow = aimLimb(from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(0, 0, -1))
             return PoseSketch(pose)
 
         case .rest:
@@ -896,8 +923,10 @@ private extension MotionLibrary {
             rightElbow: SIMD3<Float>(-0.44, 1.18, -0.16),
             leftHand: SIMD3<Float>(-0.85, 0.13, 0.14),
             rightHand: SIMD3<Float>(-0.4, 1.5, -0.16),
-            leftHip: SIMD3<Float>(0.11, 0.4, 0.05),
-            rightHip: SIMD3<Float>(0.11, 0.56, -0.05),
+            // Stacked, one hip above the other — but at the real pelvic span,
+            // which the shorter offsets were not.
+            leftHip: SIMD3<Float>(0.11, 0.349, 0.082),
+            rightHip: SIMD3<Float>(0.11, 0.611, -0.082),
             leftKnee: SIMD3<Float>(0.66, 0.28, 0.04),
             rightKnee: SIMD3<Float>(0.66, 0.44, -0.04),
             leftAnkle: SIMD3<Float>(1.2, 0.13, 0.04),
@@ -915,6 +944,43 @@ private extension MotionLibrary {
     /// The axis comes from the body's own frame rather than from the raw hip
     /// joints: taken from the joints, a stance lying on its back curls the
     /// opposite way to one lying face down.
+    /// Moves the hips through space and carries the rest of the body with them.
+    ///
+    /// A base stance authors the whole skeleton at once, so displacing the
+    /// pelvis on its own leaves the chest and hips behind: the spine stretches
+    /// into a slab, the hips tear away from the pelvis, and any later rotation
+    /// about the pelvis swings the torso through a radius it should never have
+    /// had. Standing movements travel — supine hip lifts genuinely do pivot the
+    /// pelvis alone, and those still set it directly.
+    /// - Parameter carryingTorso: false for hip lifts, where the shoulders stay
+    ///   planted and only the pelvis end of the spine travels. The hip joints
+    ///   always follow — they are bolted to the pelvis, not to the mat.
+    static func moveHips(_ pose: inout BodyPose, by delta: SIMD3<Float>, carryingTorso: Bool = true) {
+        if carryingTorso {
+            for joint in upperBodyJoints {
+                pose[keyPath: joint] += delta
+            }
+        }
+        pose.pelvis += delta
+        pose.leftHip += delta
+        pose.rightHip += delta
+    }
+
+    /// Re-aims both knees so the ankles stay where they are.
+    ///
+    /// Any movement that raises the hips over planted feet needs this: the
+    /// thigh is a fixed bone, so if it is not rotated to follow the pelvis it
+    /// simply stretches, and the solver buys the extra length back by pulling
+    /// the foot off the mat.
+    static func plantFeet(_ pose: inout BodyPose) {
+        pose.leftKnee = aimLimb(
+            from: pose.leftHip, to: pose.leftAnkle, bend: SIMD3<Float>(0, 1, 0), offset: 0.2
+        )
+        pose.rightKnee = aimLimb(
+            from: pose.rightHip, to: pose.rightAnkle, bend: SIMD3<Float>(0, 1, 0), offset: 0.2
+        )
+    }
+
     static func curlTorso(_ pose: inout BodyPose, amount: Float) {
         let axis = safeAxis(simd_cross(pose.up, pose.front), fallback: SIMD3<Float>(0, 0, 1))
         for joint in upperBodyJoints {

@@ -169,11 +169,72 @@ struct PoseSolverTests {
     @Test("Skeleton proportions are anatomically plausible")
     func proportionsAreSane() {
         let metrics = SkeletonMetrics.standard
+        var worst: [String: (Float, String)] = [:]
 
         #expect(metrics.thigh > metrics.shin, "the femur is the longest bone in the body")
         #expect(metrics.upperArm > metrics.forearm)
         #expect(metrics.thigh > metrics.upperArm, "legs are longer than arms")
         #expect(metrics.shoulderHalfWidth > metrics.hipHalfWidth)
         #expect(metrics.spine > metrics.neck && metrics.neck > metrics.skull)
+    }
+}
+
+/// Guards the choreography itself, before the solver gets a chance to hide it.
+///
+/// Scoped deliberately to the axial attachment bones. Limbs and the head are
+/// authored by aiming them at targets — a hand reaches for a heel — so their
+/// authored lengths drift and the solver normalising them is the design. The
+/// spine, the clavicles and the pelvis half-spans aim at nothing: they are body
+/// constants, so authoring them wrong is always a mistake.
+///
+/// This is what the squat did. Moving the pelvis without the hips and chest
+/// stretched the spine from 0.58 to 0.85; the solver rescaled it back to
+/// canonical length, so every bone assertion on the finished pose passed while
+/// the figure rendered as a slab tipped hard forward — rescaling preserved the
+/// wrong direction. The same mistake was in the bridge, both push-ups and the
+/// calf raise.
+@Suite("Choreography consistency")
+struct ChoreographyTests {
+    static let axialBones = ["spine", "leftClavicle", "rightClavicle", "leftPelvis", "rightPelvis"]
+
+    @Test("Body constants are authored at their real size")
+    func sketchesRespectAxialBones() {
+        let metrics = SkeletonMetrics.standard
+
+        for motion in MotionSystemTests.allMotions {
+            for step in 0..<32 {
+                let phase = Float(step) / 32
+                let pose = MotionLibrary.sketch(for: motion, phase: phase).pose
+
+                for bone in BodyPose.bones where Self.axialBones.contains(bone.name) {
+                    let authored = length(of: pose[keyPath: bone.end] - pose[keyPath: bone.start])
+                    let canonical = metrics[keyPath: bone.length]
+                    #expect(
+                        abs(authored - canonical) <= canonical * 0.25,
+                        "\(motion.rawValue) at \(phase) authors \(bone.name) at \(authored), not \(canonical)"
+                    )
+                }
+            }
+        }
+    }
+
+    @Test("Feet stay planted when the hips rise over them")
+    func plantedFeetDoNotFollowTheHips() {
+        // A glute bridge that lifts the feet is not a glute bridge. The thigh
+        // is a fixed bone, so raising the hips without rotating it stretches
+        // the thigh, and the solver pays for the extra length by dragging the
+        // ankle off the mat.
+        for motion in [MotionKind.bridge, .bridgeMarch] {
+            let planted = (0..<32).map { step -> Float in
+                let pose = MotionLibrary.pose(for: motion, phase: Float(step) / 32)
+                return min(pose.leftAnkle.y, pose.rightAnkle.y)
+            }
+            let lift = (planted.max() ?? 0) - (planted.min() ?? 0)
+            #expect(lift < 0.06, "\(motion.rawValue) lifts its planted foot by \(lift)")
+        }
+    }
+
+    private func length(of vector: SIMD3<Float>) -> Float {
+        (vector * vector).sum().squareRoot()
     }
 }
