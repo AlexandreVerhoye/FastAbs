@@ -1,6 +1,12 @@
 import Foundation
 
 enum ExerciseCatalog {
+    /// Built once. Looking an exercise up used to rebuild this map per record,
+    /// which turned reading a history into quadratic work.
+    static let byID: [String: Exercise] = Dictionary(
+        uniqueKeysWithValues: all.map { ($0.id, $0) }
+    )
+
     static let all: [Exercise] = [
         ex("hip-raise", "Relevé de bassin", [.lowerAbs, .deepCore], .hipFlexion, .beginner, .quiet, .hipRaise,
            "Ramène les genoux puis décolle doucement le bassin, sans prendre d’élan.", "Expire en montant, inspire en contrôlant la descente.", neck: true, setup: "Allongé sur le dos, bras le long du corps, paumes au sol, genoux fléchis.", mistake: "Prendre de l’élan avec les jambes au lieu d’enrouler le bassin.", intensity: 1.1),

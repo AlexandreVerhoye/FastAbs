@@ -34,8 +34,10 @@ enum MuscleZone: String, CaseIterable, Codable, Identifiable, Sendable {
     /// Zones the catalog can currently build a workout from. The picker reads
     /// this, so it grows on its own as movements are added rather than offering
     /// a focus with no exercises behind it.
-    static var available: [MuscleZone] {
-        allCases.filter { zone in ExerciseCatalog.all.contains { $0.zones.contains(zone) } }
+    /// Worked out once: it scans the whole catalog per zone, and the picker
+    /// asked for it on every redraw.
+    static let available: [MuscleZone] = allCases.filter { zone in
+        ExerciseCatalog.all.contains { $0.zones.contains(zone) }
     }
 
     var title: String {
@@ -372,9 +374,8 @@ final class WorkoutRecord {
     /// than from the focus that was asked for — what you did, not what you
     /// intended.
     var trainedZones: Set<MuscleZone> {
-        let byID = Dictionary(uniqueKeysWithValues: ExerciseCatalog.all.map { ($0.id, $0) })
-        return exerciseIDs.reduce(into: Set<MuscleZone>()) { zones, id in
-            if let exercise = byID[id] { zones.formUnion(exercise.zones) }
+        exerciseIDs.reduce(into: Set<MuscleZone>()) { zones, id in
+            if let exercise = ExerciseCatalog.byID[id] { zones.formUnion(exercise.zones) }
         }
     }
 }

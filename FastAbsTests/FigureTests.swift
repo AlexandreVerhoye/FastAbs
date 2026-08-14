@@ -16,7 +16,7 @@ struct FigureTests {
     @Test("Framing holds every pose of the movement")
     func boundsContainTheWholeCycle() {
         for motion in Self.allMotions {
-            let bounds = FigureProjection.bounds(for: motion)
+            let bounds = FigureProjection.measureBounds(for: motion)
             #expect(bounds.width > 0 && bounds.height > 0, "\(motion.rawValue) has no framing")
 
             for step in 0..<40 {
@@ -37,7 +37,7 @@ struct FigureTests {
         // Joints sit at the centre of the limbs, so framing them tightly would
         // clip the athlete's outline at the edges of the card.
         for motion in Self.allMotions {
-            let bounds = FigureProjection.bounds(for: motion)
+            let bounds = FigureProjection.measureBounds(for: motion)
             var tight = CGRect.null
             for step in 0..<40 {
                 let pose = MotionLibrary.pose(for: motion, phase: Float(step) / 40)
@@ -57,7 +57,7 @@ struct FigureTests {
         let rect = CGRect(x: 0, y: 0, width: 320, height: 400)
 
         for motion in Self.allMotions {
-            let bounds = FigureProjection.bounds(for: motion)
+            let bounds = FigureProjection.measureBounds(for: motion)
             let scales = (0..<24).map { step -> CGFloat in
                 let pose = MotionLibrary.pose(for: motion, phase: Float(step) / 24)
                 return FigureProjection.layout(pose: pose, within: bounds, in: rect).scale
@@ -75,7 +75,7 @@ struct FigureTests {
         let rect = CGRect(x: 0, y: 0, width: 320, height: 400)
 
         for motion in Self.allMotions {
-            let bounds = FigureProjection.bounds(for: motion)
+            let bounds = FigureProjection.measureBounds(for: motion)
             for step in 0..<16 {
                 let pose = MotionLibrary.pose(for: motion, phase: Float(step) / 16)
                 let layout = FigureProjection.layout(pose: pose, within: bounds, in: rect)
@@ -108,7 +108,7 @@ struct FigureTests {
         let pose = MotionLibrary.pose(for: .bicycle, phase: 0.3)
         let layout = FigureProjection.layout(
             pose: pose,
-            within: FigureProjection.bounds(for: .bicycle),
+            within: FigureProjection.measureBounds(for: .bicycle),
             in: CGRect(x: 0, y: 0, width: 320, height: 400)
         )
 
@@ -296,7 +296,7 @@ private struct FigureCanvas: View {
 
     var body: some View {
         Canvas { context, size in
-            let bounds = FigureProjection.bounds(for: motion)
+            let bounds = FigureProjection.measureBounds(for: motion)
             let layout = FigureProjection.layout(
                 pose: MotionLibrary.pose(for: motion, phase: phase),
                 within: bounds,
@@ -394,7 +394,7 @@ private struct PartCanvas: View {
         Canvas { context, size in
             let layout = FigureProjection.layout(
                 pose: MotionLibrary.pose(for: motion, phase: phase),
-                within: FigureProjection.bounds(for: motion),
+                within: FigureProjection.measureBounds(for: motion),
                 in: CGRect(origin: .zero, size: size)
             )
             let renderer = FigureRenderer(layout: layout, activation: .idle)

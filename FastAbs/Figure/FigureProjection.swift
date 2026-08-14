@@ -77,12 +77,30 @@ enum FigureProjection {
         return CGPoint(x: x, y: -y)
     }
 
+    /// Framing per movement, worked out once.
+    ///
+    /// Computing it solves 48 poses. It runs when a figure is created, and the
+    /// movements list creates one per row — so uncached it cost thousands of
+    /// pose solves every time that screen appeared, which is most of why the
+    /// app was slow to open and slow to change tabs. There are only two dozen
+    /// movements and the answer never changes, so it is worked out once.
+    @MainActor
+    private static var cachedBounds: [MotionKind: CGRect] = [:]
+
+    @MainActor
+    static func bounds(for motion: MotionKind) -> CGRect {
+        if let known = cachedBounds[motion] { return known }
+        let measured = measureBounds(for: motion)
+        cachedBounds[motion] = measured
+        return measured
+    }
+
     /// The area a whole movement sweeps through, in flattened world units.
     ///
     /// Framing is computed from the entire cycle rather than the current frame,
     /// otherwise the athlete would swell and shrink as the movement widened and
     /// narrowed — a pulse far more distracting than any pose.
-    static func bounds(for motion: MotionKind, samples: Int = 48) -> CGRect {
+    static func measureBounds(for motion: MotionKind, samples: Int = 48) -> CGRect {
         var minimum = CGPoint(x: CGFloat.greatestFiniteMagnitude, y: CGFloat.greatestFiniteMagnitude)
         var maximum = CGPoint(x: -CGFloat.greatestFiniteMagnitude, y: -CGFloat.greatestFiniteMagnitude)
 

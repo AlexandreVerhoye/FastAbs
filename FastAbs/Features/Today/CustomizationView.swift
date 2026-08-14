@@ -6,8 +6,18 @@ struct CustomizationView: View {
     let onApply: (WorkoutPreferences) -> Void
     @State private var draft: WorkoutPreferences = .recommended
 
-    private var preview: WorkoutPlan {
-        WorkoutEngine().makePlan(preferences: draft, seed: 42)
+    /// Recomputed when the draft changes, not on every redraw.
+    ///
+    /// It used to be a computed property read twice per render, so every
+    /// keystroke and every toggle built two complete workouts before drawing
+    /// a single frame.
+    @State private var preview: WorkoutPlan = WorkoutEngine().makePlan(
+        preferences: .recommended,
+        seed: 42
+    )
+
+    private func refreshPreview() {
+        preview = WorkoutEngine().makePlan(preferences: draft, seed: 42)
     }
 
     var body: some View {
@@ -55,7 +65,11 @@ struct CustomizationView: View {
                 .padding(.vertical, 8)
                 .background(.ultraThinMaterial)
             }
-            .onAppear { draft = appModel.preferences }
+            .onAppear {
+                draft = appModel.preferences
+                refreshPreview()
+            }
+            .onChange(of: draft) { _, _ in refreshPreview() }
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
