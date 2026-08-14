@@ -487,3 +487,35 @@ struct HistoryAnalyticsTests {
         #expect(Set(record.exerciseIDs).count == record.exerciseIDs.count)
     }
 }
+
+// A whole-figure hole test was tried here and removed. The idea was to flood
+// fill from the border and treat any sealed background as a hole one part had
+// punched in another. It cannot work: the renderer's separation gap — the thin
+// line that keeps an arm from merging into the torso it lies on — is itself a
+// sealed region, and a bridge or a hand behind the head encloses a real pocket.
+// Every discriminator tried (size, erosion, connected components) either passed
+// genuine cuts or failed the feature. What remains is `FigureSolidityTests`,
+// which renders each part alone and so can only see holes that are certainly
+// wrong, plus the contact sheet in `MotionContactSheet` for the rest. Reading a
+// picture is not automation, but a threshold tuned until today's output passes
+// asserts nothing except that nothing changed.
+
+/// One frame of one movement, sized for rasterising.
+struct MotionFigure: View {
+    let motion: MotionKind
+    let phase: Float
+
+    var body: some View {
+        Canvas(rendersAsynchronously: false) { context, size in
+            let layout = FigureProjection.layout(
+                pose: MotionLibrary.pose(for: motion, phase: phase),
+                within: FigureProjection.bounds(for: motion),
+                in: CGRect(origin: .zero, size: size)
+            )
+            FigureRenderer(
+                layout: layout,
+                activation: MuscleActivation.make(for: motion, phase: phase)
+            ).draw(into: &context)
+        }
+    }
+}
