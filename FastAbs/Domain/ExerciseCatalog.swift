@@ -25,7 +25,7 @@ enum ExerciseCatalog {
            "Jambes au-dessus des hanches, tends les mains vers les chevilles sans tirer la nuque.", "Souffle à chaque montée.", setup: "Sur le dos, jambes tendues à la verticale au-dessus des hanches.", mistake: "Monter par à-coups d’épaules au lieu d’enrouler le buste.", intensity: 1.1),
         ex("explosive-crunch", "Crunch explosif", [.upperAbs, .fullCore], .flexion, .advanced, .dynamic, .crunch,
            "Monte vivement puis freine la descente; la puissance vient des abdos, pas de la nuque.", "Expiration brève en montant.", setup: "Sur le dos, genoux fléchis, bras le long du corps, prêt à monter vite.", mistake: "Se laisser retomber : la descente doit rester freinée.", intensity: 1.55),
-        ex("long-lever-crunch", "Crunch bras tendus", [.upperAbs, .deepCore], .flexion, .advanced, .quiet, .crunch,
+        ex("long-lever-crunch", "Crunch bras tendus", [.upperAbs, .deepCore], .flexion, .advanced, .quiet, .longLeverCrunch,
            "Garde les bras près des oreilles et décolle uniquement le haut du dos.", "Expire en montant, inspire en redescendant.", setup: "Sur le dos, bras tendus près des oreilles, genoux fléchis.", mistake: "Laisser les bras avancer devant : ils restent alignés avec la tête.", intensity: 1.35),
 
         ex("oblique-crunch", "Crunch oblique alterné", [.obliques, .upperAbs], .lateral, .beginner, .quiet, .obliqueCrunch,
@@ -61,7 +61,7 @@ enum ExerciseCatalog {
            "Allonge bras et jambe opposés tout en gardant le tronc parfaitement stable.", "Expire pendant l’allongement.", unilateral: true, neck: true, setup: "Sur le dos, bras tendus vers le plafond, jambes en tablette.", mistake: "Allonger trop vite et laisser le dos se creuser.", intensity: 0.85),
         ex("v-sit", "Maintien en V", [.fullCore, .lowerAbs], .hipFlexion, .advanced, .quiet, .vSit,
            "Tiens l’équilibre sur les ischions, poitrine ouverte et tibias parallèles au sol.", "Respire sans arrondir davantage le dos.", neck: true, setup: "Assis, en équilibre sur les ischions, buste ouvert et tibias parallèles au sol.", mistake: "Arrondir le dos et se laisser tomber en arrière.", intensity: 1.45),
-        ex("v-sit-extension", "Extension en V", [.fullCore, .lowerAbs], .hipFlexion, .athlete, .quiet, .vSit,
+        ex("v-sit-extension", "Extension en V", [.fullCore, .lowerAbs], .hipFlexion, .athlete, .quiet, .vSitExtension,
            "Depuis le V, éloigne simultanément jambes et buste puis reviens compact.", "Expire au retour.", neck: true, setup: "Départ en V compact, mains le long des cuisses.", mistake: "Perdre l’équilibre vers l’arrière pendant l’extension.", intensity: 1.8),
 
         ex("bird-dog", "Bird dog", [.deepCore, .lowerBack], .posterior, .beginner, .quiet, .birdDog,

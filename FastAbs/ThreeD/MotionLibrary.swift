@@ -74,6 +74,10 @@ enum MotionLibrary {
             (title, description, cadence) = ("Superman", "Allongé sur le ventre, les bras et les jambes se soulèvent sur une faible amplitude.", 0.24)
         case .bridge:
             (title, description, cadence) = ("Pont fessier", "Le bassin monte jusqu’à aligner épaules, hanches et genoux, puis redescend.", 0.28)
+        case .vSitExtension:
+            (title, description, cadence) = ("Extension en V", "Depuis le V compact, le buste et les jambes s’éloignent en même temps puis reviennent.", 0.24)
+        case .longLeverCrunch:
+            (title, description, cadence) = ("Crunch bras tendus", "Les bras restent tendus près des oreilles pendant que le haut du dos décolle.", 0.3)
         case .squat:
             (title, description, cadence) = ("Squat", "Le bassin recule et descend jusqu’à ce que les cuisses approchent l’horizontale, puis remonte.", 0.3)
         case .rest:
@@ -93,9 +97,9 @@ enum MotionLibrary {
     /// How a repetition is distributed across its cycle.
     static func tempo(for motion: MotionKind) -> MotionTempo {
         switch motion {
-        case .crunch, .reverseCrunch, .toeReach, .hipRaise, .obliqueCrunch, .bridge, .squat:
+        case .crunch, .reverseCrunch, .toeReach, .hipRaise, .obliqueCrunch, .bridge, .squat, .longLeverCrunch:
             .controlled
-        case .legRaise, .vSit, .superman, .sidePlank, .plankReach, .deadBug, .birdDog, .seatedTuck:
+        case .legRaise, .vSit, .vSitExtension, .superman, .sidePlank, .plankReach, .deadBug, .birdDog, .seatedTuck:
             .deliberate
         case .bridgeMarch:
             .controlled
@@ -149,6 +153,10 @@ enum MotionLibrary {
             MuscleLoad(upperAbs: 0.4, lowerAbs: 0.6, obliques: 0.5, deepCore: 1, restingTone: 0.72)
         case .vSit:
             MuscleLoad(upperAbs: 0.85, lowerAbs: 1, obliques: 0.45, deepCore: 0.9, restingTone: 0.42)
+        case .vSitExtension:
+            MuscleLoad(upperAbs: 0.9, lowerAbs: 1, obliques: 0.45, deepCore: 1, restingTone: 0.45)
+        case .longLeverCrunch:
+            MuscleLoad(upperAbs: 1, lowerAbs: 0.5, obliques: 0.3, deepCore: 0.7, restingTone: 0.14)
         case .seatedTuck:
             MuscleLoad(upperAbs: 0.6, lowerAbs: 1, obliques: 0.4, deepCore: 0.85, restingTone: 0.4)
         case .bridgeMarch:
@@ -200,7 +208,7 @@ private extension MotionLibrary {
     /// units out, which cropped the legs and foreshortened everything else.
     static func framing(for motion: MotionKind) -> Framing {
         switch motion {
-        case .twist, .vSit, .seatedTuck:
+        case .twist, .vSit, .vSitExtension, .seatedTuck:
             Framing(target: SIMD3<Float>(0.15, 0.62, 0), position: SIMD3<Float>(0.95, 1.4, 5.1))
         case .plank, .sidePlank, .plankReach, .mountainClimber, .birdDog, .bearHold:
             // On all fours the athlete reaches further toward the head than any
@@ -279,6 +287,7 @@ private extension MotionLibrary {
 
         case .flutter:
             var pose = supineStraight()
+            tuckHandsUnderSeat(&pose)
             setLegAngle(&pose, angle: 0.22)
             pose.leftAnkle.y += swing * 0.34
             pose.rightAnkle.y -= swing * 0.34
@@ -288,6 +297,7 @@ private extension MotionLibrary {
 
         case .scissors:
             var pose = supineStraight()
+            tuckHandsUnderSeat(&pose)
             setLegAngle(&pose, angle: 0.3)
             pose.leftAnkle.z += swing * 0.42
             pose.rightAnkle.z -= swing * 0.42
@@ -326,7 +336,7 @@ private extension MotionLibrary {
                 to: pose.rightHand,
                 bend: SIMD3<Float>(-0.2, -1, -0.7)
             )
-            twistTorso(&pose, amount: swing * 0.5)
+            twistTorso(&pose, amount: swing * 0.78)
             return PoseSketch(pose)
 
         case .obliqueCrunch:
@@ -442,10 +452,10 @@ private extension MotionLibrary {
             pose.leftHand = pose.pelvis + SIMD3<Float>(-0.34, -0.1, -0.26)
             pose.rightHand = pose.pelvis + SIMD3<Float>(-0.34, -0.1, 0.26)
             pose.leftElbow = aimLimb(
-                from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(1, 0, -0.5)
+                from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(-1, 0.2, -0.5)
             )
             pose.rightElbow = aimLimb(
-                from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(1, 0, 0.5)
+                from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(-1, 0.2, 0.5)
             )
             curlTorso(&pose, amount: -0.24)
 
@@ -471,6 +481,32 @@ private extension MotionLibrary {
                 pose.rightAnkle = mix(pose.rightAnkle, SIMD3<Float>(0.62, 0.72, 0.17), t: lift)
             }
             return PoseSketch(pose, anchor: \.chest)
+
+        case .vSitExtension:
+            var pose = seated()
+            // Compact to long: buste and legs open together, which is what
+            // separates this from simply holding the V.
+            let open = effort
+            curlTorso(&pose, amount: -open * 0.46)
+            pose.leftAnkle = mix(SIMD3<Float>(0.72, 0.72, -0.16), SIMD3<Float>(1.12, 0.5, -0.16), t: open)
+            pose.rightAnkle = mix(SIMD3<Float>(0.72, 0.72, 0.16), SIMD3<Float>(1.12, 0.5, 0.16), t: open)
+            pose.leftKnee = aimLimb(from: pose.leftHip, to: pose.leftAnkle, bend: SIMD3<Float>(0, 1, 0))
+            pose.rightKnee = aimLimb(from: pose.rightHip, to: pose.rightAnkle, bend: SIMD3<Float>(0, 1, 0))
+            reachHands(
+                &pose,
+                toward: pose.leftKnee,
+                and: pose.rightKnee,
+                amount: 0.75
+            )
+            return PoseSketch(pose, anchor: \.pelvis)
+
+        case .longLeverCrunch:
+            var pose = supineBentKnees()
+            // Arms stay locked beside the ears through the whole repetition —
+            // that long lever is the entire point of the variation.
+            armsOverhead(&pose)
+            curlTorso(&pose, amount: effort * 0.56)
+            return PoseSketch(pose)
 
         case .superman:
             var pose = prone()
@@ -778,6 +814,16 @@ private extension MotionLibrary {
         pose.rightElbow = pose.rightShoulder - lateral * 0.3 + back * 0.05
     }
 
+    /// Hands slide under the seat, which is where they belong for flutter and
+    /// scissors and keeps them clear of the sweeping legs.
+    static func tuckHandsUnderSeat(_ pose: inout BodyPose) {
+        let lateral = safeAxis(pose.leftHip - pose.rightHip, fallback: SIMD3<Float>(0, 0, 1))
+        pose.leftHand = pose.pelvis + lateral * 0.1 - SIMD3<Float>(0.04, 0.07, 0)
+        pose.rightHand = pose.pelvis - lateral * 0.1 - SIMD3<Float>(0.04, 0.07, 0)
+        pose.leftElbow = aimLimb(from: pose.leftShoulder, to: pose.leftHand, bend: lateral)
+        pose.rightElbow = aimLimb(from: pose.rightShoulder, to: pose.rightHand, bend: -lateral)
+    }
+
     static func armsOverhead(_ pose: inout BodyPose) {
         let back = safeAxis(pose.head - pose.chest, fallback: SIMD3<Float>(-1, 0, 0))
         pose.leftHand = pose.leftShoulder + back * 0.66 + SIMD3<Float>(0, 0.34, -0.06)
@@ -858,7 +904,9 @@ private extension MotionLibrary {
     static func climbLegs(_ pose: inout BodyPose, leftTuck: Float) {
         let tuckedAnkle = SIMD3<Float>(0.42, 0.24, 0.18)
         let openAnkle = SIMD3<Float>(1.11, 0.18, 0.16)
-        let lift = SIMD3<Float>(0, 1, 0)
+        // Face down, bending a knee lifts the heel and puts the knee below the
+        // hip-to-ankle line. Aimed above it, the leg folded backwards.
+        let lift = SIMD3<Float>(0, -1, 0)
 
         let leftTucked = aimLimb(from: pose.leftHip, to: tuckedAnkle, bend: lift)
         let leftOpen = aimLimb(from: pose.leftHip, to: openAnkle, bend: lift)

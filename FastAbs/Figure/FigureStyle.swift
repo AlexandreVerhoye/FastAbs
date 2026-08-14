@@ -72,7 +72,7 @@ enum FigureMetrics {
 
     /// How far down a limb the separation cut starts, so the hip and shoulder
     /// stay joined to the body.
-    static let rootJoin: CGFloat = 0.1
+    static let rootJoin: CGFloat = 0.24
 
     static let headRadius: CGFloat = 0.116
     /// How far along the chest-to-head line the skull is actually drawn.
@@ -80,9 +80,9 @@ enum FigureMetrics {
 
     /// Seen from the side, the trunk's on-screen width is the body's depth.
     /// Using the shoulder span here drew a slab twice as wide as a person.
-    static let chestHalfDepth: CGFloat = 0.158
+    static let chestHalfDepth: CGFloat = 0.168
     static let waistHalfDepth: CGFloat = 0.108
-    static let seatHalfDepth: CGFloat = 0.152
+    static let seatHalfDepth: CGFloat = 0.166
     /// How far the shoulder line and the seat bulge past their joints.
     static let shoulderCrown: CGFloat = 0.14
     static let seatCrown: CGFloat = 0.12
@@ -94,8 +94,12 @@ enum FigureMetrics {
     static let obliqueWidth: CGFloat = 0.075
 
     /// How far the trunk runs past the hip and shoulder joints.
-    static let seatOverhang: CGFloat = 0.06
-    static let chestOverhang: CGFloat = 0.02
+    ///
+    /// Both were short enough that a shoulder sat on the very top edge of the
+    /// trunk and a hip on its very bottom, which is why arms and legs looked
+    /// stuck on rather than growing out of the body.
+    static let seatOverhang: CGFloat = 0.16
+    static let chestOverhang: CGFloat = 0.13
 
     /// Half the widest the athlete ever gets, used to pad the framing.
     static let silhouettePadding: CGFloat = 0.22
