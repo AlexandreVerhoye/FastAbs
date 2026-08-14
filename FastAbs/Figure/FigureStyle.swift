@@ -49,26 +49,45 @@ enum MuscleHeat {
 /// as it is long — which is what keeps the silhouette from reading as either a
 /// stick or a balloon.
 enum FigureMetrics {
-    static let upperArm: CGFloat = 0.132
-    static let forearm: CGFloat = 0.112
-    static let thigh: CGFloat = 0.195
-    static let shin: CGFloat = 0.152
-    static let neck: CGFloat = 0.135
+    // Limbs taper: a shoulder is thicker than an elbow, a hip than a knee.
+    // Drawing every segment at one width is what made the figure read as tubing.
+    static let upperArmTop: CGFloat = 0.125
+    static let upperArmBottom: CGFloat = 0.098
+    static let forearmTop: CGFloat = 0.094
+    static let forearmBottom: CGFloat = 0.072
+    static let thighTop: CGFloat = 0.192
+    static let thighBottom: CGFloat = 0.136
+    static let shinTop: CGFloat = 0.128
+    static let shinBottom: CGFloat = 0.082
+    static let neck: CGFloat = 0.13
 
-    static let headRadius: CGFloat = 0.125
+    static let handWidth: CGFloat = 0.088
+    static let handLength: CGFloat = 0.075
+    static let footHeel: CGFloat = 0.098
+    static let footToe: CGFloat = 0.062
+
+    /// The gap punched between a part and whatever it overlaps. Without it the
+    /// whole figure merges into one white mass.
+    static let separation: CGFloat = 0.016
+
+    static let headRadius: CGFloat = 0.116
     /// How far along the chest-to-head line the skull is actually drawn.
-    static let headSeating: CGFloat = 0.76
-    static let handRadius: CGFloat = 0.068
-    static let footLength: CGFloat = 0.17
-    static let footWidth: CGFloat = 0.105
+    static let headSeating: CGFloat = 0.82
 
     /// Seen from the side, the trunk's on-screen width is the body's depth.
     /// Using the shoulder span here drew a slab twice as wide as a person.
-    static let chestHalfDepth: CGFloat = 0.105
-    static let waistHalfDepth: CGFloat = 0.082
-    static let seatHalfDepth: CGFloat = 0.098
-    /// Width of the round join that fattens and softens the trunk outline.
-    static let trunkRounding: CGFloat = 0.15
+    static let chestHalfDepth: CGFloat = 0.158
+    static let waistHalfDepth: CGFloat = 0.108
+    static let seatHalfDepth: CGFloat = 0.152
+    /// How far the shoulder line and the seat bulge past their joints.
+    static let shoulderCrown: CGFloat = 0.14
+    static let seatCrown: CGFloat = 0.12
+
+    /// Abdominal bands run wider than the trunk so clipping gives them the
+    /// body's own edge; the obliques sit out on the flanks.
+    static let bandHalfWidth: CGFloat = 0.125
+    static let obliqueOffset: CGFloat = 0.15
+    static let obliqueWidth: CGFloat = 0.075
 
     /// How far the trunk runs past the hip and shoulder joints.
     static let seatOverhang: CGFloat = 0.06

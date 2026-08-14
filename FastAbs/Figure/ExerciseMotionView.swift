@@ -115,25 +115,52 @@ private struct ExerciseFigure: View {
     }
 }
 
-/// Turns a laid-out pose into strokes and fills.
+/// Turns a laid-out pose into a drawn athlete.
 ///
-/// Everything is drawn with round caps and joins in a single family of whites,
-/// so overlapping parts merge into one silhouette instead of showing seams —
-/// the thing a three-dimensional assembly of parts can never quite manage.
+/// The figure is built from five solid shapes — two arms, two legs and the
+/// trunk — rather than a set of strokes. Each is punched out of whatever has
+/// already been drawn before being filled, so an arm crossing the chest leaves
+/// a clean gap instead of dissolving into it. That separation is what turns a
+/// white blob into a readable body; without it every overlap merges.
 struct FigureRenderer {
     let layout: FigureLayout
     let activation: MuscleActivation
 
     func draw(into context: inout GraphicsContext) {
-        // Painted back to front so a limb on the far side of the body never
-        // covers the near one.
+        // Painted back to front, so a limb on the far side of the body is
+        // covered by the near one rather than the other way round.
         for part in orderedParts() {
             switch part {
-            case .arm(let side): drawArm(side, into: &context)
-            case .leg(let side): drawLeg(side, into: &context)
-            case .trunk: drawTrunk(into: &context)
+            case .arm(let side):
+                place(armPath(side), shade: shade(forArm: side), into: &context)
+            case .leg(let side):
+                place(legPath(side), shade: shade(forLeg: side), into: &context)
+            case .trunk:
+                let trunk = trunkPath()
+                place(trunkGroupPath(trunk: trunk), shade: FigureShading.near, into: &context)
+                drawMuscles(clippedTo: trunk, into: &context)
             }
         }
+    }
+
+    /// Cuts a shape out of the drawing so far, then fills it.
+    ///
+    /// The cut is a stroke along the shape's own outline: half of it falls
+    /// outside the shape and survives the fill, which is exactly the gap that
+    /// separates this part from whatever sits behind it.
+    private func place(_ path: Path, shade: Color, into context: inout GraphicsContext) {
+        var cut = context
+        cut.blendMode = .destinationOut
+        cut.stroke(
+            path,
+            with: .color(.white),
+            style: StrokeStyle(
+                lineWidth: FigureMetrics.separation * 2 * layout.scale,
+                lineCap: .round,
+                lineJoin: .round
+            )
+        )
+        context.fill(path, with: .color(shade))
     }
 }
 
@@ -154,93 +181,126 @@ private extension FigureRenderer {
         return parts.sorted { $0.1 < $1.1 }.map(\.0)
     }
 
-    func joints(forArm side: Side) -> (FigureJoint, FigureJoint, FigureJoint) {
-        side == .left
+    func shade(forArm side: Side) -> Color {
+        FigureShading.body(atDepth: side == .left ? layout.leftElbow.depth : layout.rightElbow.depth)
+    }
+
+    func shade(forLeg side: Side) -> Color {
+        FigureShading.body(atDepth: side == .left ? layout.leftKnee.depth : layout.rightKnee.depth)
+    }
+}
+
+// MARK: - Body shapes
+
+private extension FigureRenderer {
+    /// A limb segment: a capsule that tapers from one joint to the next.
+    ///
+    /// Real limbs are thicker at the shoulder than the wrist and at the hip
+    /// than the ankle. Drawing every segment at one width is most of what made
+    /// the earlier figure read as inflated tubing.
+    func segment(from start: CGPoint, to end: CGPoint, startWidth: CGFloat, endWidth: CGFloat) -> Path {
+        let scale = layout.scale
+        let direction = start.direction(to: end)
+        let across = direction.perpendicular
+        let startRadius = startWidth * scale / 2
+        let endRadius = endWidth * scale / 2
+
+        var body = Path()
+        body.move(to: start + across * startRadius)
+        body.addLine(to: end + across * endRadius)
+        body.addLine(to: end - across * endRadius)
+        body.addLine(to: start - across * startRadius)
+        body.closeSubpath()
+
+        return body
+            .union(circle(at: start, radius: startRadius))
+            .union(circle(at: end, radius: endRadius))
+    }
+
+    func circle(at centre: CGPoint, radius: CGFloat) -> Path {
+        Path(
+            ellipseIn: CGRect(
+                x: centre.x - radius,
+                y: centre.y - radius,
+                width: radius * 2,
+                height: radius * 2
+            )
+        )
+    }
+
+    func armPath(_ side: Side) -> Path {
+        let (shoulder, elbow, hand) = side == .left
             ? (layout.leftShoulder, layout.leftElbow, layout.leftHand)
             : (layout.rightShoulder, layout.rightElbow, layout.rightHand)
+
+        // The hand runs on past the wrist rather than stopping at it, so the
+        // arm ends in something shaped like a hand instead of a blunt cap.
+        let reach = elbow.point.direction(to: hand.point)
+        let fingertips = hand.point + reach * (FigureMetrics.handLength * layout.scale)
+
+        return segment(
+            from: shoulder.point, to: elbow.point,
+            startWidth: FigureMetrics.upperArmTop, endWidth: FigureMetrics.upperArmBottom
+        )
+        .union(
+            segment(
+                from: elbow.point, to: hand.point,
+                startWidth: FigureMetrics.forearmTop, endWidth: FigureMetrics.forearmBottom
+            )
+        )
+        .union(
+            segment(
+                from: hand.point, to: fingertips,
+                startWidth: FigureMetrics.handWidth, endWidth: FigureMetrics.handWidth * 0.7
+            )
+        )
     }
 
-    func joints(forLeg side: Side) -> (FigureJoint, FigureJoint, FigureJoint, FigureJoint) {
-        side == .left
+    func legPath(_ side: Side) -> Path {
+        let (hip, knee, ankle, toe) = side == .left
             ? (layout.leftHip, layout.leftKnee, layout.leftAnkle, layout.leftToe)
             : (layout.rightHip, layout.rightKnee, layout.rightAnkle, layout.rightToe)
-    }
-}
 
-// MARK: - Limbs
-
-private extension FigureRenderer {
-    func drawArm(_ side: Side, into context: inout GraphicsContext) {
-        let (shoulder, elbow, hand) = joints(forArm: side)
-        let shade = FigureShading.body(atDepth: elbow.depth)
-
-        stroke(from: shoulder.point, to: elbow.point, width: FigureMetrics.upperArm, shade, &context)
-        stroke(from: elbow.point, to: hand.point, width: FigureMetrics.forearm, shade, &context)
-        dot(at: hand.point, radius: FigureMetrics.handRadius, shade, &context)
-    }
-
-    func drawLeg(_ side: Side, into context: inout GraphicsContext) {
-        let (hip, knee, ankle, toe) = joints(forLeg: side)
-        let shade = FigureShading.body(atDepth: knee.depth)
-
-        stroke(from: hip.point, to: knee.point, width: FigureMetrics.thigh, shade, &context)
-        stroke(from: knee.point, to: ankle.point, width: FigureMetrics.shin, shade, &context)
-        stroke(from: ankle.point, to: toe.point, width: FigureMetrics.footWidth, shade, &context)
-    }
-
-    func stroke(
-        from start: CGPoint,
-        to end: CGPoint,
-        width: CGFloat,
-        _ shade: Color,
-        _ context: inout GraphicsContext
-    ) {
-        var path = Path()
-        path.move(to: start)
-        path.addLine(to: end)
-        context.stroke(
-            path,
-            with: .color(shade),
-            style: StrokeStyle(lineWidth: width * layout.scale, lineCap: .round, lineJoin: .round)
+        return segment(
+            from: hip.point, to: knee.point,
+            startWidth: FigureMetrics.thighTop, endWidth: FigureMetrics.thighBottom
+        )
+        .union(
+            segment(
+                from: knee.point, to: ankle.point,
+                startWidth: FigureMetrics.shinTop, endWidth: FigureMetrics.shinBottom
+            )
+        )
+        .union(
+            segment(
+                from: ankle.point, to: toe.point,
+                startWidth: FigureMetrics.footHeel, endWidth: FigureMetrics.footToe
+            )
         )
     }
 
-    func dot(at centre: CGPoint, radius: CGFloat, _ shade: Color, _ context: inout GraphicsContext) {
-        let size = radius * layout.scale
-        context.fill(
-            Path(ellipseIn: CGRect(x: centre.x - size, y: centre.y - size, width: size * 2, height: size * 2)),
-            with: .color(shade)
-        )
-    }
-}
-
-// MARK: - Trunk and muscles
-
-private extension FigureRenderer {
-    func drawTrunk(into context: inout GraphicsContext) {
-        let shade = FigureShading.near
-        let trunk = trunkPath()
-
-        // The skull sits lower than the skeleton's head joint. Drawing it at the
-        // joint left a visible stalk of neck between it and the shoulders, which
-        // reads as a lollipop rather than a person.
+    /// Trunk, neck and head as one shape, so the head sits on the shoulders
+    /// instead of being separated from them by a gap.
+    func trunkGroupPath(trunk: Path) -> Path {
+        let scale = layout.scale
         let headCentre = CGPoint(
             x: layout.chest.point.x + (layout.head.point.x - layout.chest.point.x) * FigureMetrics.headSeating,
             y: layout.chest.point.y + (layout.head.point.y - layout.chest.point.y) * FigureMetrics.headSeating
         )
-        stroke(from: layout.chest.point, to: headCentre, width: FigureMetrics.neck, shade, &context)
 
-        context.fill(trunk, with: .color(shade))
-        drawMuscles(clippedTo: trunk, into: &context)
-        dot(at: headCentre, radius: FigureMetrics.headRadius, shade, &context)
+        return trunk
+            .union(
+                segment(
+                    from: layout.chest.point, to: headCentre,
+                    startWidth: FigureMetrics.neck, endWidth: FigureMetrics.neck * 0.85
+                )
+            )
+            .union(circle(at: headCentre, radius: FigureMetrics.headRadius * scale))
     }
 
-    /// The silhouette of the trunk.
-    ///
-    /// Built as a slim quadrilateral and then stroked with a wide round join:
-    /// the stroke both fattens the shape to its real width and rounds every
-    /// corner, which is far more reliable than hand-placing curve controls —
-    /// those left the shoulders ending in a visible point.
+    /// The silhouette of the trunk: shoulders down to the seat, taken in at the
+    /// waist. Seen from the side its width is the body's depth, not the span of
+    /// the shoulders.
     func trunkPath() -> Path {
         let axis = layout.pelvis.point.direction(to: layout.chest.point)
         let across = axis.perpendicular
@@ -250,28 +310,32 @@ private extension FigureRenderer {
         let top = layout.chest.point + axis * (FigureMetrics.chestOverhang * scale)
         let waist = layout.pelvis.point.midpoint(to: layout.chest.point)
 
-        // Seen from the side the trunk is as wide as the body is deep, not as
-        // wide as the shoulders span.
         let chestHalf = FigureMetrics.chestHalfDepth * scale
         let waistHalf = FigureMetrics.waistHalfDepth * scale
         let seatHalf = FigureMetrics.seatHalfDepth * scale
 
         var path = Path()
         path.move(to: seat - across * seatHalf)
-        path.addLine(to: waist - across * waistHalf)
-        path.addLine(to: top - across * chestHalf)
-        path.addLine(to: top + across * chestHalf)
-        path.addLine(to: waist + across * waistHalf)
-        path.addLine(to: seat + across * seatHalf)
+        path.addQuadCurve(to: top - across * chestHalf, control: waist - across * (waistHalf * 0.78))
+        path.addQuadCurve(
+            to: top + across * chestHalf,
+            control: top + axis * (FigureMetrics.shoulderCrown * scale)
+        )
+        path.addQuadCurve(to: seat + across * seatHalf, control: waist + across * (waistHalf * 0.78))
+        path.addQuadCurve(
+            to: seat - across * seatHalf,
+            control: seat - axis * (FigureMetrics.seatCrown * scale)
+        )
         path.closeSubpath()
-
-        return path.strokedPath(
-            StrokeStyle(lineWidth: FigureMetrics.trunkRounding * scale, lineCap: .round, lineJoin: .round)
-        ).union(path)
+        return path
     }
+}
 
-    /// The abdominal map, painted inside the trunk so it can never spill past
-    /// the body's edge.
+// MARK: - Muscles
+
+private extension FigureRenderer {
+    /// The abdominal map, painted inside the trunk so it takes the body's own
+    /// outline and can never spill past its edge.
     func drawMuscles(clippedTo trunk: Path, into context: inout GraphicsContext) {
         let axis = layout.pelvis.point.direction(to: layout.chest.point)
         let scale = layout.scale
@@ -280,61 +344,92 @@ private extension FigureRenderer {
             layout.chest.point.y - layout.pelvis.point.y
         )
 
-        // The belly direction, squared up against the trunk so a band always
-        // sits flat on the abdomen whichever way the athlete has turned.
+        // The belly direction, squared up against the trunk so a band sits flat
+        // on the abdomen whichever way the athlete has turned.
         let facing = layout.front
-        let alongFacing = facing.dx * axis.dx + facing.dy * axis.dy
-        var bellyVector = CGVector(dx: facing.dx - axis.dx * alongFacing, dy: facing.dy - axis.dy * alongFacing)
-        let bellyLength = (bellyVector.dx * bellyVector.dx + bellyVector.dy * bellyVector.dy).squareRoot()
-        if bellyLength > 0.0001 {
-            bellyVector = CGVector(dx: bellyVector.dx / bellyLength, dy: bellyVector.dy / bellyLength)
-        } else {
-            bellyVector = axis.perpendicular
-        }
+        let alongAxis = facing.dx * axis.dx + facing.dy * axis.dy
+        var belly = CGVector(dx: facing.dx - axis.dx * alongAxis, dy: facing.dy - axis.dy * alongAxis)
+        let bellyLength = (belly.dx * belly.dx + belly.dy * belly.dy).squareRoot()
+        belly = bellyLength > 0.0001
+            ? CGVector(dx: belly.dx / bellyLength, dy: belly.dy / bellyLength)
+            : axis.perpendicular
 
-        // Whole regions rather than a grid of tiles: clipped to the body, a
-        // region reads as "this muscle is working", a tile reads as a sticker.
-        let bands: [(intensity: Float, along: CGFloat, belly: CGFloat, depth: CGFloat, height: CGFloat)] = [
-            (activation.lowerAbs, 0.32, 0.03, 0.29, 0.26),
-            (activation.upperAbs, 0.6, 0.03, 0.29, 0.26),
-            (activation.leftOblique, 0.46, -0.1, 0.12, 0.4),
-            (activation.rightOblique, 0.46, -0.1, 0.12, 0.4)
+        // Kept just inside the trunk so their own rounded ends show. Run edge
+        // to edge and they meet the body's outline square, which reads as a
+        // strip of tape rather than a muscle.
+        let bands: [(intensity: Float, along: CGFloat, height: CGFloat)] = [
+            (activation.lowerAbs, 0.3, 0.22),
+            (activation.upperAbs, 0.56, 0.22)
         ]
 
         context.drawLayer { layer in
             layer.clip(to: trunk)
+
             for band in bands where band.intensity > 0.02 {
-                let centre = layout.pelvis.point
-                    + axis * (band.along * length)
-                    + bellyVector * (band.belly * scale)
-                let halfDepth = band.depth * scale / 2
-                let halfHeight = band.height * length / 2
-
-                let rounded = Path(
-                    roundedRect: CGRect(
-                        x: -halfDepth,
-                        y: -halfHeight,
-                        width: halfDepth * 2,
-                        height: halfHeight * 2
-                    ),
-                    cornerRadius: min(halfDepth, halfHeight) * 0.7
-                )
-                // The band's own axes are the trunk's, so it stays square to the
-                // body however the athlete turns.
-                let placement = CGAffineTransform(
-                    a: bellyVector.dx, b: bellyVector.dy,
-                    c: axis.dx, d: axis.dy,
-                    tx: centre.x, ty: centre.y
-                )
-
+                let centre = layout.pelvis.point + axis * (band.along * length)
                 layer.fill(
-                    rounded.applying(placement),
-                    with: .color(
-                        MuscleHeat.color(for: band.intensity)
-                            .opacity(MuscleHeat.opacity(for: band.intensity))
-                    )
+                    rounded(
+                        centre: centre,
+                        across: belly,
+                        along: axis,
+                        halfWidth: FigureMetrics.bandHalfWidth * scale,
+                        halfHeight: band.height * length / 2
+                    ),
+                    with: .color(paint(band.intensity))
+                )
+            }
+
+            // Obliques hug the flanks, so they sit at the trunk's edges rather
+            // than across the middle of the belly.
+            for (intensity, side) in [
+                (activation.leftOblique, CGFloat(1)),
+                (activation.rightOblique, CGFloat(-1))
+            ] where intensity > 0.02 {
+                let centre = layout.pelvis.point
+                    + axis * (0.44 * length)
+                    + belly * (side * FigureMetrics.obliqueOffset * scale)
+                layer.fill(
+                    rounded(
+                        centre: centre,
+                        across: belly,
+                        along: axis,
+                        halfWidth: FigureMetrics.obliqueWidth * scale / 2,
+                        halfHeight: 0.36 * length / 2
+                    ),
+                    with: .color(paint(intensity))
                 )
             }
         }
+    }
+
+    func paint(_ intensity: Float) -> Color {
+        MuscleHeat.color(for: intensity).opacity(MuscleHeat.opacity(for: intensity))
+    }
+
+    /// A rounded rectangle laid out in the trunk's own axes, so it stays square
+    /// to the body however the athlete turns.
+    func rounded(
+        centre: CGPoint,
+        across: CGVector,
+        along: CGVector,
+        halfWidth: CGFloat,
+        halfHeight: CGFloat
+    ) -> Path {
+        let path = Path(
+            roundedRect: CGRect(
+                x: -halfWidth,
+                y: -halfHeight,
+                width: halfWidth * 2,
+                height: halfHeight * 2
+            ),
+            cornerRadius: min(halfWidth, halfHeight) * 0.72
+        )
+        return path.applying(
+            CGAffineTransform(
+                a: across.dx, b: across.dy,
+                c: along.dx, d: along.dy,
+                tx: centre.x, ty: centre.y
+            )
+        )
     }
 }
