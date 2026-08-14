@@ -4,9 +4,11 @@ import Foundation
 ///
 /// The pipeline is organised around one identity:
 ///
-///     target == work + recovery + transitions
+///     target == work + gap time
 ///
-/// with recovery defined as the *residual*. That is the difference from the
+/// with gap time defined as the *residual*. Every interval between two
+/// movements carries exactly one thing: a recovery, or five seconds to change
+/// position. Never both — the recovery already gave you the time to move. That is the difference from the
 /// previous design, where the number of rests was decided up front by the same
 /// expression that decided the duration budget — which meant rest placement
 /// could never respond to what was actually programmed. Here the solver owns
@@ -51,13 +53,15 @@ struct WorkoutEngine: Sendable {
         )
         let gaps = scoreGaps(slots: repaired, work: work, budget: budget, difficulty: preferences.difficulty)
         let chosen = placeRecovery(gaps, budget: budget, difficulty: preferences.difficulty)
-        let rests = splitRest(budget.rest, across: chosen)
+        // Whatever the unrested intervals do not spend on their five seconds.
+        let restBudget = budget.gaps - budget.transitionCost * (budget.gapCount - chosen.count)
+        let rests = splitRest(restBudget, across: chosen)
 
         let steps = assemble(
             slots: repaired,
             work: work,
             rests: Dictionary(uniqueKeysWithValues: zip(chosen.map(\.after), rests)),
-            transitions: preferences.positionTransitions
+            transitionCost: budget.transitionCost
         )
 
         return WorkoutPlan(
@@ -84,8 +88,15 @@ struct WorkoutEngine: Sendable {
         /// Exercise steps. A movement held per side occupies two of these.
         let slots: Int
         let work: Int
-        let rest: Int
-        let transition: Int
+        /// Everything that is not work: the gaps between movements, whatever
+        /// each one turns out to carry.
+        let gaps: Int
+        /// The five seconds an interval costs when it carries no recovery.
+        let transitionCost: Int
+
+        var gapCount: Int { max(0, slots - 1) }
+        /// What the intervals cost before a single second of rest is spent.
+        var floor: Int { transitionCost * gapCount }
     }
 
     private func solveBudget(target: Int, preferences: WorkoutPreferences) -> Budget {
@@ -99,26 +110,32 @@ struct WorkoutEngine: Sendable {
         var best: (budget: Budget, cost: Double)?
 
         for slots in 1...80 {
-            let transition = transitionCost * (slots - 1)
-            let remaining = target - transition
-            guard remaining >= slots * low else { break }
+            let floor = transitionCost * (slots - 1)
+            let spendable = target - floor
+            guard spendable >= slots * low else { break }
 
-            let ideal = Double(remaining) / (1 + ratio)
+            let ideal = Double(spendable) / (1 + ratio)
             let work = min(max(Int(ideal.rounded()), slots * low), slots * high)
-            let rest = remaining - work
-            // Either there is no rest at all, or every rest can clear the floor.
-            guard rest == 0 || rest >= Self.minimumRest else { continue }
+            let gaps = target - work
+            guard gaps >= floor else { continue }
 
-            let ratioError = abs(Double(rest) / Double(work) - ratio) / max(ratio, 0.01)
+            // What is left once every interval has paid for its own five
+            // seconds is what can become recovery.
+            let restable = gaps - floor
+            let ratioError = abs(Double(restable) / Double(work) - ratio) / max(ratio, 0.01)
             let lengthError = abs(Double(work) / Double(slots) - midpoint) / Double(high - low + 1)
             let cost = ratioError + 0.15 * lengthError
 
             if best == nil || cost < best!.cost {
-                best = (Budget(slots: slots, work: work, rest: rest, transition: transition), cost)
+                best = (
+                    Budget(slots: slots, work: work, gaps: gaps, transitionCost: transitionCost),
+                    cost
+                )
             }
         }
 
-        return best?.budget ?? Budget(slots: 1, work: target, rest: 0, transition: 0)
+        return best?.budget
+            ?? Budget(slots: 1, work: target, gaps: 0, transitionCost: transitionCost)
     }
 
     // MARK: - Stage 2: selection
@@ -408,8 +425,9 @@ struct WorkoutEngine: Sendable {
             slots[index].exercise.intensity * Double(work[index]) / midpoint
         }
         let mean = demands.reduce(0, +) / Double(demands.count)
-        let restTarget = max(1, budget.rest / max(1, difficulty.preferredRest))
-        let decay = exp(-Double(budget.rest) / Double(max(1, restTarget)) / 40)
+        let restable = max(0, budget.gaps - budget.floor)
+        let restTarget = max(1, restable / max(1, difficulty.preferredRest))
+        let decay = exp(-Double(restable) / Double(max(1, restTarget)) / 40)
 
         // Fatigue accumulates forward. The nominal rest length has to stand in
         // for the real one here: the true lengths are not known until the split,
@@ -441,15 +459,20 @@ struct WorkoutEngine: Sendable {
         budget: Budget,
         difficulty: WorkoutDifficulty
     ) -> [Gap] {
-        guard budget.rest > 0 else { return [] }
+        let restable = budget.gaps - budget.floor
+        guard restable > 0 else { return [] }
         let allowed = gaps.filter(\.allowsRecovery)
         guard !allowed.isEmpty else { return [] }
 
-        let ceiling = min(allowed.count, budget.rest / Self.minimumRest)
+        // A rested interval stops paying for its own five seconds, so each one
+        // chosen adds that back to the purse: r rests share `restable + 5r`,
+        // and every rest must still clear the floor.
+        let affordable = restable / max(1, Self.minimumRest - budget.transitionCost)
+        let ceiling = min(allowed.count, max(0, affordable))
         guard ceiling > 0 else { return [] }
         let target = min(
             ceiling,
-            max(1, Int((Double(budget.rest) / Double(difficulty.preferredRest)).rounded()))
+            max(1, Int((Double(restable) / Double(difficulty.preferredRest)).rounded()))
         )
 
         // Two demanding movements never land back to back — the promise that
@@ -519,15 +542,18 @@ struct WorkoutEngine: Sendable {
 
     // MARK: - Stage 7: assembly
 
-    /// Grammar: `E ( [R] [X] E )*`. Recovery answers what was just done, the
-    /// transition sets up what comes next. First and last step are exercises
-    /// and two rests can never touch, both by construction rather than by
-    /// assertion.
+    /// Grammar: `E ( (R | X) E )*`. Every interval carries one thing — a
+    /// recovery, or five seconds to change position, never both. A recovery
+    /// already gives you time to move, and stacking a placement on top of one
+    /// only makes the session feel like it is waiting for you.
+    ///
+    /// First and last step are exercises, and two rests can never touch, both
+    /// by construction rather than by assertion.
     private func assemble(
         slots: [Slot],
         work: [Int],
         rests: [Int: Int],
-        transitions: Bool
+        transitionCost: Int
     ) -> [WorkoutStep] {
         var steps: [WorkoutStep] = []
         for index in slots.indices {
@@ -542,11 +568,8 @@ struct WorkoutEngine: Sendable {
             guard index < slots.count - 1 else { continue }
             if let rest = rests[index], rest > 0 {
                 steps.append(WorkoutStep(kind: .recovery, exercise: nil, duration: rest))
-            }
-            if transitions {
-                steps.append(
-                    WorkoutStep(kind: .transition, exercise: nil, duration: Self.transitionDuration)
-                )
+            } else if transitionCost > 0 {
+                steps.append(WorkoutStep(kind: .transition, exercise: nil, duration: transitionCost))
             }
         }
         return steps

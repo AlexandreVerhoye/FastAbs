@@ -68,6 +68,14 @@ enum Haptics {
         rigid.prepare()
     }
 
+    /// One second closer to the end. Light on purpose — it lands three times
+    /// in a row, and at full strength that reads as an alarm.
+    static func tick() {
+        guard isEnabled else { return }
+        light.impactOccurred(intensity: 0.55)
+        light.prepare()
+    }
+
     /// Change sides. Two knocks, because it asks the athlete to do something
     /// rather than just marking that time passed.
     static func switchSides() {

@@ -12,6 +12,9 @@ struct WorkoutView: View {
     /// Held so the effort rating lands on this session's record rather than on
     /// whatever happens to be newest in the store.
     @State private var saved: WorkoutRecord?
+    /// Shared by the countdown on every stage, so it travels between its corner
+    /// and the middle of the screen instead of being replaced by another one.
+    @Namespace private var timerSpace
 
     init(plan: WorkoutPlan) {
         _session = State(initialValue: WorkoutSession(plan: plan))
@@ -101,7 +104,9 @@ struct WorkoutView: View {
 
                 Spacer()
 
-                Text("\(session.completedExerciseCount + 1) SUR \(session.plan.exerciseCount)")
+                // Clamped: on the rest after the last movement there is no
+                // seventh movement of six, and the counter said there was.
+                Text("\(min(session.completedExerciseCount + 1, session.plan.exerciseCount)) SUR \(session.plan.exerciseCount)")
                     .font(.caption.weight(.bold))
                     .tracking(0.5)
                     .foregroundStyle(.white.opacity(0.76))
@@ -133,11 +138,14 @@ struct WorkoutView: View {
 
     @ViewBuilder
     private var motionStage: some View {
-        switch session.currentStep.kind {
-        case .recovery: recoveryStage
-        case .transition: transitionStage
-        case .exercise: exerciseStage
+        ZStack {
+            switch session.currentStep.kind {
+            case .recovery: recoveryStage
+            case .transition: transitionStage
+            case .exercise: exerciseStage
+            }
         }
+        .animation(.smooth(duration: 0.55), value: session.currentStep.id)
     }
 
     /// Recovery is dead time on screen: an idle animation teaches nothing,
@@ -147,28 +155,28 @@ struct WorkoutView: View {
             eyebrow: "RÉCUPÉRATION",
             symbol: "wind",
             tint: .fastMint,
-            caption: "Relâchez les épaules et respirez profondément.",
+            caption: "Relâchez les épaules, respirez.",
             progress: session.stepProgress,
             seconds: Int(ceil(session.secondsRemaining)),
-            showsRing: true,
-            next: session.nextExerciseStep
+            next: session.nextExerciseStep,
+            timerSpace: timerSpace
         )
         .accessibilityIdentifier("workout.recoveryStage")
     }
 
-    /// Five seconds to change position. Same layout as recovery so the two read
-    /// as one idea, with a bar instead of a ring — a countdown this short is a
-    /// nudge, not something to watch.
+    /// Five seconds to change position. The same layout as recovery, because
+    /// they answer the same question and switching between two different ones
+    /// mid-session is what made the player feel like several apps.
     private var transitionStage: some View {
         UpNextStage(
             eyebrow: "EN PLACE",
             symbol: "figure.stand",
             tint: .fastCoral,
-            caption: "Installez-vous pour le mouvement suivant.",
+            caption: "Installez-vous.",
             progress: session.stepProgress,
             seconds: Int(ceil(session.secondsRemaining)),
-            showsRing: false,
-            next: session.nextExerciseStep
+            next: session.nextExerciseStep,
+            timerSpace: timerSpace
         )
         .accessibilityIdentifier("workout.transitionStage")
     }
@@ -183,6 +191,7 @@ struct WorkoutView: View {
                 accessibilityName: session.currentStep.exercise?.name
             )
             .id(session.currentStep.id)
+            .transition(.opacity.combined(with: .scale(scale: 1.04)))
 
             LinearGradient(
                 stops: [
@@ -210,6 +219,7 @@ struct WorkoutView: View {
                 color: .fastCoral,
                 diameter: 64
             )
+            .matchedGeometryEffect(id: "timer", in: timerSpace)
             .padding(14)
         }
         .overlay(alignment: .bottomLeading) { exerciseSummary.padding(20) }
@@ -376,8 +386,10 @@ struct WorkoutView: View {
 
 /// The screen between two movements — recovery or a change of position.
 ///
-/// One layout for both, because they answer the same question: what is coming,
-/// and what should I do about it right now.
+/// One layout for both, because they answer the same question: how long have I
+/// got, and what is it for. The countdown sits in the middle at full size and
+/// carries the same identity as the small ring on the exercise stage, so it
+/// travels there and back rather than one being swapped for the other.
 struct UpNextStage: View {
     let eyebrow: String
     let symbol: String
@@ -385,57 +397,48 @@ struct UpNextStage: View {
     let caption: String
     let progress: Double
     let seconds: Int
-    let showsRing: Bool
     let next: WorkoutStep?
+    let timerSpace: Namespace.ID
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Label(eyebrow, systemImage: symbol)
-                        .font(.caption2.weight(.heavy))
-                        .tracking(0.4)
-                        .foregroundStyle(tint)
-                    Text(caption)
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.7))
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 12)
-                if showsRing {
-                    CircularTimerRing(progress: progress, seconds: seconds, color: tint, diameter: 64)
-                } else {
-                    Text("\(seconds)")
-                        .font(.system(.title, design: .rounded, weight: .bold))
-                        .contentTransition(.numericText())
-                        .foregroundStyle(tint)
-                }
-            }
-            .padding(20)
+        VStack(spacing: 0) {
+            Label(eyebrow, systemImage: symbol)
+                .font(.caption2.weight(.heavy))
+                .tracking(0.8)
+                .foregroundStyle(tint)
+                .padding(.top, 22)
 
-            if !showsRing {
-                ProgressView(value: min(1, max(0, progress)))
-                    .tint(tint)
-                    .background(.white.opacity(0.1))
-                    .clipShape(Capsule())
-                    .padding(.horizontal, 20)
-            }
+            Spacer(minLength: 8)
+
+            CircularTimerRing(
+                progress: progress,
+                seconds: seconds,
+                color: tint,
+                diameter: 132,
+                lineWidth: 12
+            )
+            .matchedGeometryEffect(id: "timer", in: timerSpace)
+
+            Text(caption)
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.62))
+                .padding(.top, 12)
+
+            Spacer(minLength: 8)
 
             if let next, let exercise = next.exercise {
-                Divider().overlay(.white.opacity(0.1)).padding(.top, 16)
-                Spacer(minLength: 0)
                 NextExerciseBriefing(exercise: exercise, side: next.side, duration: next.duration)
-                Spacer(minLength: 0)
+                    .padding(.horizontal, 14)
+                    .padding(.bottom, 14)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             } else {
-                Spacer(minLength: 0)
                 Text("Dernier effort, la séance se termine juste après.")
                     .font(.headline)
                     .foregroundStyle(.white.opacity(0.82))
-                    .padding(20)
-                Spacer(minLength: 0)
+                    .padding(22)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.fastNavy.opacity(0.72))
         .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
         .overlay {
@@ -448,57 +451,69 @@ struct UpNextStage: View {
 
 /// What is coming next, while the athlete catches their breath.
 ///
-/// Deliberately short. The athlete is out of breath and has a few seconds: it
-/// is the movement, what it looks like, where to start from, and the one
-/// mistake to avoid.
+/// A card rather than a paragraph: the movement plays in it at the size it will
+/// be performed at, the side is stated when there is one, and the one mistake
+/// worth naming sits underneath. Out of breath with a few seconds to read, that
+/// is the whole budget.
 struct NextExerciseBriefing: View {
     let exercise: Exercise
     var side: BodySide?
     let duration: Int
 
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
+        HStack(alignment: .center, spacing: 14) {
             ExerciseMotionView(
                 motion: exercise.motion,
                 isPlaying: true,
                 focusZones: exercise.zones,
                 mirrored: side == .right
             )
-            .frame(width: 92, height: 104)
-            .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .frame(width: 96, height: 96)
+            .background(
+                LinearGradient(
+                    colors: [exercise.pattern.color.opacity(0.22), .white.opacity(0.04)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
+                in: RoundedRectangle(cornerRadius: 20, style: .continuous)
+            )
 
-            VStack(alignment: .leading, spacing: 10) {
-                VStack(alignment: .leading, spacing: 5) {
-                    HStack(spacing: 8) {
-                        Text("ENSUITE · \(duration) S")
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(spacing: 6) {
+                    Text("ENSUITE")
+                        .font(.caption2.weight(.heavy))
+                        .tracking(0.7)
+                        .foregroundStyle(.white.opacity(0.45))
+                    Text("\(duration) S")
+                        .font(.caption2.weight(.heavy).monospacedDigit())
+                        .foregroundStyle(.white.opacity(0.45))
+                    if let side {
+                        Text(side.title.uppercased())
                             .font(.caption2.weight(.heavy))
-                            .tracking(0.6)
-                            .foregroundStyle(.white.opacity(0.5))
-                        if let side {
-                            Text(side.title.uppercased())
-                                .font(.caption2.weight(.heavy))
-                                .tracking(0.6)
-                                .foregroundStyle(Color.fastOrange)
-                        }
+                            .tracking(0.7)
+                            .padding(.horizontal, 7)
+                            .frame(height: 18)
+                            .background(Color.fastOrange.opacity(0.22), in: Capsule())
+                            .foregroundStyle(Color.fastOrange)
                     }
-                    Text(exercise.name)
-                        .font(.system(.title3, design: .rounded, weight: .bold))
-                        .fixedSize(horizontal: false, vertical: true)
                 }
 
-                Text(exercise.setup)
-                    .font(.footnote)
-                    .foregroundStyle(.white.opacity(0.76))
+                Text(exercise.name)
+                    .font(.system(.title3, design: .rounded, weight: .bold))
+                    .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
 
                 Label(exercise.mistake, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(Color.fastOrange.opacity(0.92))
+                    .font(.caption)
+                    .foregroundStyle(Color.fastOrange.opacity(0.9))
+                    .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
+
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
+        .padding(14)
+        .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
             "Prochain exercice : \(exercise.name)\(side.map { ", côté \($0.title)" } ?? ""), "
@@ -566,18 +581,20 @@ struct CircularTimerRing: View {
     let seconds: Int
     let color: Color
     var diameter: CGFloat = 76
+    var lineWidth: CGFloat = 8
 
     var body: some View {
         ZStack {
-            Circle().stroke(.white.opacity(0.12), lineWidth: 8)
+            Circle().stroke(.white.opacity(0.12), lineWidth: lineWidth)
             Circle()
                 .trim(from: 0, to: max(0.001, 1 - progress))
-                .stroke(color, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
                 .animation(.linear(duration: 0.08), value: progress)
             Text("\(seconds)")
-                .font(.system(.title2, design: .rounded, weight: .bold))
-                .contentTransition(.numericText())
+                .font(.system(size: diameter * 0.34, weight: .bold, design: .rounded).monospacedDigit())
+                .contentTransition(.numericText(countsDown: true))
+                .foregroundStyle(.white)
         }
         .frame(width: diameter, height: diameter)
         .accessibilityElement(children: .ignore)

@@ -39,6 +39,9 @@ final class WorkoutSession {
     /// Set when the app itself paused the session, so resuming can tell the
     /// difference between "the athlete pressed pause" and "a sheet appeared".
     @ObservationIgnored private var pausedBySystem = false
+    /// The last whole second announced, so the count-out fires once per second
+    /// rather than on every one of the twelve ticks it spans.
+    @ObservationIgnored private var lastCountdownSecond: Int?
 
     init(plan: WorkoutPlan) {
         self.plan = plan
@@ -203,7 +206,25 @@ final class WorkoutSession {
         }
         last = now
         secondsRemaining = max(0, deadline.timeIntervalSince(now))
+        countOutFinalSeconds()
         if secondsRemaining <= 0.02 { advance() }
+    }
+
+    /// Three, two, one. Knowing the movement is about to end is the difference
+    /// between finishing it and being cut off mid-repetition, and it has to
+    /// arrive without looking at the screen.
+    private func countOutFinalSeconds() {
+        guard currentStep.kind == .exercise else {
+            lastCountdownSecond = nil
+            return
+        }
+        let second = Int(ceil(secondsRemaining))
+        guard (1...3).contains(second), second != lastCountdownSecond else {
+            if second > 3 { lastCountdownSecond = nil }
+            return
+        }
+        lastCountdownSecond = second
+        WorkoutFeedback.countdownTick()
     }
 
     private func advance(resumePaused: Bool = false) {
@@ -217,6 +238,7 @@ final class WorkoutSession {
         }
 
         stepIndex += 1
+        lastCountdownSecond = nil
         if isSideSwitch {
             WorkoutFeedback.switchSides()
         } else {

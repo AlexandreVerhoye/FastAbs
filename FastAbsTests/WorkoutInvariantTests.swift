@@ -249,6 +249,35 @@ struct SessionShapeTests {
         }
     }
 
+    @Test("A recovery is never followed by a placement")
+    func recoveryReplacesThePlacement() {
+        // An interval carries one thing. A recovery already gives you the time
+        // to move, so five more seconds on top only makes the session feel like
+        // it is waiting for you.
+        for difficulty in WorkoutDifficulty.allCases {
+            for seed in TestSupport.seeds {
+                let plan = plan(minutes: 14, difficulty: difficulty, seed: seed)
+                for (step, next) in zip(plan.steps, plan.steps.dropFirst()) {
+                    #expect(
+                        !(step.kind == .recovery && next.kind == .transition),
+                        "a placement followed a recovery at \(difficulty.title)"
+                    )
+                }
+                // And every interval between two movements carries exactly one.
+                var carried = 0
+                for step in plan.steps {
+                    switch step.kind {
+                    case .exercise:
+                        #expect(carried <= 1, "an interval carried \(carried) steps")
+                        carried = 0
+                    case .recovery, .transition:
+                        carried += 1
+                    }
+                }
+            }
+        }
+    }
+
     @Test("A session never runs three movements without a break")
     func noLongRunsWithoutRest() {
         for difficulty in WorkoutDifficulty.allCases {

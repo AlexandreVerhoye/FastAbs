@@ -17,6 +17,12 @@ enum WorkoutFeedback {
         Haptics.step()
     }
 
+    /// One of the last three seconds of a movement.
+    static func countdownTick() {
+        if soundEnabled { audio.play(.tick) }
+        Haptics.tick()
+    }
+
     /// The mid-point of a movement held per side.
     static func switchSides() {
         if soundEnabled { audio.play(.transition) }
@@ -37,6 +43,9 @@ enum WorkoutCue: CaseIterable {
     case start
     case transition
     case success
+    /// Deliberately the shortest and quietest of the four: it fires three
+    /// times in a row and anything with a tail would run into itself.
+    case tick
 }
 
 /// Generates short, high-clarity PCM cues without shipping opaque audio assets.
@@ -62,6 +71,9 @@ enum WorkoutCueWaveform {
                 Note(start: 0, duration: 0.16, frequency: 880, amplitude: 0.82),
                 Note(start: 0.11, duration: 0.19, frequency: 1_320, amplitude: 0.92)
             ]
+        case .tick:
+            duration = 0.09
+            notes = [Note(start: 0, duration: 0.075, frequency: 1_480, amplitude: 0.5)]
         case .success:
             duration = 0.76
             notes = [
