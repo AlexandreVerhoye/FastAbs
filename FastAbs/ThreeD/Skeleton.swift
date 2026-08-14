@@ -44,12 +44,20 @@ extension BodyPose {
     var leftToe: SIMD3<Float> { toe(ankle: leftAnkle, knee: leftKnee) }
     var rightToe: SIMD3<Float> { toe(ankle: rightAnkle, knee: rightKnee) }
 
-    /// The foot points the way the body faces, square to the shin — lying on
-    /// your back your toes point up, in a plank they point at the floor.
+    /// The foot points the way the body faces, leaning a little further along
+    /// the shin — lying on your back your toes point up, in a plank they point
+    /// at the floor, standing they point ahead.
+    ///
+    /// It used to be the facing direction with the shin component projected out,
+    /// which is square to the shin but collapses whenever the two line up —
+    /// legs raised vertically while lying on your back is exactly that case, and
+    /// there the direction flipped between frames. Two stable vectors in fixed
+    /// proportion cannot collapse: the weights are chosen so they never cancel,
+    /// even when the shin and the facing are opposed.
     private func toe(ankle: SIMD3<Float>, knee: SIMD3<Float>) -> SIMD3<Float> {
         let shin = BodyPose.normalised(ankle - knee, fallback: SIMD3<Float>(0, -1, 0))
         let forward = BodyPose.normalised(
-            front - shin * simd_dot(front, shin),
+            front * 0.9 + shin * 0.35,
             fallback: SIMD3<Float>(0, 0, 1)
         )
         let length: Float = 0.148

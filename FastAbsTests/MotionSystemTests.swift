@@ -310,6 +310,34 @@ struct MotionSystemTests {
         }
     }
 
+    @Test("Feet never flip between frames")
+    func feetTurnSmoothly() {
+        // The foot direction used to be built by projecting the body's facing
+        // square to the shin, which collapses when the two line up — legs
+        // raised while lying on your back — and there it flipped.
+        for motion in Self.allMotions {
+            let advancePerFrame = MotionLibrary.metadata(for: motion).cyclesPerSecond / 60
+            let frameCount = max(8, Int((1 / advancePerFrame).rounded()))
+
+            for index in 0..<frameCount {
+                let current = MotionLibrary.pose(for: motion, phase: Float(index) * advancePerFrame)
+                let next = MotionLibrary.pose(for: motion, phase: Float(index + 1) * advancePerFrame)
+
+                for (ankleA, toeA, ankleB, toeB) in [
+                    (current.leftAnkle, current.leftToe, next.leftAnkle, next.leftToe),
+                    (current.rightAnkle, current.rightToe, next.rightAnkle, next.rightToe)
+                ] {
+                    let before = simd_normalize(toeA - ankleA)
+                    let after = simd_normalize(toeB - ankleB)
+                    #expect(
+                        simd_dot(before, after) > 0.9,
+                        "\(motion.rawValue) swings a foot through \(acos(min(max(simd_dot(before, after), -1), 1)) * 180 / .pi)° in one frame"
+                    )
+                }
+            }
+        }
+    }
+
     @Test("Feet keep their shape whatever the leg is doing")
     func feetStayWellFormed() {
         // Tucked toes legitimately fold back under the shin — a bear hold and a
