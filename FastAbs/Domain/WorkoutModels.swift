@@ -121,8 +121,12 @@ struct Exercise: Identifiable, Hashable, Codable, Sendable {
     let minimumDifficulty: WorkoutDifficulty
     let impact: ExerciseImpact
     let motion: MotionKind
+    /// How to get into position before the first repetition.
+    let setup: String
     let instruction: String
     let breathing: String
+    /// The mistake this movement invites, so it can be named before it happens.
+    let mistake: String
     let unilateral: Bool
     let neckFriendly: Bool
     let intensity: Double

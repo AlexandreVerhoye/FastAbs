@@ -51,8 +51,10 @@ enum TestSupport {
             minimumDifficulty: minimumDifficulty,
             impact: impact,
             motion: .plank,
+            setup: "Start from a stable position.",
             instruction: "Keep a controlled position.",
             breathing: "Breathe continuously.",
+            mistake: "Letting the hips drop.",
             unilateral: false,
             neckFriendly: neckFriendly,
             intensity: 1

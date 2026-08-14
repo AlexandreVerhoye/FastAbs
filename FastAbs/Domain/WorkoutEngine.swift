@@ -64,7 +64,9 @@ struct WorkoutEngine: Sendable {
             let fallback = Exercise(
                 id: "safe-core-hold", name: "Gainage doux", zones: [.deepCore], family: .antiExtension,
                 minimumDifficulty: .beginner, impact: .quiet, motion: .plank,
+                setup: "Installez-vous à quatre pattes ou sur les avant-bras, dos plat.",
                 instruction: "Maintenez une posture confortable.", breathing: "Respirez régulièrement.",
+                mistake: "Retenir sa respiration pendant le maintien.",
                 unilateral: false, neckFriendly: true, intensity: 0.7
             )
             steps = [WorkoutStep(kind: .exercise, exercise: fallback, duration: target)]

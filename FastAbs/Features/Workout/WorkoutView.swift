@@ -108,7 +108,63 @@ struct WorkoutView: View {
         }
     }
 
+    @ViewBuilder
     private var motionStage: some View {
+        if session.currentStep.kind == .recovery {
+            recoveryStage
+        } else {
+            exerciseStage
+        }
+    }
+
+    /// Recovery is dead time on screen: an idle animation teaches nothing,
+    /// while the seconds before a movement are the best moment to explain it.
+    private var recoveryStage: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Label("RÉCUPÉRATION", systemImage: "wind")
+                        .font(.caption2.weight(.heavy))
+                        .tracking(0.4)
+                        .foregroundStyle(Color.fastMint)
+                    Text("Relâchez les épaules et respirez profondément.")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.7))
+                }
+                Spacer(minLength: 12)
+                CircularTimerRing(
+                    progress: session.stepProgress,
+                    seconds: Int(ceil(session.secondsRemaining)),
+                    color: .fastMint,
+                    diameter: 64
+                )
+            }
+            .padding(20)
+
+            if let next = session.nextStep?.exercise {
+                Divider().overlay(.white.opacity(0.1))
+                NextExerciseBriefing(exercise: next, duration: session.nextStep?.duration ?? 0)
+            } else {
+                Spacer(minLength: 0)
+                Text("Dernier effort, la séance se termine juste après.")
+                    .font(.headline)
+                    .foregroundStyle(.white.opacity(0.82))
+                    .padding(20)
+                Spacer(minLength: 0)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(Color.fastNavy.opacity(0.72))
+        .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .stroke(.white.opacity(0.08), lineWidth: 1)
+        }
+        .layoutPriority(1)
+        .accessibilityIdentifier("workout.recoveryStage")
+    }
+
+    private var exerciseStage: some View {
         ZStack {
             ExerciseMotionView(
                 motion: session.currentStep.motion,
@@ -178,6 +234,12 @@ struct WorkoutView: View {
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.white.opacity(0.62))
                     .lineLimit(1)
+            }
+            if let mistake = session.currentStep.exercise?.mistake {
+                Label(mistake, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(Color.fastOrange.opacity(0.85))
+                    .lineLimit(2)
             }
         }
         .frame(maxWidth: 300, alignment: .leading)
@@ -263,7 +325,80 @@ struct WorkoutView: View {
     }
 }
 
-private struct CircularTimerRing: View {
+/// What the athlete is about to do, laid out while they catch their breath.
+struct NextExerciseBriefing: View {
+    let exercise: Exercise
+    let duration: Int
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 7) {
+                    Text("ENSUITE")
+                        .font(.caption2.weight(.heavy))
+                        .tracking(0.6)
+                        .foregroundStyle(.white.opacity(0.5))
+                    Text(exercise.name)
+                        .font(.system(.title2, design: .rounded, weight: .bold))
+                    HStack(spacing: 8) {
+                        ForEach(Array(exercise.zones).sorted { $0.rawValue < $1.rawValue }) { zone in
+                            Label(zone.shortTitle, systemImage: zone.symbol)
+                                .font(.caption2.weight(.semibold))
+                                .padding(.horizontal, 9)
+                                .frame(height: 26)
+                                .background(zone.color.opacity(0.18), in: Capsule())
+                                .foregroundStyle(zone.color)
+                        }
+                        Text("\(duration) s")
+                            .font(.caption2.weight(.semibold).monospacedDigit())
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                }
+
+                briefingRow("figure.stand", "Position de départ", exercise.setup, .white.opacity(0.75))
+                briefingRow("arrow.triangle.turn.up.right.diamond.fill", "Exécution", exercise.instruction, .white.opacity(0.75))
+                briefingRow("wind", "Respiration", exercise.breathing, .white.opacity(0.65))
+                briefingRow("exclamationmark.triangle.fill", "À éviter", exercise.mistake, Color.fastOrange.opacity(0.9))
+            }
+            .padding(20)
+        }
+        .scrollIndicators(.hidden)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            """
+            Prochain exercice : \(exercise.name), \(duration) secondes. \
+            Position de départ : \(exercise.setup) \(exercise.instruction) \
+            Respiration : \(exercise.breathing) À éviter : \(exercise.mistake)
+            """
+        )
+    }
+
+    private func briefingRow(
+        _ symbol: String,
+        _ title: String,
+        _ body: String,
+        _ tint: Color
+    ) -> some View {
+        HStack(alignment: .top, spacing: 11) {
+            Image(systemName: symbol)
+                .font(.caption)
+                .foregroundStyle(tint)
+                .frame(width: 20, height: 20)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption2.weight(.bold))
+                    .tracking(0.3)
+                    .foregroundStyle(.white.opacity(0.45))
+                Text(body)
+                    .font(.subheadline)
+                    .foregroundStyle(tint)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+}
+
+struct CircularTimerRing: View {
     let progress: Double
     let seconds: Int
     let color: Color

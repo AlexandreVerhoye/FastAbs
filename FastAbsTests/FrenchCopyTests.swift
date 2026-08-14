@@ -35,8 +35,10 @@ struct FrenchCopyTests {
         }
         for exercise in ExerciseCatalog.all {
             copy.append(("\(exercise.id).name", exercise.name))
+            copy.append(("\(exercise.id).setup", exercise.setup))
             copy.append(("\(exercise.id).instruction", exercise.instruction))
             copy.append(("\(exercise.id).breathing", exercise.breathing))
+            copy.append(("\(exercise.id).mistake", exercise.mistake))
         }
         for motion in MotionSystemTests.allMotions {
             let metadata = MotionLibrary.metadata(for: motion)
@@ -108,9 +110,26 @@ struct FrenchCopyTests {
         }
     }
 
+    @Test("Every exercise explains itself fully")
+    func everyExerciseIsBriefed() {
+        // The recovery screen reads all four of these out before the movement
+        // starts, so a thin one leaves a gap in the coaching.
+        for exercise in ExerciseCatalog.all {
+            #expect(exercise.setup.count > 30, "\(exercise.id) has no real starting position")
+            #expect(exercise.mistake.count > 20, "\(exercise.id) names no common mistake")
+            #expect(exercise.setup != exercise.instruction, "\(exercise.id) repeats itself")
+            #expect(
+                exercise.mistake.first?.isUppercase == true,
+                "\(exercise.id) mistake does not start with a capital"
+            )
+        }
+    }
+
     @Test("Coaching sentences are punctuated")
     func sentencesAreComplete() {
         for exercise in ExerciseCatalog.all {
+            #expect(exercise.setup.hasSuffix("."), "\(exercise.id) setup is unpunctuated")
+            #expect(exercise.mistake.hasSuffix("."), "\(exercise.id) mistake is unpunctuated")
             #expect(
                 exercise.instruction.hasSuffix("."),
                 "\(exercise.id) instruction is unpunctuated: \(exercise.instruction)"
