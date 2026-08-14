@@ -38,6 +38,7 @@ private struct RewardsDashboard: View {
                         subtitle: "Des objectifs adaptés à votre rythme"
                     )
 
+                    ChallengeCard(challenge: summary.weeklyBalance, tint: .fastMint)
                     ChallengeCard(challenge: summary.monthlyChallenge, tint: .fastCoral)
                     ChallengeCard(challenge: summary.annualChallenge, tint: .fastBlue)
                 }

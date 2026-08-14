@@ -611,14 +611,26 @@ private extension MotionLibrary {
 
         case .wallSit:
             var pose = standing()
-            // Thighs horizontal, shins vertical, back upright against the wall.
-            pose.pelvis = SIMD3<Float>(-0.24, 0.63 + breath * 0.022, 0)
-            pose.leftAnkle = SIMD3<Float>(0.28, 0.11, -0.16)
-            pose.rightAnkle = SIMD3<Float>(0.28, 0.11, 0.16)
-            pose.leftKnee = SIMD3<Float>(0.3, 0.62, -0.17)
-            pose.rightKnee = SIMD3<Float>(0.3, 0.62, 0.17)
-            pose.leftHand = pose.pelvis + SIMD3<Float>(0.5, 0.12, -0.2)
-            pose.rightHand = pose.pelvis + SIMD3<Float>(0.5, 0.12, 0.2)
+            // Back vertical against the wall, thighs horizontal, shins vertical.
+            // Leaving the chest where standing put it made the spine solve into
+            // a long slab tipped backwards.
+            let settle = breath * 0.02
+            pose.pelvis = SIMD3<Float>(-0.2, 0.6 + settle, 0)
+            pose.chest = SIMD3<Float>(-0.22, 1.18 + settle, 0)
+            pose.neck = SIMD3<Float>(-0.22, 1.44 + settle, 0)
+            pose.head = SIMD3<Float>(-0.2, 1.57 + settle, 0)
+            pose.leftShoulder = SIMD3<Float>(-0.22, 1.18 + settle, -0.25)
+            pose.rightShoulder = SIMD3<Float>(-0.22, 1.18 + settle, 0.25)
+            pose.leftHip = SIMD3<Float>(-0.2, 0.6 + settle, -0.155)
+            pose.rightHip = SIMD3<Float>(-0.2, 0.6 + settle, 0.155)
+            pose.leftKnee = SIMD3<Float>(0.3, 0.61 + settle, -0.17)
+            pose.rightKnee = SIMD3<Float>(0.3, 0.61 + settle, 0.17)
+            pose.leftAnkle = SIMD3<Float>(0.32, 0.11, -0.17)
+            pose.rightAnkle = SIMD3<Float>(0.32, 0.11, 0.17)
+            // Arms reach forward, which is both what people do and what keeps
+            // them off the trunk in profile.
+            pose.leftHand = SIMD3<Float>(0.46, 1.1 + settle, -0.26)
+            pose.rightHand = SIMD3<Float>(0.46, 1.1 + settle, 0.26)
             pose.leftElbow = aimLimb(from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(0, -1, -0.3))
             pose.rightElbow = aimLimb(from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(0, -1, 0.3))
             return PoseSketch(pose)
@@ -634,12 +646,16 @@ private extension MotionLibrary {
 
         case .pushUp:
             var pose = highPlank()
+            // Hands a little ahead of and wider than the shoulders, so the two
+            // arms separate in profile and the bend actually shows.
+            pose.leftHand = SIMD3<Float>(-0.62, 0.13, -0.32)
+            pose.rightHand = SIMD3<Float>(-0.62, 0.13, 0.32)
             // The body turns as one about the toes; the hands are planted, so
             // the arms bend to take it. Lowering the hips instead folds the
             // athlete in half.
             let pivot = (pose.leftAnkle + pose.rightAnkle) * 0.5
             let axis = safeAxis(pose.leftHip - pose.rightHip, fallback: SIMD3<Float>(0, 0, 1))
-            let dip = -effort * 0.2
+            let dip = -effort * 0.3
             for joint in upperBodyJoints where joint != \.leftHand && joint != \.rightHand {
                 pose[keyPath: joint] = rotate(pose[keyPath: joint], around: pivot, axis: axis, angle: dip)
             }
@@ -649,14 +665,16 @@ private extension MotionLibrary {
         case .pikePushUp:
             var pose = highPlank()
             // Hips pike up and the head travels down between the hands.
-            pose.pelvis = SIMD3<Float>(0.42, 1.02, 0)
-            pose.chest = SIMD3<Float>(-0.16, 0.62 - effort * 0.2, 0)
+            pose.pelvis = SIMD3<Float>(0.3, 1.24, 0)
+            pose.chest = SIMD3<Float>(-0.24, 0.86 - effort * 0.26, 0)
             pose.leftShoulder = pose.chest + SIMD3<Float>(0, 0, -0.25)
             pose.rightShoulder = pose.chest + SIMD3<Float>(0, 0, 0.25)
-            pose.neck = pose.chest + SIMD3<Float>(-0.24, -0.08, 0)
-            pose.head = pose.chest + SIMD3<Float>(-0.4, -0.16, 0)
-            pose.leftAnkle = SIMD3<Float>(1.12, 0.13, -0.16)
-            pose.rightAnkle = SIMD3<Float>(1.12, 0.13, 0.16)
+            pose.neck = pose.chest + SIMD3<Float>(-0.26, -0.1, 0)
+            pose.head = pose.chest + SIMD3<Float>(-0.4, -0.2, 0)
+            pose.leftHand = SIMD3<Float>(-0.58, 0.13, -0.3)
+            pose.rightHand = SIMD3<Float>(-0.58, 0.13, 0.3)
+            pose.leftAnkle = SIMD3<Float>(0.94, 0.13, -0.2)
+            pose.rightAnkle = SIMD3<Float>(0.94, 0.13, 0.2)
             pose.leftKnee = aimLimb(from: pose.leftHip, to: pose.leftAnkle, bend: SIMD3<Float>(0, -1, 0))
             pose.rightKnee = aimLimb(from: pose.rightHip, to: pose.rightAnkle, bend: SIMD3<Float>(0, -1, 0))
             pose.leftElbow = aimLimb(from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(0, 0, -1))
@@ -832,10 +850,10 @@ private extension MotionLibrary {
             pelvis: SIMD3<Float>(0, 1.12, 0),
             leftShoulder: SIMD3<Float>(0, 1.7, -0.25),
             rightShoulder: SIMD3<Float>(0, 1.7, 0.25),
-            leftElbow: SIMD3<Float>(0.06, 1.33, -0.28),
-            rightElbow: SIMD3<Float>(0.06, 1.33, 0.28),
-            leftHand: SIMD3<Float>(0.12, 1.02, -0.3),
-            rightHand: SIMD3<Float>(0.12, 1.02, 0.3),
+            leftElbow: SIMD3<Float>(0.12, 1.33, -0.29),
+            rightElbow: SIMD3<Float>(0.12, 1.33, 0.29),
+            leftHand: SIMD3<Float>(0.22, 1.04, -0.31),
+            rightHand: SIMD3<Float>(0.22, 1.04, 0.31),
             leftHip: SIMD3<Float>(0, 1.12, -0.155),
             rightHip: SIMD3<Float>(0, 1.12, 0.155),
             leftKnee: SIMD3<Float>(0.03, 0.6, -0.16),

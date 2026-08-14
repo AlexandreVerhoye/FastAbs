@@ -69,35 +69,35 @@ struct BadgeVisualTests {
         #expect(PixelColor(DailyBadgeTier.silver.tint).saturation < gold.saturation)
     }
 
-    @Test("Badge symbols differ across the styles a month can produce")
-    func styleIndexChangesTheSymbol() {
-        var seen: Set<String> = []
-        for styleIndex in 0..<7 {
-            seen.insert(VisualFixture.badge(tier: .gold, styleIndex: styleIndex).symbol)
+    @Test("A badge shows what the day was spent training")
+    func badgeSymbolFollowsTheProgramme() {
+        // The gallery is a record of the work, so two different kinds of day
+        // must not be remembered by the same mark.
+        let symbols = TrainingProgramme.allCases.map {
+            VisualFixture.badge(tier: .gold, programme: $0).symbol
         }
-        #expect(seen.count == 7, "the badge rotation repeats itself: \(seen)")
+        #expect(Set(symbols).count == symbols.count, "programmes share a badge symbol: \(symbols)")
 
-        // Two different styles must also look different once drawn.
         guard
-            let flame = VisualProbe.require(
-                MiniBadgeView(badge: VisualFixture.badge(tier: .gold, styleIndex: 0)),
-                width: 120, height: 120, "style 0"
+            let core = VisualProbe.require(
+                MiniBadgeView(badge: VisualFixture.badge(tier: .gold, programme: .core)),
+                width: 120, height: 120, "core badge"
             ),
-            let crown = VisualProbe.require(
-                MiniBadgeView(badge: VisualFixture.badge(tier: .gold, styleIndex: 6)),
-                width: 120, height: 120, "style 6"
+            let legs = VisualProbe.require(
+                MiniBadgeView(badge: VisualFixture.badge(tier: .gold, programme: .lowerBody)),
+                width: 120, height: 120, "lower-body badge"
             )
         else { return }
 
-        let flameFace = flame.cropped(x: 34, y: 6, width: 52, height: 52)
-        let crownFace = crown.cropped(x: 34, y: 6, width: 52, height: 52)
-        #expect(flameFace.difference(from: crownFace) > 0.01, "two badge styles rasterise the same")
+        let coreFace = core.cropped(x: 34, y: 6, width: 52, height: 52)
+        let legsFace = legs.cropped(x: 34, y: 6, width: 52, height: 52)
+        #expect(coreFace.difference(from: legsFace) > 0.01, "two badge symbols rasterise the same")
     }
 
     @Test("The gallery grows with the number of badges")
     func galleryReflectsItsContents() {
         let single = [VisualFixture.badge(tier: .gold, offset: 0)]
-        let many = (0..<12).map { VisualFixture.badge(tier: .silver, offset: -$0, styleIndex: $0) }
+        let many = (0..<12).map { VisualFixture.badge(tier: .silver, offset: -$0) }
 
         guard
             let one = VisualProbe.require(
@@ -124,7 +124,7 @@ struct BadgeVisualTests {
 
     @Test("The gallery renders in dark mode too")
     func galleryWorksInDarkMode() {
-        let badges = (0..<6).map { VisualFixture.badge(tier: .gold, offset: -$0, styleIndex: $0) }
+        let badges = (0..<6).map { VisualFixture.badge(tier: .gold, offset: -$0) }
 
         guard
             let light = VisualProbe.require(
@@ -152,6 +152,7 @@ struct BadgeVisualTests {
             longestStreak: 21,
             todayBadge: nil,
             dailyBadges: (0..<9).map { VisualFixture.badge(tier: .bronze, offset: -$0) },
+            weeklyBalance: VisualFixture.challenge(current: 2, target: 3),
             monthlyChallenge: VisualFixture.challenge(current: 6, target: 12),
             annualChallenge: VisualFixture.challenge(current: 40, target: 100)
         )

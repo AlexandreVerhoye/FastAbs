@@ -203,6 +203,9 @@ struct FrenchCopyTests {
         #expect(ChallengeUnit.activeDays.formatted(3) == "3 j")
         #expect(ChallengeUnit.activeMinutes.formatted(45) == "45 min")
         #expect(ChallengeUnit.sessions.formatted(2) == "2 séances")
+        #expect(ChallengeUnit.bodyAreas.formatted(0) == "0 zone", "zéro prend le singulier")
+        #expect(ChallengeUnit.bodyAreas.formatted(1) == "1 zone")
+        #expect(ChallengeUnit.bodyAreas.formatted(3) == "3 zones")
     }
 
     @Test("A focus description never falls back to a placeholder")

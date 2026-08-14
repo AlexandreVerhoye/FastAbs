@@ -228,14 +228,14 @@ enum VisualFixture {
         tier: DailyBadgeTier,
         offset: Int = 0,
         activeSeconds: Int = 600,
-        styleIndex: Int = 0
+        programme: TrainingProgramme = .core
     ) -> DailyBadge {
         DailyBadge(
             day: day(offset: offset),
             activeSeconds: activeSeconds,
             sessionCount: 1,
             tier: tier,
-            styleIndex: styleIndex
+            programme: programme
         )
     }
 
