@@ -88,85 +88,82 @@ struct RewardsEngineTests {
         #expect(challenge.targetValue == 100)
     }
 
-    @Test("The weekly balance challenge counts body areas, not sessions")
-    func weeklyBalanceCountsAreas() {
+    @Test("The weekly balance challenge counts jobs of the trunk, not sessions")
+    func weeklyBalanceCountsPatterns() {
         let now = date(2026, 8, 14)
         let engine = RewardsEngine(calendar: calendar)
 
-        let coreOnly = [
-            record(at: date(2026, 8, 10)),
-            record(at: date(2026, 8, 11)),
-            record(at: date(2026, 8, 12))
+        // Three days of one movement is one job done three times, not three
+        // jobs — the whole reason this challenge exists.
+        let narrow = [
+            record(at: date(2026, 8, 10), exercises: ["classic-crunch"]),
+            record(at: date(2026, 8, 11), exercises: ["classic-crunch"]),
+            record(at: date(2026, 8, 12), exercises: ["classic-crunch"])
         ]
-        let coreProgress = engine.weeklyBalance(records: coreOnly, now: now)
+        let narrowProgress = engine.weeklyBalance(records: narrow, now: now)
 
-        #expect(coreProgress.unit == .bodyAreas)
-        #expect(coreProgress.targetValue == BodyRegion.allCases.count)
-        #expect(
-            coreProgress.currentValue == 1,
-            "three days of abs is still one area, not three (\(coreProgress.currentValue))"
-        )
+        #expect(narrowProgress.unit == .corePatterns)
+        #expect(narrowProgress.targetValue == CorePattern.allCases.count)
+        #expect(narrowProgress.currentValue == 1, "got \(narrowProgress.currentValue)")
 
-        let varied = coreOnly + [
-            record(at: date(2026, 8, 13), programme: .lowerBody),
-            record(at: date(2026, 8, 13, hour: 18), programme: .upperBody)
+        let varied = narrow + [
+            record(at: date(2026, 8, 13), exercises: ["forearm-plank", "bird-dog"]),
+            record(at: date(2026, 8, 13, hour: 18), exercises: ["side-plank", "glute-bridge"])
         ]
-        #expect(engine.weeklyBalance(records: varied, now: now).currentValue == 3)
+        #expect(engine.weeklyBalance(records: varied, now: now).currentValue == 5)
     }
 
     @Test("Last week's work does not count toward this week's balance")
     func weeklyBalanceResets() {
         let now = date(2026, 8, 14)
         let lastWeek = [
-            record(at: date(2026, 8, 5), programme: .lowerBody),
-            record(at: date(2026, 8, 6), programme: .upperBody)
+            record(at: date(2026, 8, 5), exercises: ["forearm-plank"]),
+            record(at: date(2026, 8, 6), exercises: ["side-plank"])
         ]
 
         #expect(RewardsEngine(calendar: calendar).weeklyBalance(records: lastWeek, now: now).currentValue == 0)
     }
 
     @Test("A badge remembers what the day was spent on")
-    func badgesCarryTheirProgramme() {
+    func badgesCarryTheirPattern() {
         let engine = RewardsEngine(calendar: calendar)
 
-        let legs = engine.dailyBadges(records: [record(at: date(2026, 8, 14), programme: .lowerBody)])
-        #expect(legs.first?.programme == .lowerBody)
-        #expect(legs.first?.symbol == TrainingProgramme.lowerBody.symbol)
-
-        // A day that ends up covering the whole body earns the whole-body mark
-        // even though neither session was a full-body programme on its own.
-        let both = engine.dailyBadges(records: [
-            record(at: date(2026, 8, 14, hour: 8), programme: .lowerBody),
-            record(at: date(2026, 8, 14, hour: 18), programme: .upperBody),
-            record(at: date(2026, 8, 14, hour: 20), programme: .core)
+        let lateral = engine.dailyBadges(records: [
+            record(at: date(2026, 8, 14), exercises: ["side-plank", "side-plank-dip"])
         ])
-        #expect(both.first?.programme == .fullBody)
+        #expect(lateral.first?.pattern == .antiLateralFlexion)
+        #expect(lateral.first?.isComplete == false)
+
+        // A day that covers every job earns the whole-session mark, even though
+        // no single movement could.
+        let complete = engine.dailyBadges(records: [
+            record(at: date(2026, 8, 14), exercises: [
+                "forearm-plank", "bird-dog", "side-plank", "classic-crunch", "glute-bridge"
+            ])
+        ])
+        #expect(complete.first?.isComplete == true)
+        #expect(complete.first?.symbol == "medal.fill")
     }
 
     private func date(_ year: Int, _ month: Int, _ day: Int, hour: Int = 12) -> Date {
         calendar.date(from: DateComponents(year: year, month: month, day: day, hour: hour))!
     }
 
+    /// Built from a real plan so the qualifying rules apply, then narrowed to
+    /// the named movements when a test cares which jobs the day covered.
     private func record(
         at date: Date,
         activeSeconds: Int = 300,
         plannedSeconds: Int = 300,
-        programme: TrainingProgramme = .core
+        exercises: [String]? = nil
     ) -> WorkoutRecord {
         let plan = WorkoutEngine().makePlan(
-            preferences: WorkoutPreferences(
-                durationMinutes: max(5, plannedSeconds / 60),
-                difficulty: .balanced,
-                programme: programme,
-                focusZones: [.fullCore],
-                apartmentFriendly: true,
-                neckFriendly: false,
-                extraRecovery: false
-            ),
+            preferences: TestSupport.preferences(durationMinutes: max(5, plannedSeconds / 60)),
             seed: 7
         )
         let record = WorkoutRecord(plan: plan, completedAt: date, activeDuration: activeSeconds)
         record.plannedDuration = plannedSeconds
+        if let exercises { record.exerciseIDs = exercises }
         return record
     }
 }

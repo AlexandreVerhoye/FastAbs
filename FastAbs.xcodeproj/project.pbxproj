@@ -54,6 +54,7 @@
 		FF9099FFE2CF7FF2CEE9B3B0 /* WorkoutSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DF8A4C2548B1541C0F636B7 /* WorkoutSession.swift */; };
 		87661A525B671A91926699D1 /* ExerciseLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7F36EDD389397B59B7083C /* ExerciseLibraryView.swift */; };
 		E35145385FB6EE816709D51C /* StartupCostTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0753973DBB0C09D2C9E7D2D5 /* StartupCostTests.swift */; };
+		9DF9856D105DE309FC16349C /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 441BF1F4AA9371444B302FE2 /* Haptics.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -117,6 +118,7 @@
 		FEDFCC2CA07C3E31DB9CED15 /* FastAbsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastAbsApp.swift; sourceTree = "<group>"; };
 		DE7F36EDD389397B59B7083C /* ExerciseLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryView.swift; sourceTree = "<group>"; };
 		0753973DBB0C09D2C9E7D2D5 /* StartupCostTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupCostTests.swift; sourceTree = "<group>"; };
+		441BF1F4AA9371444B302FE2 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -269,6 +271,7 @@
 			children = (
 				BDB67B8640388D5D3B3F15A8 /* NotificationScheduler.swift */,
 				3B10D7593EDB0EFA5703CCEB /* WorkoutFeedback.swift */,
+				441BF1F4AA9371444B302FE2 /* Haptics.swift */,
 			);
 			path = Platform;
 			sourceTree = "<group>";
@@ -462,6 +465,7 @@
 				18B45D4F51DF46A80079A4E3 /* WelcomeView.swift in Sources */,
 				830D86021B614EC722B454AE /* WorkoutEngine.swift in Sources */,
 				B477EB95263CD355DBC14427 /* WorkoutFeedback.swift in Sources */,
+				9DF9856D105DE309FC16349C /* Haptics.swift in Sources */,
 				9F3C8930C77C202AD1792B16 /* WorkoutHistoryAnalytics.swift in Sources */,
 				0775B37D4B46E83D18A305E4 /* WorkoutModels.swift in Sources */,
 				FF9099FFE2CF7FF2CEE9B3B0 /* WorkoutSession.swift in Sources */,

@@ -29,6 +29,11 @@ struct FrenchCopyTests {
             copy.append(("MuscleZone.\(zone.rawValue).title", zone.title))
             copy.append(("MuscleZone.\(zone.rawValue).shortTitle", zone.shortTitle))
         }
+        for pattern in CorePattern.allCases {
+            copy.append(("CorePattern.\(pattern.rawValue).title", pattern.title))
+            copy.append(("CorePattern.\(pattern.rawValue).shortTitle", pattern.shortTitle))
+            copy.append(("CorePattern.\(pattern.rawValue).detail", pattern.detail))
+        }
         for difficulty in WorkoutDifficulty.allCases {
             copy.append(("WorkoutDifficulty.\(difficulty.rawValue).title", difficulty.title))
             copy.append(("WorkoutDifficulty.\(difficulty.rawValue).detail", difficulty.detail))
@@ -39,6 +44,9 @@ struct FrenchCopyTests {
             copy.append(("\(exercise.id).instruction", exercise.instruction))
             copy.append(("\(exercise.id).breathing", exercise.breathing))
             copy.append(("\(exercise.id).mistake", exercise.mistake))
+            for (index, tip) in exercise.tips.enumerated() {
+                copy.append(("\(exercise.id).tip\(index)", tip))
+            }
         }
         for motion in MotionSystemTests.allMotions {
             let metadata = MotionLibrary.metadata(for: motion)
@@ -203,9 +211,9 @@ struct FrenchCopyTests {
         #expect(ChallengeUnit.activeDays.formatted(3) == "3 j")
         #expect(ChallengeUnit.activeMinutes.formatted(45) == "45 min")
         #expect(ChallengeUnit.sessions.formatted(2) == "2 séances")
-        #expect(ChallengeUnit.bodyAreas.formatted(0) == "0 zone", "zéro prend le singulier")
-        #expect(ChallengeUnit.bodyAreas.formatted(1) == "1 zone")
-        #expect(ChallengeUnit.bodyAreas.formatted(3) == "3 zones")
+        #expect(ChallengeUnit.corePatterns.formatted(0) == "0 type", "zéro prend le singulier")
+        #expect(ChallengeUnit.corePatterns.formatted(1) == "1 type")
+        #expect(ChallengeUnit.corePatterns.formatted(3) == "3 types")
     }
 
     @Test("A focus description never falls back to a placeholder")

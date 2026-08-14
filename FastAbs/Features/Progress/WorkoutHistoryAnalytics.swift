@@ -41,13 +41,17 @@ struct WorkoutHistoryOverview {
     }
 }
 
-/// How much work each part of the body has taken.
-struct RegionLoad: Identifiable, Hashable {
-    let region: BodyRegion
+/// How much work each job of the trunk has taken.
+///
+/// Measured on patterns rather than muscles: a week of nothing but crunches
+/// lights every abdominal zone while training one skill, so a zone split would
+/// have reported that week as balanced.
+struct PatternLoad: Identifiable, Hashable {
+    let pattern: CorePattern
     let sessions: Int
     let activeSeconds: Int
 
-    var id: BodyRegion { region }
+    var id: CorePattern { pattern }
     var activeMinutes: Int { activeSeconds / 60 }
 }
 
@@ -150,27 +154,28 @@ struct WorkoutHistoryAnalytics {
             }
     }
 
-    /// Work split across the body, taken from the exercises actually performed.
-    func regionLoad(records: [WorkoutRecord]) -> [RegionLoad] {
-        var sessions: [BodyRegion: Int] = [:]
-        var seconds: [BodyRegion: Int] = [:]
+    /// Work split across the jobs of the trunk, from the movements actually
+    /// performed.
+    func patternLoad(records: [WorkoutRecord]) -> [PatternLoad] {
+        var sessions: [CorePattern: Int] = [:]
+        var seconds: [CorePattern: Int] = [:]
 
         for record in qualifyingRecords(from: records) {
-            let regions = Set(record.trainedZones.map(\.region))
-            guard !regions.isEmpty else { continue }
-            // A session that trained three areas gives each a third of its time,
-            // so the split reads as effort spent rather than sessions counted
-            // three times over.
-            let share = max(0, record.activeDuration) / regions.count
-            for region in regions {
-                sessions[region, default: 0] += 1
-                seconds[region, default: 0] += share
+            let patterns = record.trainedPatterns
+            guard !patterns.isEmpty else { continue }
+            // A session that trained three patterns gives each a third of its
+            // time, so the split reads as effort spent rather than sessions
+            // counted three times over.
+            let share = max(0, record.activeDuration) / patterns.count
+            for pattern in patterns {
+                sessions[pattern, default: 0] += 1
+                seconds[pattern, default: 0] += share
             }
         }
 
-        return BodyRegion.allCases.compactMap { region in
-            guard let count = sessions[region], count > 0 else { return nil }
-            return RegionLoad(region: region, sessions: count, activeSeconds: seconds[region] ?? 0)
+        return CorePattern.allCases.compactMap { pattern in
+            guard let count = sessions[pattern], count > 0 else { return nil }
+            return PatternLoad(pattern: pattern, sessions: count, activeSeconds: seconds[pattern] ?? 0)
         }
         .sorted { $0.activeSeconds > $1.activeSeconds }
     }

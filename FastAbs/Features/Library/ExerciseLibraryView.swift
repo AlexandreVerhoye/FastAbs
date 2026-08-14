@@ -7,27 +7,29 @@ import SwiftUI
 /// to schedule them.
 struct ExerciseLibraryView: View {
     @State private var search = ""
-    @State private var region: BodyRegion?
+    @State private var pattern: CorePattern?
 
     private var results: [Exercise] {
         ExerciseCatalog.all.filter { exercise in
-            let matchesRegion = region.map { area in
-                exercise.zones.contains { $0.region == area }
-            } ?? true
+            let matchesPattern = pattern.map { exercise.pattern == $0 } ?? true
             let query = search.trimmingCharacters(in: .whitespaces).lowercased()
             let matchesSearch = query.isEmpty
                 || exercise.name.lowercased().contains(query)
                 || exercise.zones.contains { $0.title.lowercased().contains(query) }
-            return matchesRegion && matchesSearch
+                || exercise.pattern.title.lowercased().contains(query)
+            return matchesPattern && matchesSearch
         }
     }
 
-    private var groups: [(region: BodyRegion, exercises: [Exercise])] {
-        BodyRegion.allCases.compactMap { area in
+    /// Grouped by what the trunk is asked to do rather than by muscle: it is
+    /// the axis a session is balanced on, and browsing it that way makes the
+    /// shape of the catalog legible.
+    private var groups: [(pattern: CorePattern, exercises: [Exercise])] {
+        CorePattern.allCases.compactMap { pattern in
             let matching = results
-                .filter { exercise in exercise.zones.contains { $0.region == area } }
+                .filter { $0.pattern == pattern }
                 .sorted { $0.name.localizedCompare($1.name) == .orderedAscending }
-            return matching.isEmpty ? nil : (area, matching)
+            return matching.isEmpty ? nil : (pattern, matching)
         }
     }
 
@@ -37,7 +39,7 @@ struct ExerciseLibraryView: View {
                 LazyVStack(alignment: .leading, spacing: 22, pinnedViews: .sectionHeaders) {
                     regionPicker
 
-                    ForEach(groups, id: \.region) { group in
+                    ForEach(groups, id: \.pattern) { group in
                         Section {
                             VStack(spacing: 12) {
                                 ForEach(group.exercises) { exercise in
@@ -50,8 +52,13 @@ struct ExerciseLibraryView: View {
                                 }
                             }
                         } header: {
-                            Text(group.region.title)
-                                .font(.headline)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(group.pattern.title)
+                                    .font(.headline)
+                                Text(group.pattern.detail)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.vertical, 6)
                                 .background(Color(.systemGroupedBackground))
@@ -75,9 +82,15 @@ struct ExerciseLibraryView: View {
     private var regionPicker: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 9) {
-                chip(title: "Tout", isSelected: region == nil) { region = nil }
-                ForEach(BodyRegion.allCases, id: \.self) { area in
-                    chip(title: area.title, isSelected: region == area) { region = area }
+                FilterChip(title: "Tout", isSelected: pattern == nil) { pattern = nil }
+                ForEach(CorePattern.allCases) { candidate in
+                    FilterChip(
+                        title: candidate.shortTitle,
+                        tint: candidate.color,
+                        isSelected: pattern == candidate
+                    ) {
+                        pattern = pattern == candidate ? nil : candidate
+                    }
                 }
             }
             .padding(.vertical, 2)
@@ -85,18 +98,6 @@ struct ExerciseLibraryView: View {
         .scrollIndicators(.hidden)
     }
 
-    private func chip(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .padding(.horizontal, 14)
-                .frame(height: 36)
-                .background(isSelected ? Color.fastCoral : Color.secondary.opacity(0.12), in: Capsule())
-                .foregroundStyle(isSelected ? .white : .primary)
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
 }
 
 private struct ExerciseRow: View {

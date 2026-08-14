@@ -162,21 +162,21 @@ struct MuscleActivationTests {
         }
     }
 
-    @Test("Movements outside the core reach their own muscles")
-    func nonCoreMovementsActivate() {
-        // The whole point of generalising the muscle map: a squat has to light
-        // up quadriceps and glutes, not the abdominal wall.
+    @Test("Posterior work reads as back, not as abdominals")
+    func posteriorMovementsActivateTheBack() {
+        // The counterweight to flexion has to look different on the figure,
+        // otherwise every movement lights the same band and the colour stops
+        // teaching anything.
         let peak = Self.phases
-            .map { MuscleActivation.make(for: .squat, phase: $0, focus: [.quadriceps, .glutes]) }
-            .max { $0.quadriceps < $1.quadriceps }
+            .map { MuscleActivation.make(for: .superman, phase: $0, focus: [.lowerBack]) }
+            .max { $0.lowerBack < $1.lowerBack }
 
         guard let peak else {
-            Issue.record("squat produced no activation")
+            Issue.record("superman produced no activation")
             return
         }
-        #expect(peak.quadriceps > 0.85, "a squat barely loads the quadriceps")
-        #expect(peak.glutes > 0.85, "a squat barely loads the glutes")
-        #expect(peak.upperAbs < 0.4, "a squat should not read as an abdominal exercise")
+        #expect(peak.lowerBack > 0.85, "a superman barely loads the lower back")
+        #expect(peak.upperAbs < 0.4, "a superman should not read as an abdominal exercise")
     }
 
     @Test("Every zone the catalog uses can actually be activated")

@@ -92,3 +92,115 @@ struct MetricPill: View {
         .accessibilityLabel("\(label), \(value)")
     }
 }
+
+// MARK: - Tokens
+
+/// Corner radii, spacing and type in one place.
+///
+/// Before this the app used eight different corner radii and wrote its fonts
+/// out by hand at every call site, which is how a design drifts without anyone
+/// deciding to change it.
+enum Metric {
+    /// Page gutter.
+    static let gutter: CGFloat = 18
+    /// Between two sections of a screen.
+    static let section: CGFloat = 26
+    /// Between rows inside one card.
+    static let row: CGFloat = 12
+    /// Inside a card.
+    static let cardPadding: CGFloat = 16
+
+    enum Radius {
+        /// Pills, chips, small tiles.
+        static let small: CGFloat = 14
+        /// Cards.
+        static let card: CGFloat = 24
+        /// Hero surfaces and full-bleed panels.
+        static let hero: CGFloat = 30
+    }
+}
+
+extension Font {
+    /// The one oversized numeral style, for a streak or a countdown.
+    static let fastDisplay = Font.system(size: 42, weight: .bold, design: .rounded).monospacedDigit()
+    static let fastHeroTitle = Font.system(.largeTitle, design: .rounded, weight: .bold)
+    static let fastCardTitle = Font.system(.title3, design: .rounded, weight: .bold)
+    /// Small all-caps label above a block.
+    static let fastEyebrow = Font.caption.weight(.bold)
+    static let fastMetric = Font.headline.monospacedDigit()
+}
+
+// MARK: - Controls
+
+/// The app's primary action: full width, warm, and it answers to the touch.
+struct FastPrimaryButtonStyle: ButtonStyle {
+    var tint: AnyShapeStyle = AnyShapeStyle(LinearGradient.fastHero)
+    var foreground: Color = .white
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline)
+            .foregroundStyle(foreground)
+            .frame(maxWidth: .infinity)
+            .frame(height: 54)
+            .background(tint, in: Capsule())
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .opacity(configuration.isPressed ? 0.9 : 1)
+            .animation(.spring(response: 0.28, dampingFraction: 0.7), value: configuration.isPressed)
+    }
+}
+
+/// Quieter sibling of the primary button, for the second choice on a screen.
+struct FastSecondaryButtonStyle: ButtonStyle {
+    var tint: Color = .fastCoral
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline)
+            .foregroundStyle(tint)
+            .frame(maxWidth: .infinity)
+            .frame(height: 50)
+            .background(tint.opacity(configuration.isPressed ? 0.2 : 0.12), in: Capsule())
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(.spring(response: 0.28, dampingFraction: 0.7), value: configuration.isPressed)
+    }
+}
+
+extension ButtonStyle where Self == FastPrimaryButtonStyle {
+    static var fastPrimary: FastPrimaryButtonStyle { FastPrimaryButtonStyle() }
+
+    static func fastPrimary(tint: some ShapeStyle, foreground: Color = .white) -> FastPrimaryButtonStyle {
+        FastPrimaryButtonStyle(tint: AnyShapeStyle(tint), foreground: foreground)
+    }
+}
+
+extension ButtonStyle where Self == FastSecondaryButtonStyle {
+    static var fastSecondary: FastSecondaryButtonStyle { FastSecondaryButtonStyle() }
+}
+
+/// A single-select capsule for a horizontal filter row.
+struct FilterChip: View {
+    let title: String
+    var tint: Color = .fastCoral
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button {
+            Haptics.selection()
+            action()
+        } label: {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 14)
+                .frame(height: 36)
+                .background(
+                    isSelected ? AnyShapeStyle(tint) : AnyShapeStyle(Color.secondary.opacity(0.12)),
+                    in: Capsule()
+                )
+                .foregroundStyle(isSelected ? .white : .primary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}

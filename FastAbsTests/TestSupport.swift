@@ -10,28 +10,32 @@ enum TestSupport {
     static func preferences(
         durationMinutes: Int = 7,
         difficulty: WorkoutDifficulty = .balanced,
-        programme: TrainingProgramme = .core,
         focusZones: Set<MuscleZone> = [.fullCore],
         apartmentFriendly: Bool = true,
         neckFriendly: Bool = false,
-        extraRecovery: Bool = false
+        extraRecovery: Bool = false,
+        positionTransitions: Bool = true
     ) -> WorkoutPreferences {
         WorkoutPreferences(
             durationMinutes: durationMinutes,
             difficulty: difficulty,
-            programme: programme,
             focusZones: focusZones,
             apartmentFriendly: apartmentFriendly,
             neckFriendly: neckFriendly,
-            extraRecovery: extraRecovery
+            extraRecovery: extraRecovery,
+            positionTransitions: positionTransitions
         )
     }
 
+    /// Includes the side: without it, a plan that put the right half first and
+    /// a plan that put the left half first would sign identically, and the
+    /// determinism test would stop testing determinism.
     static func signature(of plan: WorkoutPlan) -> [String] {
         plan.steps.map { step in
             [
                 step.kind.rawValue,
-                step.exercise?.id ?? "recovery",
+                step.exercise?.id ?? "none",
+                step.side?.rawValue ?? "-",
                 String(step.duration)
             ].joined(separator: ":")
         }
@@ -41,15 +45,19 @@ enum TestSupport {
         id: String,
         zones: Set<MuscleZone> = [.deepCore],
         family: MovementFamily = .antiExtension,
+        pattern: CorePattern = .antiExtension,
         minimumDifficulty: WorkoutDifficulty = .beginner,
         impact: ExerciseImpact = .quiet,
-        neckFriendly: Bool = true
+        sideMode: SideMode = .bilateral,
+        neckFriendly: Bool = true,
+        intensity: Double = 1
     ) -> Exercise {
         Exercise(
             id: id,
             name: "Exercise \(id)",
             zones: zones,
             family: family,
+            pattern: pattern,
             minimumDifficulty: minimumDifficulty,
             impact: impact,
             motion: .plank,
@@ -57,9 +65,10 @@ enum TestSupport {
             instruction: "Keep a controlled position.",
             breathing: "Breathe continuously.",
             mistake: "Letting the hips drop.",
-            unilateral: false,
+            tips: ["Keep breathing.", "Stop when the line breaks."],
+            sideMode: sideMode,
             neckFriendly: neckFriendly,
-            intensity: 1
+            intensity: intensity
         )
     }
 }

@@ -144,26 +144,86 @@ struct WorkoutEngineTests {
         #expect(exercises.allSatisfy { $0.impact == .quiet && $0.neckFriendly })
     }
 
-    @Test("Recovery spends exactly the budget the settings ask for")
-    func recoveryDurationMatchesPreferences() {
-        // Individual rests now follow the effort that earned them, so the
-        // promise is about the total rather than every rest being identical.
+    @Test("The session's seconds add up, whatever the mix")
+    func secondsAreFullyAccountedFor() {
+        // Rest is defined as the residual — target minus work minus transitions
+        // — so this is the identity the whole engine is built on. If it ever
+        // fails, no other duration promise means anything.
         for difficulty in WorkoutDifficulty.allCases {
-            for extraRecovery in [false, true] {
-                let preferences = TestSupport.preferences(
-                    durationMinutes: 14,
-                    difficulty: difficulty,
-                    extraRecovery: extraRecovery
-                )
-                let plan = WorkoutEngine().makePlan(preferences: preferences, seed: 3)
-                let recoveries = plan.steps.filter { $0.kind == .recovery }
-                guard !recoveries.isEmpty else { continue }
+            for transitions in [false, true] {
+                for minutes in [5, 9, 14, 20] {
+                    let preferences = TestSupport.preferences(
+                        durationMinutes: minutes,
+                        difficulty: difficulty,
+                        positionTransitions: transitions
+                    )
+                    let plan = WorkoutEngine().makePlan(preferences: preferences, seed: 3)
 
-                let expected = (difficulty.rest + (extraRecovery ? 5 : 0)) * recoveries.count
-                let total = recoveries.reduce(0) { $0 + $1.duration }
-                #expect(total == expected, "budgeted \(expected)s of rest but spent \(total)s")
-                #expect(recoveries.allSatisfy { $0.duration >= 6 }, "a rest was cut to nothing")
+                    let work = plan.steps.filter { $0.kind == .exercise }.reduce(0) { $0 + $1.duration }
+                    let rest = plan.steps.filter { $0.kind == .recovery }.reduce(0) { $0 + $1.duration }
+                    let moves = plan.steps.filter { $0.kind == .transition }
+
+                    #expect(work + rest + moves.reduce(0) { $0 + $1.duration } == minutes * 60)
+                    #expect(moves.allSatisfy { $0.duration == 5 })
+                    #expect(transitions || moves.isEmpty, "transitions appeared while switched off")
+                }
             }
+        }
+    }
+
+    @Test("Rests are long enough to be worth taking and short enough to stay warm")
+    func restsAreWithinHumanBounds() {
+        for difficulty in WorkoutDifficulty.allCases {
+            for seed in TestSupport.seeds {
+                let plan = WorkoutEngine().makePlan(
+                    preferences: TestSupport.preferences(durationMinutes: 14, difficulty: difficulty),
+                    seed: seed
+                )
+                for rest in plan.steps where rest.kind == .recovery {
+                    #expect(rest.duration >= 6, "a rest was cut to \(rest.duration)s")
+                    #expect(rest.duration <= 90, "a rest ran to \(rest.duration)s")
+                }
+            }
+        }
+    }
+
+    @Test("Reinforced recovery buys more rest, not a different session length")
+    func extraRecoveryLengthensRest() {
+        for difficulty in WorkoutDifficulty.allCases {
+            let plain = WorkoutEngine().makePlan(
+                preferences: TestSupport.preferences(durationMinutes: 14, difficulty: difficulty),
+                seed: 3
+            )
+            let padded = WorkoutEngine().makePlan(
+                preferences: TestSupport.preferences(
+                    durationMinutes: 14, difficulty: difficulty, extraRecovery: true
+                ),
+                seed: 3
+            )
+
+            func rest(_ plan: WorkoutPlan) -> Int {
+                plan.steps.filter { $0.kind == .recovery }.reduce(0) { $0 + $1.duration }
+            }
+            #expect(rest(padded) > rest(plain), "\(difficulty) gained no rest from reinforcement")
+            #expect(padded.duration == plain.duration, "reinforcement changed the session length")
+        }
+    }
+
+    @Test("Difficulty sets the work-to-rest ratio")
+    func harderSessionsRestLess() {
+        func ratio(_ difficulty: WorkoutDifficulty) -> Double {
+            let plan = WorkoutEngine().makePlan(
+                preferences: TestSupport.preferences(durationMinutes: 16, difficulty: difficulty),
+                seed: 11
+            )
+            let work = plan.steps.filter { $0.kind == .exercise }.reduce(0) { $0 + $1.duration }
+            let rest = plan.steps.filter { $0.kind == .recovery }.reduce(0) { $0 + $1.duration }
+            return Double(rest) / Double(max(1, work))
+        }
+
+        let ratios = WorkoutDifficulty.allCases.map(ratio)
+        for (harder, easier) in zip(ratios.dropFirst(), ratios) {
+            #expect(harder < easier, "rest did not shrink with difficulty: \(ratios)")
         }
     }
 

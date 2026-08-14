@@ -422,27 +422,29 @@ struct HistoryAnalyticsTests {
         return stored
     }
 
-    @Test("Region balance is read from what was actually trained")
-    func regionLoadReflectsTheExercises() {
+    @Test("The balance is read from what was actually trained")
+    func patternLoadReflectsTheExercises() {
         // Not from the focus the athlete asked for: what counts is the work done.
         let analytics = WorkoutHistoryAnalytics()
-        let load = analytics.regionLoad(records: [
-            record(["air-squat", "reverse-lunge"], daysAgo: 1),
-            record(["push-up", "pike-push-up"], daysAgo: 2),
+        let load = analytics.patternLoad(records: [
+            record(["forearm-plank", "hollow-hold"], daysAgo: 1),
+            record(["side-plank"], daysAgo: 2),
             record(["classic-crunch"], daysAgo: 3)
         ])
 
-        #expect(Set(load.map(\.region)) == [.core, .upperBody, .lowerBody])
+        #expect(Set(load.map(\.pattern)) == [.antiExtension, .antiLateralFlexion, .dynamicFlexion])
         #expect(load.allSatisfy { $0.activeSeconds > 0 })
         #expect(load == load.sorted { $0.activeSeconds > $1.activeSeconds }, "not ordered by load")
     }
 
-    @Test("A session spanning areas splits its time between them")
+    @Test("A session spanning several jobs splits its time between them")
     func mixedSessionsSplitTheirTime() {
-        // Counting the full session against every area it touched would make a
-        // full-body week look like three weeks of training.
+        // Counting the full session against every job it touched would make one
+        // varied week look like three weeks of training.
         let analytics = WorkoutHistoryAnalytics()
-        let load = analytics.regionLoad(records: [record(["air-squat", "push-up"], seconds: 600)])
+        let load = analytics.patternLoad(records: [
+            record(["forearm-plank", "classic-crunch"], seconds: 600)
+        ])
 
         #expect(load.reduce(0) { $0 + $1.activeSeconds } <= 600)
         #expect(load.count == 2)
@@ -469,17 +471,19 @@ struct HistoryAnalyticsTests {
     func emptyHistoryHasNoRecords() {
         let bests = WorkoutHistoryAnalytics().personalRecords(records: [])
         #expect(!bests.hasAny)
-        #expect(WorkoutHistoryAnalytics().regionLoad(records: []).isEmpty)
+        #expect(WorkoutHistoryAnalytics().patternLoad(records: []).isEmpty)
     }
 
-    @Test("A stored session remembers the programme it came from")
-    func recordsKeepTheirProgramme() {
-        for programme in TrainingProgramme.allCases {
-            let plan = WorkoutEngine().makePlan(
-                preferences: TestSupport.preferences(programme: programme),
-                seed: 5
-            )
-            #expect(WorkoutRecord(plan: plan).programme == programme)
-        }
+    @Test("A stored session counts a held movement once, not twice")
+    func recordsCountMovementsNotSteps() {
+        // The two halves of a side plank are two steps and one movement; a
+        // record that listed the id twice would double it in every statistic.
+        let plan = WorkoutEngine().makePlan(
+            preferences: TestSupport.preferences(durationMinutes: 16, apartmentFriendly: false),
+            seed: 5
+        )
+        let record = WorkoutRecord(plan: plan)
+        #expect(record.exerciseIDs.count == plan.movements.count)
+        #expect(Set(record.exerciseIDs).count == record.exerciseIDs.count)
     }
 }

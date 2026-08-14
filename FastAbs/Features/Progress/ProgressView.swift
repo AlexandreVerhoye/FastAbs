@@ -25,7 +25,7 @@ struct ProgressDashboardView: View {
             )
             let activityDays = analytics.days(records: records, endingAt: context.date, count: 35)
             let focus = analytics.focusBreakdown(records: records)
-            let regions = analytics.regionLoad(records: records)
+            let patterns = analytics.patternLoad(records: records)
             let bests = analytics.personalRecords(records: records)
 
             ScrollView {
@@ -43,8 +43,8 @@ struct ProgressDashboardView: View {
 
                     ActivityGridCard(days: activityDays, calendar: localCalendar)
 
-                    if !regions.isEmpty {
-                        RegionBalanceCard(items: regions)
+                    if !patterns.isEmpty {
+                        PatternBalanceCard(items: patterns)
                     }
 
                     if bests.hasAny {
@@ -94,22 +94,22 @@ private enum ProgressRange: Int, CaseIterable, Identifiable {
     }
 }
 
-/// How the work has been split across the body, so a run of leg sessions is
-/// visible rather than something you have to remember.
-struct RegionBalanceCard: View {
-    let items: [RegionLoad]
+/// How the work has been split across the jobs of the trunk, so a month of
+/// nothing but crunches is visible rather than something you have to remember.
+struct PatternBalanceCard: View {
+    let items: [PatternLoad]
 
     private var total: Int { max(1, items.reduce(0) { $0 + $1.activeSeconds }) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            SectionHeader(title: "Équilibre du corps", subtitle: "Temps actif par zone")
+            SectionHeader(title: "Équilibre du travail", subtitle: "Temps actif par type d’effort")
 
             GeometryReader { proxy in
                 HStack(spacing: 3) {
                     ForEach(items) { item in
                         Capsule()
-                            .fill(tint(for: item.region))
+                            .fill(item.pattern.color)
                             .frame(width: max(6, proxy.size.width * CGFloat(item.activeSeconds) / CGFloat(total)))
                     }
                 }
@@ -119,8 +119,8 @@ struct RegionBalanceCard: View {
             VStack(spacing: 9) {
                 ForEach(items) { item in
                     HStack(spacing: 9) {
-                        Circle().fill(tint(for: item.region)).frame(width: 9, height: 9)
-                        Text(item.region.title).font(.subheadline).lineLimit(1)
+                        Circle().fill(item.pattern.color).frame(width: 9, height: 9)
+                        Text(item.pattern.title).font(.subheadline).lineLimit(1)
                         Spacer(minLength: 4)
                         Text("\(item.activeMinutes) min")
                             .font(.subheadline.weight(.semibold).monospacedDigit())
@@ -134,13 +134,6 @@ struct RegionBalanceCard: View {
         .accessibilityElement(children: .contain)
     }
 
-    private func tint(for region: BodyRegion) -> Color {
-        switch region {
-        case .core: .fastCoral
-        case .upperBody: .fastBlue
-        case .lowerBody: .fastMint
-        }
-    }
 }
 
 /// The bests, which is the part of a history worth coming back for.

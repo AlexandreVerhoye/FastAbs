@@ -70,28 +70,35 @@ struct BadgeVisualTests {
     }
 
     @Test("A badge shows what the day was spent training")
-    func badgeSymbolFollowsTheProgramme() {
+    func badgeSymbolFollowsThePattern() {
         // The gallery is a record of the work, so two different kinds of day
         // must not be remembered by the same mark.
-        let symbols = TrainingProgramme.allCases.map {
-            VisualFixture.badge(tier: .gold, programme: $0).symbol
+        let symbols = CorePattern.allCases.map {
+            VisualFixture.badge(tier: .gold, pattern: $0).symbol
         }
-        #expect(Set(symbols).count == symbols.count, "programmes share a badge symbol: \(symbols)")
+        #expect(Set(symbols).count == symbols.count, "patterns share a badge symbol: \(symbols)")
+
+        // A day that covered every job earns a mark none of them can produce.
+        let complete = VisualFixture.badge(
+            tier: .gold, pattern: .antiExtension, patterns: Set(CorePattern.allCases)
+        )
+        #expect(complete.isComplete)
+        #expect(!symbols.contains(complete.symbol))
 
         guard
-            let core = VisualProbe.require(
-                MiniBadgeView(badge: VisualFixture.badge(tier: .gold, programme: .core)),
-                width: 120, height: 120, "core badge"
+            let gainage = VisualProbe.require(
+                MiniBadgeView(badge: VisualFixture.badge(tier: .gold, pattern: .antiExtension)),
+                width: 120, height: 120, "anti-extension badge"
             ),
-            let legs = VisualProbe.require(
-                MiniBadgeView(badge: VisualFixture.badge(tier: .gold, programme: .lowerBody)),
-                width: 120, height: 120, "lower-body badge"
+            let lateral = VisualProbe.require(
+                MiniBadgeView(badge: VisualFixture.badge(tier: .gold, pattern: .antiLateralFlexion)),
+                width: 120, height: 120, "anti-lateral badge"
             )
         else { return }
 
-        let coreFace = core.cropped(x: 34, y: 6, width: 52, height: 52)
-        let legsFace = legs.cropped(x: 34, y: 6, width: 52, height: 52)
-        #expect(coreFace.difference(from: legsFace) > 0.01, "two badge symbols rasterise the same")
+        let left = gainage.cropped(x: 34, y: 6, width: 52, height: 52)
+        let right = lateral.cropped(x: 34, y: 6, width: 52, height: 52)
+        #expect(left.difference(from: right) > 0.01, "two badge symbols rasterise the same")
     }
 
     @Test("The gallery grows with the number of badges")

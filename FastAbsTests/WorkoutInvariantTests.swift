@@ -33,11 +33,19 @@ struct WorkoutInvariantTests {
                     switch step.kind {
                     case .exercise: step.exercise != nil
                     case .recovery: step.exercise == nil
+                    case .transition: step.exercise == nil && step.duration == 5
                     }
                 })
                 #expect(!zip(plan.steps, plan.steps.dropFirst()).contains { pair in
                     pair.0.kind == .recovery && pair.1.kind == .recovery
                 })
+                // Grammar: E ( [R] [X] E )*. A transition is a doorway, so it
+                // always has a movement on the far side of it.
+                for (step, next) in zip(plan.steps, plan.steps.dropFirst())
+                where step.kind == .transition {
+                    #expect(next.kind == .exercise, "a transition led to \(next.kind)")
+                }
+                #expect(!plan.steps.contains { $0.kind == .transition } || preference.positionTransitions)
                 #expect(plan.exerciseCount > 0)
                 #expect(plan.estimatedCalories >= 12)
             }
@@ -64,8 +72,8 @@ struct WorkoutInvariantTests {
 
         for preference in preferences {
             for seed in 0..<64 {
-                let identifiers = engine.makePlan(preferences: preference, seed: UInt64(seed))
-                    .steps.compactMap(\.exercise?.id)
+                let plan = engine.makePlan(preferences: preference, seed: UInt64(seed))
+                let identifiers = plan.movements.map(\.id)
 
                 #expect(Set(identifiers).count == identifiers.count,
                         "Duplicate exercise for seed \(seed), difficulty \(preference.difficulty.title)")
@@ -85,8 +93,10 @@ struct WorkoutInvariantTests {
             )
 
             for seed in 0..<64 {
-                let exercises = engine.makePlan(preferences: preference, seed: UInt64(seed))
-                    .steps.compactMap(\.exercise)
+                // Evaluated over movements, not steps: the two halves of a
+                // side plank are the same movement and cannot clash with
+                // themselves.
+                let exercises = engine.makePlan(preferences: preference, seed: UInt64(seed)).movements
                 let repeatedFamily = zip(exercises, exercises.dropFirst()).first { pair in
                     pair.0.family == pair.1.family
                 }
@@ -189,134 +199,162 @@ struct WorkoutInvariantTests {
 
 /// A programme has to be more than a filter on the same session. These are the
 /// promises it makes.
-@Suite("Training programmes")
-struct TrainingProgrammeTests {
-    private func plan(_ programme: TrainingProgramme, minutes: Int = 12, seed: UInt64 = 7) -> WorkoutPlan {
+@Suite("Session shape")
+struct SessionShapeTests {
+    private func plan(
+        minutes: Int = 12,
+        difficulty: WorkoutDifficulty = .balanced,
+        seed: UInt64 = 5,
+        transitions: Bool = true
+    ) -> WorkoutPlan {
         WorkoutEngine().makePlan(
-            preferences: TestSupport.preferences(durationMinutes: minutes, programme: programme),
+            preferences: TestSupport.preferences(
+                durationMinutes: minutes,
+                difficulty: difficulty,
+                apartmentFriendly: false,
+                positionTransitions: transitions
+            ),
             seed: seed
         )
     }
 
-    @Test("A programme only draws from the body it is about")
-    func programmesStayInTheirRegion() {
-        for programme in TrainingProgramme.allCases {
+    @Test("Two demanding movements never land back to back without a rest")
+    func hardWorkEarnsItsRest() {
+        // The promise that justified scoring gaps instead of counting them.
+        for difficulty in WorkoutDifficulty.allCases {
             for seed in TestSupport.seeds {
-                for exercise in plan(programme, seed: seed).steps.compactMap(\.exercise) {
+                let plan = plan(minutes: 16, difficulty: difficulty, seed: seed)
+                let exercises = plan.steps.enumerated().filter { $0.element.kind == .exercise }
+                let midpoint = Double(
+                    difficulty.interval.lowerBound + difficulty.interval.upperBound
+                ) / 2
+                let demands = exercises.map { index, step in
+                    (index, (step.exercise?.intensity ?? 1) * Double(step.duration) / midpoint)
+                }
+                guard demands.count > 1 else { continue }
+                let mean = demands.reduce(0) { $0 + $1.1 } / Double(demands.count)
+
+                for (lhs, rhs) in zip(demands, demands.dropFirst()) {
+                    guard min(lhs.1, rhs.1) > mean * 1.15 else { continue }
+                    let between = plan.steps[(lhs.0 + 1)..<rhs.0]
+                    // Two halves of one held movement are one effort, not two.
+                    let sameMovement = plan.steps[lhs.0].exercise?.id == plan.steps[rhs.0].exercise?.id
+                        && plan.steps[lhs.0].side != nil
                     #expect(
-                        exercise.zones.contains { programme.regions.contains($0.region) },
-                        "\(programme.rawValue) picked \(exercise.id), which trains nothing it covers"
+                        sameMovement || between.contains { $0.kind == .recovery },
+                        "\(plan.steps[lhs.0].title) then \(plan.steps[rhs.0].title) with no rest"
                     )
                 }
             }
         }
     }
 
-    @Test("A full session covers everything its programme promises")
-    func programmesCoverTheirEssentials() {
-        // The point of a programme: you are owed every group it names, not a
-        // random draw that happens to skip your hamstrings.
-        for programme in TrainingProgramme.allCases {
-            for seed in TestSupport.seeds.prefix(5) {
-                let covered = plan(programme, minutes: 15, seed: seed)
-                    .steps
-                    .compactMap(\.exercise)
-                    .reduce(into: Set<MuscleZone>()) { $0.formUnion($1.zones) }
-
-                let missing = Set(programme.essentialZones).subtracting(covered)
-                #expect(
-                    missing.isEmpty,
-                    "\(programme.rawValue) at seed \(seed) never trains \(missing.map(\.rawValue).sorted())"
-                )
+    @Test("A session never runs three movements without a break")
+    func noLongRunsWithoutRest() {
+        for difficulty in WorkoutDifficulty.allCases {
+            for seed in TestSupport.seeds {
+                let plan = plan(minutes: 16, difficulty: difficulty, seed: seed)
+                var run = 0
+                for step in plan.steps {
+                    switch step.kind {
+                    case .exercise: run += 1
+                    case .recovery: run = 0
+                    case .transition: break
+                    }
+                    #expect(run <= 3, "\(run) movements in a row at \(difficulty.title)")
+                }
             }
         }
     }
 
-    @Test("Whole-body work alternates areas instead of stacking them")
-    func fullBodyAlternatesAreas() {
-        func area(_ exercise: Exercise) -> BodyRegion {
-            exercise.zones.map(\.region).first { $0 != .core } ?? .core
-        }
+    @Test("A movement held on one side is performed on both")
+    func heldMovementsTrainBothSides() {
+        for difficulty in WorkoutDifficulty.allCases {
+            for seed in TestSupport.seeds {
+                let plan = plan(minutes: 16, difficulty: difficulty, seed: seed)
+                let steps = plan.steps.filter { $0.kind == .exercise }
 
-        for seed in TestSupport.seeds.prefix(6) {
-            let exercises = plan(.fullBody, minutes: 15, seed: seed).steps.compactMap(\.exercise)
-            guard exercises.count > 3 else { continue }
-
-            var runs = 0
-            for index in exercises.indices.dropFirst() where area(exercises[index]) == area(exercises[index - 1]) {
-                runs += 1
-            }
-            #expect(
-                Double(runs) / Double(exercises.count - 1) < 0.5,
-                "seed \(seed): \(runs) of \(exercises.count - 1) transitions stay in the same area"
-            )
-        }
-    }
-
-    @Test("Recovery follows effort rather than being handed out evenly")
-    func recoveryFollowsEffort() {
-        // A set of squats and a dead bug do not leave you in the same state.
-        for seed in TestSupport.seeds.prefix(6) {
-            let steps = plan(.fullBody, minutes: 16, seed: seed).steps
-            var pairs: [(intensity: Double, rest: Int)] = []
-            for (index, step) in steps.enumerated() where step.kind == .recovery {
-                guard let previous = steps[..<index].last(where: { $0.kind == .exercise })?.exercise else { continue }
-                pairs.append((previous.intensity, step.duration))
-            }
-            guard pairs.count > 2, Set(pairs.map(\.intensity)).count > 1 else { continue }
-
-            let hardest = pairs.max { $0.intensity < $1.intensity }
-            let easiest = pairs.min { $0.intensity < $1.intensity }
-            #expect(
-                (hardest?.rest ?? 0) >= (easiest?.rest ?? 0),
-                "seed \(seed): the hardest exercise earns no more rest than the easiest"
-            )
-        }
-    }
-
-    @Test("Adapting is not just making the session longer")
-    func shortSessionsFavourCompoundWork() {
-        // With few slots, movements that pay several muscles at once have to win.
-        var shortBreadth = 0.0
-        var longBreadth = 0.0
-
-        for seed in TestSupport.seeds.prefix(6) {
-            let short = plan(.fullBody, minutes: 6, seed: seed).steps.compactMap(\.exercise)
-            let long = plan(.fullBody, minutes: 18, seed: seed).steps.compactMap(\.exercise)
-            shortBreadth += short.map { Double($0.zones.count) }.reduce(0, +) / Double(max(short.count, 1))
-            longBreadth += long.map { Double($0.zones.count) }.reduce(0, +) / Double(max(long.count, 1))
-        }
-
-        #expect(
-            shortBreadth > longBreadth,
-            "short sessions (\(shortBreadth)) are no more compound than long ones (\(longBreadth))"
-        )
-    }
-
-    @Test("Duration and difficulty still hold whatever the programme")
-    func settingsSurviveTheProgramme() {
-        for programme in TrainingProgramme.allCases {
-            for minutes in [5, 9, 14, 20] {
-                for difficulty in WorkoutDifficulty.allCases {
-                    let preferences = TestSupport.preferences(
-                        durationMinutes: minutes,
-                        difficulty: difficulty,
-                        programme: programme
-                    )
-                    let plan = WorkoutEngine().makePlan(preferences: preferences, seed: 11)
-
-                    #expect(
-                        abs(plan.duration - minutes * 60) <= 1,
-                        "\(programme.rawValue) at \(minutes) min lands on \(plan.duration)s"
-                    )
-                    for step in plan.steps where step.kind == .exercise {
-                        #expect(
-                            step.duration <= difficulty.interval.upperBound,
-                            "\(programme.rawValue) exceeds the \(difficulty.title) interval"
-                        )
+                for (index, step) in steps.enumerated() {
+                    guard step.exercise?.sideMode == .heldPerSide else {
+                        #expect(step.side == nil, "\(step.title) carries a side it cannot use")
+                        continue
+                    }
+                    #expect(step.side != nil, "\(step.title) was programmed without a side")
+                    if step.side == .left {
+                        let next = index + 1 < steps.count ? steps[index + 1] : nil
+                        #expect(next?.side == .right, "the left half of \(step.title) had no right half")
+                        #expect(next?.exercise?.id == step.exercise?.id)
+                        #expect(next?.duration == step.duration, "the two sides ran for different times")
                     }
                 }
             }
         }
+    }
+
+    @Test("A session covers several of the jobs the trunk does")
+    func sessionsCoverSeveralPatterns() {
+        for difficulty in WorkoutDifficulty.allCases {
+            for seed in TestSupport.seeds {
+                let patterns = Set(plan(minutes: 14, difficulty: difficulty, seed: seed).movements.map(\.pattern))
+                #expect(patterns.count >= 3, "only \(patterns.count) job(s) at \(difficulty.title)")
+            }
+        }
+    }
+
+    @Test("No single job takes over the session")
+    func noPatternDominates() {
+        for seed in TestSupport.seeds {
+            let movements = plan(minutes: 16, seed: seed).movements
+            let counts = Dictionary(grouping: movements, by: \.pattern).mapValues(\.count)
+            for (pattern, count) in counts {
+                let share = Double(count) / Double(movements.count)
+                #expect(share <= 0.55, "\(pattern.rawValue) took \(Int(share * 100))% of the session")
+            }
+        }
+    }
+
+    @Test("A repeated movement is spaced, never adjacent")
+    func repeatsAreSpaced() {
+        // The beginner catalog cannot fill a long session without repeating.
+        // Repeating is allowed; repeating back to back is not.
+        for minutes in [16, 20] {
+            for seed in TestSupport.seeds {
+                let movements = plan(minutes: minutes, difficulty: .beginner, seed: seed).movements
+                for (index, movement) in movements.enumerated() {
+                    let earlier = movements[..<index].lastIndex { $0.id == movement.id }
+                    guard let earlier else { continue }
+                    #expect(index - earlier >= 3, "\(movement.name) came back after \(index - earlier) slots")
+                }
+            }
+        }
+    }
+
+    @Test("Every setting still lands on the requested duration")
+    func settingsSurviveEverySetting() {
+        for minutes in [5, 8, 12, 16, 20] {
+            for difficulty in WorkoutDifficulty.allCases {
+                for transitions in [false, true] {
+                    let plan = plan(
+                        minutes: minutes, difficulty: difficulty, seed: 21, transitions: transitions
+                    )
+                    #expect(plan.duration == minutes * 60, "\(minutes) min came out at \(plan.duration)s")
+                    #expect(plan.steps.allSatisfy { step in
+                        step.kind != .exercise || step.duration <= difficulty.interval.upperBound
+                    })
+                    #expect(plan.steps.allSatisfy { step in
+                        step.kind != .exercise || step.duration >= 20
+                    })
+                }
+            }
+        }
+    }
+
+    @Test("A short session prefers movements that pay several groups at once")
+    func shortSessionsFavourCompoundWork() {
+        func breadth(_ minutes: Int) -> Double {
+            let movements = plan(minutes: minutes, seed: 8).movements
+            return movements.reduce(0.0) { $0 + Double($1.zones.count) } / Double(movements.count)
+        }
+        #expect(breadth(6) > breadth(18))
     }
 }

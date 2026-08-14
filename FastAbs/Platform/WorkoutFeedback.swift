@@ -1,48 +1,35 @@
 import AVFoundation
 import UIKit
 
+/// Sound and vibration for the moments the session engine produces on its own.
+/// Anything triggered by a tap goes through `Haptics` directly.
 @MainActor
 enum WorkoutFeedback {
     private static let audio = WorkoutCuePlayer()
 
     static func start() {
-        if soundEnabled {
-            audio.play(.start)
-        }
-        haptic(.medium)
+        if soundEnabled { audio.play(.start) }
+        Haptics.begin()
     }
 
     static func transition() {
-        if soundEnabled {
-            audio.play(.transition)
-        }
-        haptic(.rigid, intensity: 0.9)
+        if soundEnabled { audio.play(.transition) }
+        Haptics.step()
+    }
+
+    /// The mid-point of a movement held per side.
+    static func switchSides() {
+        if soundEnabled { audio.play(.transition) }
+        Haptics.switchSides()
     }
 
     static func success() {
-        if soundEnabled {
-            audio.play(.success)
-        }
-        guard hapticsEnabled else { return }
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        if soundEnabled { audio.play(.success) }
+        Haptics.success()
     }
 
     private static var soundEnabled: Bool {
         UserDefaults.standard.object(forKey: "sound-enabled") as? Bool ?? true
-    }
-
-    private static var hapticsEnabled: Bool {
-        UserDefaults.standard.object(forKey: "haptics-enabled") as? Bool ?? true
-    }
-
-    private static func haptic(
-        _ style: UIImpactFeedbackGenerator.FeedbackStyle,
-        intensity: CGFloat = 1
-    ) {
-        guard hapticsEnabled else { return }
-        let generator = UIImpactFeedbackGenerator(style: style)
-        generator.prepare()
-        generator.impactOccurred(intensity: intensity)
     }
 }
 
