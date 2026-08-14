@@ -8,7 +8,7 @@ struct ExerciseCatalogTests {
         let exercises = ExerciseCatalog.all
         let identifiers = exercises.map(\.id)
 
-        #expect(exercises.count == 37)
+        #expect(exercises.count == 46)
         #expect(Set(identifiers).count == identifiers.count)
         #expect(identifiers.allSatisfy { id in
             !id.isEmpty && id.allSatisfy { $0.isLowercase || $0.isNumber || $0 == "-" }

@@ -402,3 +402,84 @@ private struct PartCanvas: View {
         }
     }
 }
+
+/// The history surface: work split across the body, and the bests.
+@Suite("History analytics")
+struct HistoryAnalyticsTests {
+    private func record(
+        _ exercises: [String],
+        seconds: Int = 420,
+        daysAgo: Int = 0
+    ) -> WorkoutRecord {
+        let plan = WorkoutEngine().makePlan(preferences: .recommended, seed: 1)
+        let stored = WorkoutRecord(
+            plan: plan,
+            completedAt: Calendar.current.date(byAdding: .day, value: -daysAgo, to: .now) ?? .now,
+            activeDuration: seconds
+        )
+        stored.exerciseIDs = exercises
+        stored.plannedDuration = seconds
+        return stored
+    }
+
+    @Test("Region balance is read from what was actually trained")
+    func regionLoadReflectsTheExercises() {
+        // Not from the focus the athlete asked for: what counts is the work done.
+        let analytics = WorkoutHistoryAnalytics()
+        let load = analytics.regionLoad(records: [
+            record(["air-squat", "reverse-lunge"], daysAgo: 1),
+            record(["push-up", "pike-push-up"], daysAgo: 2),
+            record(["classic-crunch"], daysAgo: 3)
+        ])
+
+        #expect(Set(load.map(\.region)) == [.core, .upperBody, .lowerBody])
+        #expect(load.allSatisfy { $0.activeSeconds > 0 })
+        #expect(load == load.sorted { $0.activeSeconds > $1.activeSeconds }, "not ordered by load")
+    }
+
+    @Test("A session spanning areas splits its time between them")
+    func mixedSessionsSplitTheirTime() {
+        // Counting the full session against every area it touched would make a
+        // full-body week look like three weeks of training.
+        let analytics = WorkoutHistoryAnalytics()
+        let load = analytics.regionLoad(records: [record(["air-squat", "push-up"], seconds: 600)])
+
+        #expect(load.reduce(0) { $0 + $1.activeSeconds } <= 600)
+        #expect(load.count == 2)
+    }
+
+    @Test("Records report the best, not the latest")
+    func personalRecordsFindTheBest() {
+        let analytics = WorkoutHistoryAnalytics()
+        let bests = analytics.personalRecords(records: [
+            record(["classic-crunch"], seconds: 400, daysAgo: 40),
+            record(["classic-crunch"], seconds: 900, daysAgo: 20),
+            record(["classic-crunch"], seconds: 500, daysAgo: 1),
+            record(["classic-crunch"], seconds: 480, daysAgo: 1)
+        ])
+
+        #expect(bests.longestSessionSeconds == 900)
+        #expect(bests.busiestDaySessions == 2)
+        #expect(bests.totalSessions == 4)
+        #expect(bests.bestWeekMinutes > 0)
+        #expect(bests.hasAny)
+    }
+
+    @Test("An empty history reports nothing rather than zeroes dressed as records")
+    func emptyHistoryHasNoRecords() {
+        let bests = WorkoutHistoryAnalytics().personalRecords(records: [])
+        #expect(!bests.hasAny)
+        #expect(WorkoutHistoryAnalytics().regionLoad(records: []).isEmpty)
+    }
+
+    @Test("A stored session remembers the programme it came from")
+    func recordsKeepTheirProgramme() {
+        for programme in TrainingProgramme.allCases {
+            let plan = WorkoutEngine().makePlan(
+                preferences: TestSupport.preferences(programme: programme),
+                seed: 5
+            )
+            #expect(WorkoutRecord(plan: plan).programme == programme)
+        }
+    }
+}

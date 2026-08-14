@@ -25,6 +25,8 @@ struct ProgressDashboardView: View {
             )
             let activityDays = analytics.days(records: records, endingAt: context.date, count: 35)
             let focus = analytics.focusBreakdown(records: records)
+            let regions = analytics.regionLoad(records: records)
+            let bests = analytics.personalRecords(records: records)
 
             ScrollView {
                 LazyVStack(spacing: 24) {
@@ -40,6 +42,14 @@ struct ProgressDashboardView: View {
                     WeeklyComparisonCard(overview: overview)
 
                     ActivityGridCard(days: activityDays, calendar: localCalendar)
+
+                    if !regions.isEmpty {
+                        RegionBalanceCard(items: regions)
+                    }
+
+                    if bests.hasAny {
+                        PersonalRecordsCard(records: bests)
+                    }
 
                     if !focus.isEmpty {
                         FocusDistributionCard(items: focus)
@@ -81,6 +91,92 @@ private enum ProgressRange: Int, CaseIterable, Identifiable {
         case .month: 5
         case .quarter: 15
         }
+    }
+}
+
+/// How the work has been split across the body, so a run of leg sessions is
+/// visible rather than something you have to remember.
+struct RegionBalanceCard: View {
+    let items: [RegionLoad]
+
+    private var total: Int { max(1, items.reduce(0) { $0 + $1.activeSeconds }) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            SectionHeader(title: "Équilibre du corps", subtitle: "Temps actif par zone")
+
+            GeometryReader { proxy in
+                HStack(spacing: 3) {
+                    ForEach(items) { item in
+                        Capsule()
+                            .fill(tint(for: item.region))
+                            .frame(width: max(6, proxy.size.width * CGFloat(item.activeSeconds) / CGFloat(total)))
+                    }
+                }
+            }
+            .frame(height: 14)
+
+            VStack(spacing: 9) {
+                ForEach(items) { item in
+                    HStack(spacing: 9) {
+                        Circle().fill(tint(for: item.region)).frame(width: 9, height: 9)
+                        Text(item.region.title).font(.subheadline).lineLimit(1)
+                        Spacer(minLength: 4)
+                        Text("\(item.activeMinutes) min")
+                            .font(.subheadline.weight(.semibold).monospacedDigit())
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+        .padding(18)
+        .glassCard()
+        .accessibilityElement(children: .contain)
+    }
+
+    private func tint(for region: BodyRegion) -> Color {
+        switch region {
+        case .core: .fastCoral
+        case .upperBody: .fastBlue
+        case .lowerBody: .fastMint
+        }
+    }
+}
+
+/// The bests, which is the part of a history worth coming back for.
+struct PersonalRecordsCard: View {
+    let records: PersonalRecords
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            SectionHeader(title: "Vos records", subtitle: "Le meilleur que vous ayez fait")
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
+                record("flame.fill", "\(records.longestStreak)", "jours d’affilée")
+                record("calendar", "\(records.bestWeekMinutes)", "min sur 7 jours")
+                record("timer", "\(records.longestSessionMinutes)", "min en une séance")
+                record("bolt.fill", "\(records.busiestDaySessions)", "séances en un jour")
+            }
+        }
+        .padding(18)
+        .glassCard()
+    }
+
+    private func record(_ symbol: String, _ value: String, _ label: String) -> some View {
+        HStack(spacing: 11) {
+            Image(systemName: symbol)
+                .font(.subheadline)
+                .foregroundStyle(Color.fastCoral)
+                .frame(width: 34, height: 34)
+                .background(Color.fastCoral.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            VStack(alignment: .leading, spacing: 1) {
+                Text(value).font(.title3.weight(.bold).monospacedDigit())
+                Text(label).font(.caption2).foregroundStyle(.secondary).lineLimit(2)
+            }
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(value) \(label)")
     }
 }
 

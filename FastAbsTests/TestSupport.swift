@@ -10,6 +10,7 @@ enum TestSupport {
     static func preferences(
         durationMinutes: Int = 7,
         difficulty: WorkoutDifficulty = .balanced,
+        programme: TrainingProgramme = .core,
         focusZones: Set<MuscleZone> = [.fullCore],
         apartmentFriendly: Bool = true,
         neckFriendly: Bool = false,
@@ -18,6 +19,7 @@ enum TestSupport {
         WorkoutPreferences(
             durationMinutes: durationMinutes,
             difficulty: difficulty,
+            programme: programme,
             focusZones: focusZones,
             apartmentFriendly: apartmentFriendly,
             neckFriendly: neckFriendly,

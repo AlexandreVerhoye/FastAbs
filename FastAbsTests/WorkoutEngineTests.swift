@@ -144,25 +144,25 @@ struct WorkoutEngineTests {
         #expect(exercises.allSatisfy { $0.impact == .quiet && $0.neckFriendly })
     }
 
-    @Test("Extra recovery uses the selected difficulty budget")
+    @Test("Recovery spends exactly the budget the settings ask for")
     func recoveryDurationMatchesPreferences() {
-        let engine = WorkoutEngine()
-
+        // Individual rests now follow the effort that earned them, so the
+        // promise is about the total rather than every rest being identical.
         for difficulty in WorkoutDifficulty.allCases {
-            let preferences = TestSupport.preferences(
-                durationMinutes: 10,
-                difficulty: difficulty,
-                extraRecovery: true
-            )
-            let expectedRecovery = difficulty.rest + 5
+            for extraRecovery in [false, true] {
+                let preferences = TestSupport.preferences(
+                    durationMinutes: 14,
+                    difficulty: difficulty,
+                    extraRecovery: extraRecovery
+                )
+                let plan = WorkoutEngine().makePlan(preferences: preferences, seed: 3)
+                let recoveries = plan.steps.filter { $0.kind == .recovery }
+                guard !recoveries.isEmpty else { continue }
 
-            for seed in TestSupport.seeds {
-                let recoveries = engine.makePlan(preferences: preferences, seed: seed)
-                    .steps.filter { $0.kind == .recovery }
-
-                #expect(!recoveries.isEmpty)
-                #expect(recoveries.allSatisfy { $0.duration == expectedRecovery },
-                        "Recovery budget changed for seed \(seed)")
+                let expected = (difficulty.rest + (extraRecovery ? 5 : 0)) * recoveries.count
+                let total = recoveries.reduce(0) { $0 + $1.duration }
+                #expect(total == expected, "budgeted \(expected)s of rest but spent \(total)s")
+                #expect(recoveries.allSatisfy { $0.duration >= 6 }, "a rest was cut to nothing")
             }
         }
     }

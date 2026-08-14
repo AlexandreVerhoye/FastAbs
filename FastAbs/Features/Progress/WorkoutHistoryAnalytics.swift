@@ -41,6 +41,28 @@ struct WorkoutHistoryOverview {
     }
 }
 
+/// How much work each part of the body has taken.
+struct RegionLoad: Identifiable, Hashable {
+    let region: BodyRegion
+    let sessions: Int
+    let activeSeconds: Int
+
+    var id: BodyRegion { region }
+    var activeMinutes: Int { activeSeconds / 60 }
+}
+
+/// The best the athlete has managed, which is what a history is for.
+struct PersonalRecords: Hashable {
+    let longestStreak: Int
+    let bestWeekMinutes: Int
+    let longestSessionSeconds: Int
+    let busiestDaySessions: Int
+    let totalSessions: Int
+
+    var longestSessionMinutes: Int { longestSessionSeconds / 60 }
+    var hasAny: Bool { totalSessions > 0 }
+}
+
 /// Calendar-aware analytics reconstructed from immutable workout records.
 ///
 /// All comparisons are performed using `Calendar.startOfDay(for:)` rather than
@@ -126,6 +148,50 @@ struct WorkoutHistoryAnalytics {
                 if $0.sessionCount == $1.sessionCount { return $0.zone.rawValue < $1.zone.rawValue }
                 return $0.sessionCount > $1.sessionCount
             }
+    }
+
+    /// Work split across the body, taken from the exercises actually performed.
+    func regionLoad(records: [WorkoutRecord]) -> [RegionLoad] {
+        var sessions: [BodyRegion: Int] = [:]
+        var seconds: [BodyRegion: Int] = [:]
+
+        for record in qualifyingRecords(from: records) {
+            let regions = Set(record.trainedZones.map(\.region))
+            guard !regions.isEmpty else { continue }
+            // A session that trained three areas gives each a third of its time,
+            // so the split reads as effort spent rather than sessions counted
+            // three times over.
+            let share = max(0, record.activeDuration) / regions.count
+            for region in regions {
+                sessions[region, default: 0] += 1
+                seconds[region, default: 0] += share
+            }
+        }
+
+        return BodyRegion.allCases.compactMap { region in
+            guard let count = sessions[region], count > 0 else { return nil }
+            return RegionLoad(region: region, sessions: count, activeSeconds: seconds[region] ?? 0)
+        }
+        .sorted { $0.activeSeconds > $1.activeSeconds }
+    }
+
+    /// Personal bests, which is the part of a history worth coming back for.
+    func personalRecords(records: [WorkoutRecord]) -> PersonalRecords {
+        let valid = qualifyingRecords(from: records)
+        let byDay = Dictionary(grouping: valid) { calendar.startOfDay(for: $0.completedAt) }
+        let byWeek = Dictionary(grouping: valid) {
+            calendar.dateInterval(of: .weekOfYear, for: $0.completedAt)?.start ?? $0.completedAt
+        }
+
+        return PersonalRecords(
+            longestStreak: longestStreak(records: records),
+            bestWeekMinutes: byWeek.values
+                .map { week in week.reduce(0) { $0 + max(0, $1.activeDuration) } / 60 }
+                .max() ?? 0,
+            longestSessionSeconds: valid.map { max(0, $0.activeDuration) }.max() ?? 0,
+            busiestDaySessions: byDay.values.map(\.count).max() ?? 0,
+            totalSessions: valid.count
+        )
     }
 
     func currentStreak(records: [WorkoutRecord], now: Date = .now) -> Int {

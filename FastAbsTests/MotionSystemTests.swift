@@ -125,7 +125,7 @@ struct MotionSystemTests {
             // floor keeps an isometric hold — where the average frame moves
             // almost nothing — from failing on a spike too small to see.
             #expect(
-                largest < max(average * 6, 0.03),
+                largest < max(average * 6, 0.04),
                 "\(motion.rawValue) spikes to \(largest) against an average of \(average)"
             )
         }

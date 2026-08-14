@@ -115,6 +115,72 @@ enum MuscleZone: String, CaseIterable, Codable, Identifiable, Sendable {
     }
 }
 
+/// What a session is built around.
+///
+/// A programme is not a filter on top of the same workout — it changes which
+/// muscles the session has to cover, how the exercises are ordered, and how
+/// much recovery each one earns.
+enum TrainingProgramme: String, CaseIterable, Codable, Identifiable, Sendable {
+    case core, fullBody, upperBody, lowerBody
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .core: "Sangle abdominale"
+        case .fullBody: "Corps entier"
+        case .upperBody: "Haut du corps"
+        case .lowerBody: "Bas du corps"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .core: "Abdos, obliques et gainage profond"
+        case .fullBody: "Un passage complet, du haut aux jambes"
+        case .upperBody: "Pectoraux, épaules, bras et dos"
+        case .lowerBody: "Cuisses, fessiers et mollets"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .core: "figure.core.training"
+        case .fullBody: "figure.mixed.cardio"
+        case .upperBody: "figure.arms.open"
+        case .lowerBody: "figure.run"
+        }
+    }
+
+    /// Which parts of the body the session may draw from.
+    var regions: Set<BodyRegion> {
+        switch self {
+        case .core: [.core]
+        case .fullBody: [.core, .upperBody, .lowerBody]
+        case .upperBody: [.upperBody, .core]
+        case .lowerBody: [.lowerBody, .core]
+        }
+    }
+
+    /// Groups a complete session should touch at least once. Coverage is what
+    /// makes a programme a programme rather than a random draw from a pool.
+    var essentialZones: [MuscleZone] {
+        switch self {
+        case .core: [.upperAbs, .lowerAbs, .obliques, .deepCore]
+        case .fullBody: [.quadriceps, .glutes, .chest, .shoulders, .deepCore]
+        case .upperBody: [.chest, .shoulders, .arms, .upperBack, .deepCore]
+        case .lowerBody: [.quadriceps, .glutes, .hamstrings, .calves]
+        }
+    }
+
+    /// How strongly consecutive exercises should move away from each other.
+    /// A full-body session alternates whole areas; a core session only has one
+    /// area to work with and alternates movement families instead.
+    var alternatesRegions: Bool {
+        self != .core
+    }
+}
+
 enum WorkoutDifficulty: Int, CaseIterable, Codable, Identifiable, Comparable, Sendable {
     case beginner = 1, balanced, advanced, athlete
 
@@ -170,7 +236,8 @@ enum MotionKind: String, CaseIterable, Codable, Sendable {
     case bicycle, twist, obliqueCrunch, heelTap
     case plank, sidePlank, plankReach, mountainClimber, hollowHold
     case deadBug, birdDog, bearHold, vSit, vSitExtension, seatedTuck, longLeverCrunch
-    case superman, bridge, bridgeMarch, squat, rest
+    case superman, bridge, bridgeMarch
+    case squat, lunge, wallSit, calfRaise, pushUp, pikePushUp, rest
 }
 
 enum ExerciseImpact: String, Codable, Sendable {
@@ -199,6 +266,7 @@ struct Exercise: Identifiable, Hashable, Codable, Sendable {
 struct WorkoutPreferences: Codable, Hashable, Sendable {
     var durationMinutes: Int
     var difficulty: WorkoutDifficulty
+    var programme: TrainingProgramme = .core
     var focusZones: Set<MuscleZone>
     var apartmentFriendly: Bool
     var neckFriendly: Bool
@@ -207,6 +275,7 @@ struct WorkoutPreferences: Codable, Hashable, Sendable {
     static let recommended = WorkoutPreferences(
         durationMinutes: 7,
         difficulty: .balanced,
+        programme: .core,
         focusZones: [.fullCore],
         apartmentFriendly: true,
         neckFriendly: false,
@@ -259,6 +328,7 @@ struct WorkoutPlan: Identifiable, Hashable, Codable, Sendable {
     var duration: Int { steps.reduce(0) { $0 + $1.duration } }
     var exerciseCount: Int { steps.filter { $0.kind == .exercise }.count }
     var focusDescription: String {
+        guard preferences.programme == .core else { return preferences.programme.title }
         let zones = preferences.focusZones.filter { $0 != .fullCore }
         return zones.isEmpty ? "Sangle abdominale" : zones.map(\.shortTitle).sorted().joined(separator: " · ")
     }
@@ -274,6 +344,9 @@ final class WorkoutRecord {
     var exerciseIDs: [String]
     var focusZoneRaws: [String]
     var estimatedCalories: Int
+    /// Stored so history can be read back by programme without inferring it
+    /// from the exercises, which would change meaning as the catalog grows.
+    var programmeRaw: String = TrainingProgramme.core.rawValue
 
     init(plan: WorkoutPlan, completedAt: Date = .now, activeDuration: Int? = nil) {
         id = UUID()
@@ -284,9 +357,24 @@ final class WorkoutRecord {
         exerciseIDs = plan.steps.compactMap { $0.exercise?.id }
         focusZoneRaws = plan.preferences.focusZones.map(\.rawValue)
         estimatedCalories = plan.estimatedCalories
+        programmeRaw = plan.preferences.programme.rawValue
     }
 
     var difficulty: WorkoutDifficulty {
         WorkoutDifficulty(rawValue: difficultyRaw) ?? .balanced
+    }
+
+    var programme: TrainingProgramme {
+        TrainingProgramme(rawValue: programmeRaw) ?? .core
+    }
+
+    /// The muscle groups actually trained, read back from the exercises rather
+    /// than from the focus that was asked for — what you did, not what you
+    /// intended.
+    var trainedZones: Set<MuscleZone> {
+        let byID = Dictionary(uniqueKeysWithValues: ExerciseCatalog.all.map { ($0.id, $0) })
+        return exerciseIDs.reduce(into: Set<MuscleZone>()) { zones, id in
+            if let exercise = byID[id] { zones.formUnion(exercise.zones) }
+        }
     }
 }

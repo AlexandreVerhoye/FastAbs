@@ -14,6 +14,7 @@ struct CustomizationView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
+                    programmeCard
                     durationCard
                     difficultyCard
                     focusCard
@@ -58,6 +59,47 @@ struct CustomizationView: View {
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+    }
+
+    private var programmeCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SectionHeader(title: "Programme", subtitle: "Ce que la séance travaille")
+            ForEach(TrainingProgramme.allCases) { programme in
+                Button {
+                    withAnimation(.snappy) {
+                        draft.programme = programme
+                        if programme != .core { draft.focusZones = [.fullCore] }
+                    }
+                } label: {
+                    HStack(spacing: 14) {
+                        ZStack {
+                            Circle().fill(
+                                draft.programme == programme
+                                    ? Color.fastCoral
+                                    : Color.secondary.opacity(0.12)
+                            )
+                            Image(systemName: programme.symbol)
+                                .font(.subheadline)
+                                .foregroundStyle(draft.programme == programme ? .white : .secondary)
+                        }
+                        .frame(width: 38, height: 38)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(programme.title).font(.headline)
+                            Text(programme.detail).font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer(minLength: 0)
+                        if draft.programme == programme {
+                            Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.fastCoral)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(draft.programme == programme ? .isSelected : [])
+            }
+        }
+        .padding(20)
+        .glassCard()
     }
 
     private var durationCard: some View {
@@ -116,7 +158,14 @@ struct CustomizationView: View {
         .glassCard()
     }
 
+    @ViewBuilder
     private var focusCard: some View {
+        if draft.programme == .core {
+            coreFocusCard
+        }
+    }
+
+    private var coreFocusCard: some View {
         VStack(alignment: .leading, spacing: 16) {
             SectionHeader(title: "Zones prioritaires", subtitle: "Le reste de la sangle abdominale reste sollicité")
             LazyVGrid(columns: [.init(.flexible()), .init(.flexible())], spacing: 11) {
