@@ -165,7 +165,7 @@ enum MovementFamily: String, Codable, Sendable {
     case flexion, antiExtension, rotation, lateral, hipFlexion, posterior, locomotion
 }
 
-enum MotionKind: String, Codable, Sendable {
+enum MotionKind: String, CaseIterable, Codable, Sendable {
     case crunch, reverseCrunch, toeReach, legRaise, hipRaise, flutter, scissors
     case bicycle, twist, obliqueCrunch, heelTap
     case plank, sidePlank, plankReach, mountainClimber, hollowHold

@@ -70,6 +70,10 @@ enum FigureMetrics {
     /// whole figure merges into one white mass.
     static let separation: CGFloat = 0.016
 
+    /// How far down a limb the separation cut starts, so the hip and shoulder
+    /// stay joined to the body.
+    static let rootJoin: CGFloat = 0.1
+
     static let headRadius: CGFloat = 0.116
     /// How far along the chest-to-head line the skull is actually drawn.
     static let headSeating: CGFloat = 0.82

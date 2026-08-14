@@ -44,7 +44,9 @@ struct ExerciseMotionView: View {
     var body: some View {
         let metadata = MotionLibrary.metadata(for: motion)
 
-        TimelineView(.animation(paused: !isPlaying || reduceMotion)) { timeline in
+        TimelineView(
+            .animation(minimumInterval: 1.0 / 40, paused: !isPlaying || reduceMotion)
+        ) { timeline in
             ExerciseFigure(
                 motion: motion,
                 phase: phase(at: timeline.date, cadence: Double(metadata.cyclesPerSecond)),
@@ -111,7 +113,6 @@ private struct ExerciseFigure: View {
 
             FigureRenderer(layout: layout, activation: activation).draw(into: &context)
         }
-        .drawingGroup()
     }
 }
 
@@ -132,30 +133,17 @@ struct FigureRenderer {
         for part in orderedParts() {
             switch part {
             case .arm(let side):
-                let root = (side == .left ? layout.leftShoulder : layout.rightShoulder).point
                 let arm = armPath(side)
-                place(
-                    arm,
-                    joinedAt: root,
-                    jointWidth: FigureMetrics.upperArmTop,
-                    shade: shade(forArm: side),
-                    into: &context
-                )
+                place(arm, cutting: armPath(side, trimmedAtRoot: true), shade: shade(forArm: side), into: &context)
                 drawLimbMuscles(on: .arm(side), clippedTo: arm, into: &context)
             case .leg(let side):
-                let root = (side == .left ? layout.leftHip : layout.rightHip).point
                 let leg = legPath(side)
-                place(
-                    leg,
-                    joinedAt: root,
-                    jointWidth: FigureMetrics.thighTop,
-                    shade: shade(forLeg: side),
-                    into: &context
-                )
+                place(leg, cutting: legPath(side, trimmedAtRoot: true), shade: shade(forLeg: side), into: &context)
                 drawLimbMuscles(on: .leg(side), clippedTo: leg, into: &context)
             case .trunk:
                 let trunk = trunkPath()
-                place(trunkGroupPath(trunk: trunk), shade: FigureShading.near, into: &context)
+                let group = trunkGroupPath(trunk: trunk)
+                place(group, cutting: group, shade: FigureShading.near, into: &context)
                 drawMuscles(clippedTo: trunk, into: &context)
             }
         }
@@ -168,21 +156,14 @@ struct FigureRenderer {
     /// separates this part from whatever sits behind it.
     private func place(
         _ path: Path,
-        joinedAt root: CGPoint? = nil,
-        jointWidth: CGFloat = 0,
+        cutting cutShape: Path,
         shade: Color,
         into context: inout GraphicsContext
     ) {
-        // A limb is separated from everything it crosses, but not from the body
-        // it grows out of: the cut is held back from its root joint, so the hip
-        // and the shoulder stay attached instead of showing a dark seam.
-        var cutShape = path
-        if let root {
-            cutShape = cutShape.subtracting(
-                circle(at: root, radius: jointWidth * layout.scale * 0.8)
-            )
-        }
-
+        // A part is separated from everything it crosses, but not from the body
+        // it grows out of, so the cut shape is the limb trimmed back from its
+        // root joint. Trimming beats subtracting a disc: no path boolean runs
+        // in the frame loop at all.
         var cut = context
         cut.blendMode = .destinationOut
         cut.stroke(
@@ -233,36 +214,81 @@ private extension FigureRenderer {
     /// than the ankle. Drawing every segment at one width is most of what made
     /// the earlier figure read as inflated tubing.
     func segment(from start: CGPoint, to end: CGPoint, startWidth: CGFloat, endWidth: CGFloat) -> Path {
+        var path = Path()
+        appendSegment(to: &path, from: start, to: end, startWidth: startWidth, endWidth: endWidth)
+        return path
+    }
+
+    /// Appends one tapered capsule as a single closed outline.
+    ///
+    /// Built as two tangent lines and two end caps rather than a rectangle
+    /// unioned with two circles. Path booleans are expensive and this runs for
+    /// every limb of every frame; traced directly it costs nothing, and
+    /// overlapping subpaths already merge under the non-zero fill rule.
+    func appendSegment(
+        to path: inout Path,
+        from start: CGPoint,
+        to end: CGPoint,
+        startWidth: CGFloat,
+        endWidth: CGFloat,
+        capSegments: Int = 10
+    ) {
         let scale = layout.scale
-        let direction = start.direction(to: end)
-        let across = direction.perpendicular
-        let startRadius = startWidth * scale / 2
-        let endRadius = endWidth * scale / 2
+        let startRadius = max(startWidth * scale / 2, 0.01)
+        let endRadius = max(endWidth * scale / 2, 0.01)
+        let span = hypot(end.x - start.x, end.y - start.y)
 
-        var body = Path()
-        body.move(to: start + across * startRadius)
-        body.addLine(to: end + across * endRadius)
-        body.addLine(to: end - across * endRadius)
-        body.addLine(to: start - across * startRadius)
-        body.closeSubpath()
+        guard span > 0.001 else {
+            appendCircle(to: &path, centre: start, radius: startRadius)
+            return
+        }
 
-        return body
-            .union(circle(at: start, radius: startRadius))
-            .union(circle(at: end, radius: endRadius))
+        let heading = atan2(end.y - start.y, end.x - start.x)
+        // Where the outline leaves the caps: a wider end tilts the tangent.
+        let taper = asin(min(max((startRadius - endRadius) / span, -1), 1))
+        let near = heading + .pi / 2 + taper
+        let far = heading - .pi / 2 - taper
+
+        func point(_ centre: CGPoint, _ radius: CGFloat, _ angle: CGFloat) -> CGPoint {
+            CGPoint(x: centre.x + cos(angle) * radius, y: centre.y + sin(angle) * radius)
+        }
+
+        path.move(to: point(start, startRadius, near))
+        path.addLine(to: point(end, endRadius, near))
+        // Round the far cap, sweeping through the heading.
+        let farSweep = CGFloat.pi + 2 * taper
+        for step in 1...capSegments {
+            let angle = near - farSweep * CGFloat(step) / CGFloat(capSegments)
+            path.addLine(to: point(end, endRadius, angle))
+        }
+        path.addLine(to: point(start, startRadius, far))
+        // And the near cap, sweeping back the other side.
+        let nearSweep = CGFloat.pi - 2 * taper
+        for step in 1...capSegments {
+            let angle = far - nearSweep * CGFloat(step) / CGFloat(capSegments)
+            path.addLine(to: point(start, startRadius, angle))
+        }
+        path.closeSubpath()
     }
 
-    func circle(at centre: CGPoint, radius: CGFloat) -> Path {
-        Path(
-            ellipseIn: CGRect(
-                x: centre.x - radius,
-                y: centre.y - radius,
-                width: radius * 2,
-                height: radius * 2
-            )
-        )
+    /// A circle traced the same way round as `appendSegment` traces its caps.
+    ///
+    /// `Path(ellipseIn:)` winds the other way, and under the non-zero fill rule
+    /// an opposite winding cancels where it overlaps — which is why the head was
+    /// punching a hole through the shoulders on every single pose.
+    func appendCircle(to path: inout Path, centre: CGPoint, radius: CGFloat, segments: Int = 24) {
+        guard radius > 0.01 else { return }
+        path.move(to: CGPoint(x: centre.x + radius, y: centre.y))
+        for step in 1...segments {
+            let angle = -2 * CGFloat.pi * CGFloat(step) / CGFloat(segments)
+            path.addLine(to: CGPoint(x: centre.x + cos(angle) * radius, y: centre.y + sin(angle) * radius))
+        }
+        path.closeSubpath()
     }
 
-    func armPath(_ side: Side) -> Path {
+    /// `trimmedAtRoot` starts the shape a little way down the limb, which is how
+    /// the separation cut is kept off the hip and the shoulder.
+    func armPath(_ side: Side, trimmedAtRoot: Bool = false) -> Path {
         let (shoulder, elbow, hand) = side == .left
             ? (layout.leftShoulder, layout.leftElbow, layout.leftHand)
             : (layout.rightShoulder, layout.rightElbow, layout.rightHand)
@@ -271,46 +297,49 @@ private extension FigureRenderer {
         // arm ends in something shaped like a hand instead of a blunt cap.
         let reach = elbow.point.direction(to: hand.point)
         let fingertips = hand.point + reach * (FigureMetrics.handLength * layout.scale)
+        let start = trimmedAtRoot
+            ? shoulder.point + shoulder.point.direction(to: elbow.point) * (FigureMetrics.rootJoin * layout.scale)
+            : shoulder.point
 
-        return segment(
-            from: shoulder.point, to: elbow.point,
+        var path = Path()
+        appendSegment(
+            to: &path, from: start, to: elbow.point,
             startWidth: FigureMetrics.upperArmTop, endWidth: FigureMetrics.upperArmBottom
         )
-        .union(
-            segment(
-                from: elbow.point, to: hand.point,
-                startWidth: FigureMetrics.forearmTop, endWidth: FigureMetrics.forearmBottom
-            )
+        appendSegment(
+            to: &path, from: elbow.point, to: hand.point,
+            startWidth: FigureMetrics.forearmTop, endWidth: FigureMetrics.forearmBottom
         )
-        .union(
-            segment(
-                from: hand.point, to: fingertips,
-                startWidth: FigureMetrics.handWidth, endWidth: FigureMetrics.handWidth * 0.7
-            )
+        appendSegment(
+            to: &path, from: hand.point, to: fingertips,
+            startWidth: FigureMetrics.handWidth, endWidth: FigureMetrics.handWidth * 0.7
         )
+        return path
     }
 
-    func legPath(_ side: Side) -> Path {
+    func legPath(_ side: Side, trimmedAtRoot: Bool = false) -> Path {
         let (hip, knee, ankle, toe) = side == .left
             ? (layout.leftHip, layout.leftKnee, layout.leftAnkle, layout.leftToe)
             : (layout.rightHip, layout.rightKnee, layout.rightAnkle, layout.rightToe)
 
-        return segment(
-            from: hip.point, to: knee.point,
+        let start = trimmedAtRoot
+            ? hip.point + hip.point.direction(to: knee.point) * (FigureMetrics.rootJoin * layout.scale)
+            : hip.point
+
+        var path = Path()
+        appendSegment(
+            to: &path, from: start, to: knee.point,
             startWidth: FigureMetrics.thighTop, endWidth: FigureMetrics.thighBottom
         )
-        .union(
-            segment(
-                from: knee.point, to: ankle.point,
-                startWidth: FigureMetrics.shinTop, endWidth: FigureMetrics.shinBottom
-            )
+        appendSegment(
+            to: &path, from: knee.point, to: ankle.point,
+            startWidth: FigureMetrics.shinTop, endWidth: FigureMetrics.shinBottom
         )
-        .union(
-            segment(
-                from: ankle.point, to: toe.point,
-                startWidth: FigureMetrics.footHeel, endWidth: FigureMetrics.footToe
-            )
+        appendSegment(
+            to: &path, from: ankle.point, to: toe.point,
+            startWidth: FigureMetrics.footHeel, endWidth: FigureMetrics.footToe
         )
+        return path
     }
 
     /// Trunk, neck and head as one shape, so the head sits on the shoulders
@@ -322,14 +351,13 @@ private extension FigureRenderer {
             y: layout.chest.point.y + (layout.head.point.y - layout.chest.point.y) * FigureMetrics.headSeating
         )
 
-        return trunk
-            .union(
-                segment(
-                    from: layout.chest.point, to: headCentre,
-                    startWidth: FigureMetrics.neck, endWidth: FigureMetrics.neck * 0.85
-                )
-            )
-            .union(circle(at: headCentre, radius: FigureMetrics.headRadius * scale))
+        var path = trunk
+        appendSegment(
+            to: &path, from: layout.chest.point, to: headCentre,
+            startWidth: FigureMetrics.neck, endWidth: FigureMetrics.neck * 0.85
+        )
+        appendCircle(to: &path, centre: headCentre, radius: FigureMetrics.headRadius * scale)
+        return path
     }
 
     /// The silhouette of the trunk: shoulders down to the seat, taken in at the
