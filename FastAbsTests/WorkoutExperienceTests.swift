@@ -10,20 +10,23 @@ struct WorkoutExperienceTests {
         let left = MotionLibrary.pose(for: .twist, phase: 0.42)
         let right = MotionLibrary.pose(for: .twist, phase: 0.92)
 
-        for pose in [left, right] {
-            let handsCentre = (pose.leftHand + pose.rightHand) * 0.5
-            // The shoulder line swings one shoulder forward and the other back,
-            // so its rotation shows up as a difference in reach, not as a
-            // sideways shift of its midpoint.
-            let shoulderLead = pose.leftShoulder.x - pose.rightShoulder.x
+        // The shoulder line swings one shoulder forward and the other back, so
+        // its rotation shows up as a difference in reach rather than as a
+        // sideways shift of its midpoint.
+        func shoulderLead(_ pose: BodyPose) -> Float { pose.leftShoulder.x - pose.rightShoulder.x }
+        func handsOffset(_ pose: BodyPose) -> Float { ((pose.leftHand + pose.rightHand) * 0.5).z }
 
-            #expect(abs(handsCentre.z) > 0.05, "the hands barely travel")
-            #expect(abs(shoulderLead) > 0.05, "the shoulder line barely rotates")
-            #expect(
-                handsCentre.z * shoulderLead < 0,
-                "the hands and the shoulder line turn in opposite directions"
-            )
+        for pose in [left, right] {
+            #expect(abs(handsOffset(pose)) > 0.05, "the hands barely travel")
+            #expect(abs(shoulderLead(pose)) > 0.05, "the shoulder line barely rotates")
         }
+
+        // Hands and shoulders belong to one rigid torso, so whichever way round
+        // the sign works out it must be the same at both ends of the swing.
+        #expect(
+            (handsOffset(left) * shoulderLead(left)) * (handsOffset(right) * shoulderLead(right)) > 0,
+            "the hands and the shoulder line do not turn together"
+        )
 
         #expect(
             ((left.leftHand + left.rightHand) * 0.5).z

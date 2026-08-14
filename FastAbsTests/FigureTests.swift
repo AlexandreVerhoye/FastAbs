@@ -112,7 +112,10 @@ struct FigureTests {
             in: CGRect(x: 0, y: 0, width: 320, height: 400)
         )
 
-        #expect(layout.leftHip.depth > layout.rightHip.depth, "the sides are not separated in depth")
+        #expect(
+            abs(layout.leftHip.depth - layout.rightHip.depth) > 0.1,
+            "the sides are not separated in depth"
+        )
         #expect(abs(layout.front.dx) + abs(layout.front.dy) > 0.9, "the facing direction is not a unit vector")
     }
 

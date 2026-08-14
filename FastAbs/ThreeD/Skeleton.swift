@@ -38,6 +38,9 @@ extension BodyPose {
         BodyPose.normalised(chest - pelvis, fallback: SIMD3<Float>(0, 1, 0))
     }
 
+    /// Height at which a joint is considered to be resting on the mat.
+    static let matHeight: Float = 0.11
+
     var leftToe: SIMD3<Float> { toe(ankle: leftAnkle, knee: leftKnee) }
     var rightToe: SIMD3<Float> { toe(ankle: rightAnkle, knee: rightKnee) }
 
@@ -49,7 +52,11 @@ extension BodyPose {
             front - shin * simd_dot(front, shin),
             fallback: SIMD3<Float>(0, 0, 1)
         )
-        return ankle + forward * 0.145 + shin * 0.03
+        let tip = ankle + forward * 0.145 + shin * 0.03
+        // The foot stops at the mat rather than driving through it. Letting the
+        // toes pull the whole athlete up instead made the body jump whenever a
+        // foot swung low.
+        return SIMD3<Float>(tip.x, max(tip.y, BodyPose.matHeight), tip.z)
     }
 
     static func normalised(_ vector: SIMD3<Float>, fallback: SIMD3<Float>) -> SIMD3<Float> {

@@ -18,7 +18,7 @@ struct MotionVisualMetadata: Equatable, Sendable {
 /// on bone lengths.
 enum MotionLibrary {
     /// Height at which a joint is considered to be resting on the mat.
-    static let groundLevel: Float = 0.11
+    static var groundLevel: Float { BodyPose.matHeight }
 
     static func metadata(for motion: MotionKind) -> MotionVisualMetadata {
         let title: String
@@ -424,55 +424,59 @@ private extension MotionLibrary {
 // MARK: - Base stances
 
 private extension MotionLibrary {
+    /// Lying on the back. The athlete's left is on the negative side: with the
+    /// head toward -X and the belly up, that is which way round a person
+    /// actually is, and getting it backwards pointed the body's whole facing
+    /// into the mat — which is where the feet ended up pointing too.
     static func supineBentKnees() -> BodyPose {
         BodyPose(
             head: SIMD3<Float>(-1.07, 0.256, 0),
             neck: SIMD3<Float>(-0.86, 0.227, 0),
             chest: SIMD3<Float>(-0.56, 0.212, 0),
             pelvis: SIMD3<Float>(0.02, 0.2, 0),
-            leftShoulder: SIMD3<Float>(-0.56, 0.212, 0.27),
-            rightShoulder: SIMD3<Float>(-0.56, 0.212, -0.27),
-            leftElbow: SIMD3<Float>(-0.18, 0.18, 0.33),
-            rightElbow: SIMD3<Float>(-0.18, 0.18, -0.33),
-            leftHand: SIMD3<Float>(0.2, 0.15, 0.36),
-            rightHand: SIMD3<Float>(0.2, 0.15, -0.36),
-            leftHip: SIMD3<Float>(0.02, 0.2, 0.16),
-            rightHip: SIMD3<Float>(0.02, 0.2, -0.16),
-            leftKnee: SIMD3<Float>(0.38, 0.68, 0.17),
-            rightKnee: SIMD3<Float>(0.38, 0.68, -0.17),
-            leftAnkle: SIMD3<Float>(0.56, 0.13, 0.175),
-            rightAnkle: SIMD3<Float>(0.56, 0.13, -0.175)
+            leftShoulder: SIMD3<Float>(-0.56, 0.212, -0.27),
+            rightShoulder: SIMD3<Float>(-0.56, 0.212, 0.27),
+            leftElbow: SIMD3<Float>(-0.18, 0.18, -0.33),
+            rightElbow: SIMD3<Float>(-0.18, 0.18, 0.33),
+            leftHand: SIMD3<Float>(0.2, 0.15, -0.36),
+            rightHand: SIMD3<Float>(0.2, 0.15, 0.36),
+            leftHip: SIMD3<Float>(0.02, 0.2, -0.16),
+            rightHip: SIMD3<Float>(0.02, 0.2, 0.16),
+            leftKnee: SIMD3<Float>(0.38, 0.68, -0.17),
+            rightKnee: SIMD3<Float>(0.38, 0.68, 0.17),
+            leftAnkle: SIMD3<Float>(0.56, 0.13, -0.175),
+            rightAnkle: SIMD3<Float>(0.56, 0.13, 0.175)
         )
     }
 
     static func supineStraight() -> BodyPose {
         var pose = supineBentKnees()
-        pose.leftKnee = SIMD3<Float>(0.62, 0.19, 0.16)
-        pose.rightKnee = SIMD3<Float>(0.62, 0.19, -0.16)
-        pose.leftAnkle = SIMD3<Float>(1.16, 0.135, 0.16)
-        pose.rightAnkle = SIMD3<Float>(1.16, 0.135, -0.16)
+        pose.leftKnee = SIMD3<Float>(0.62, 0.19, -0.16)
+        pose.rightKnee = SIMD3<Float>(0.62, 0.19, 0.16)
+        pose.leftAnkle = SIMD3<Float>(1.16, 0.135, -0.16)
+        pose.rightAnkle = SIMD3<Float>(1.16, 0.135, 0.16)
         return pose
     }
 
     static func supineLegsRaised() -> BodyPose {
         var pose = supineStraight()
-        pose.leftKnee = SIMD3<Float>(0.06, 0.8, 0.16)
-        pose.rightKnee = SIMD3<Float>(0.06, 0.8, -0.16)
-        pose.leftAnkle = SIMD3<Float>(0.05, 1.35, 0.155)
-        pose.rightAnkle = SIMD3<Float>(0.05, 1.35, -0.155)
+        pose.leftKnee = SIMD3<Float>(0.06, 0.8, -0.16)
+        pose.rightKnee = SIMD3<Float>(0.06, 0.8, 0.16)
+        pose.leftAnkle = SIMD3<Float>(0.05, 1.35, -0.155)
+        pose.rightAnkle = SIMD3<Float>(0.05, 1.35, 0.155)
         return pose
     }
 
     static func supineTabletop() -> BodyPose {
         var pose = supineBentKnees()
-        pose.leftKnee = SIMD3<Float>(0.09, 0.8, 0.17)
-        pose.rightKnee = SIMD3<Float>(0.09, 0.8, -0.17)
-        pose.leftAnkle = SIMD3<Float>(0.67, 0.83, 0.17)
-        pose.rightAnkle = SIMD3<Float>(0.67, 0.83, -0.17)
-        pose.leftElbow = SIMD3<Float>(-0.54, 0.6, 0.27)
-        pose.rightElbow = SIMD3<Float>(-0.54, 0.6, -0.27)
-        pose.leftHand = SIMD3<Float>(-0.53, 0.94, 0.26)
-        pose.rightHand = SIMD3<Float>(-0.53, 0.94, -0.26)
+        pose.leftKnee = SIMD3<Float>(0.09, 0.8, -0.17)
+        pose.rightKnee = SIMD3<Float>(0.09, 0.8, 0.17)
+        pose.leftAnkle = SIMD3<Float>(0.67, 0.83, -0.17)
+        pose.rightAnkle = SIMD3<Float>(0.67, 0.83, 0.17)
+        pose.leftElbow = SIMD3<Float>(-0.54, 0.6, -0.27)
+        pose.rightElbow = SIMD3<Float>(-0.54, 0.6, 0.27)
+        pose.leftHand = SIMD3<Float>(-0.53, 0.94, -0.26)
+        pose.rightHand = SIMD3<Float>(-0.53, 0.94, 0.26)
         return pose
     }
 
@@ -545,18 +549,18 @@ private extension MotionLibrary {
             neck: SIMD3<Float>(-0.46, 0.96, 0),
             chest: SIMD3<Float>(-0.31, 0.7, 0),
             pelvis: SIMD3<Float>(0.02, 0.22, 0),
-            leftShoulder: SIMD3<Float>(-0.31, 0.7, 0.27),
-            rightShoulder: SIMD3<Float>(-0.31, 0.7, -0.27),
-            leftElbow: SIMD3<Float>(0.02, 0.62, 0.24),
-            rightElbow: SIMD3<Float>(0.02, 0.62, -0.24),
-            leftHand: SIMD3<Float>(0.3, 0.6, 0.06),
-            rightHand: SIMD3<Float>(0.3, 0.6, -0.06),
-            leftHip: SIMD3<Float>(0.02, 0.22, 0.16),
-            rightHip: SIMD3<Float>(0.02, 0.22, -0.16),
-            leftKnee: SIMD3<Float>(0.45, 0.64, 0.17),
-            rightKnee: SIMD3<Float>(0.45, 0.64, -0.17),
-            leftAnkle: SIMD3<Float>(0.93, 0.31, 0.17),
-            rightAnkle: SIMD3<Float>(0.93, 0.31, -0.17)
+            leftShoulder: SIMD3<Float>(-0.31, 0.7, -0.27),
+            rightShoulder: SIMD3<Float>(-0.31, 0.7, 0.27),
+            leftElbow: SIMD3<Float>(0.02, 0.62, -0.24),
+            rightElbow: SIMD3<Float>(0.02, 0.62, 0.24),
+            leftHand: SIMD3<Float>(0.3, 0.6, -0.06),
+            rightHand: SIMD3<Float>(0.3, 0.6, 0.06),
+            leftHip: SIMD3<Float>(0.02, 0.22, -0.16),
+            rightHip: SIMD3<Float>(0.02, 0.22, 0.16),
+            leftKnee: SIMD3<Float>(0.45, 0.64, -0.17),
+            rightKnee: SIMD3<Float>(0.45, 0.64, 0.17),
+            leftAnkle: SIMD3<Float>(0.93, 0.31, -0.17),
+            rightAnkle: SIMD3<Float>(0.93, 0.31, 0.17)
         )
     }
 
@@ -608,11 +612,14 @@ private extension MotionLibrary {
 private extension MotionLibrary {
     /// Rotates the upper body around the hip axis. Positive amounts curl the
     /// ribs toward the pelvis, negative amounts open the chest away from it.
+    ///
+    /// The axis comes from the body's own frame rather than from the raw hip
+    /// joints: taken from the joints, a stance lying on its back curls the
+    /// opposite way to one lying face down.
     static func curlTorso(_ pose: inout BodyPose, amount: Float) {
-        let axis = safeAxis(pose.rightHip - pose.leftHip, fallback: SIMD3<Float>(0, 0, -1))
-        let angle = amount
+        let axis = safeAxis(simd_cross(pose.up, pose.front), fallback: SIMD3<Float>(0, 0, 1))
         for joint in upperBodyJoints {
-            pose[keyPath: joint] = rotate(pose[keyPath: joint], around: pose.pelvis, axis: axis, angle: angle)
+            pose[keyPath: joint] = rotate(pose[keyPath: joint], around: pose.pelvis, axis: axis, angle: amount)
         }
     }
 
@@ -625,11 +632,11 @@ private extension MotionLibrary {
     }
 
     /// Lateral flexion — the torso leans toward one side without rotating.
+    /// Bending happens about the direction the body faces.
     static func sideBend(_ pose: inout BodyPose, amount: Float) {
-        let axis = safeAxis(pose.chest - pose.pelvis, fallback: SIMD3<Float>(0, 1, 0))
-        let forward = safeAxis(simd_cross(axis, SIMD3<Float>(0, 0, 1)), fallback: SIMD3<Float>(1, 0, 0))
+        let axis = safeAxis(pose.front, fallback: SIMD3<Float>(0, 0, 1))
         for joint in upperBodyJoints {
-            pose[keyPath: joint] = rotate(pose[keyPath: joint], around: pose.pelvis, axis: forward, angle: amount)
+            pose[keyPath: joint] = rotate(pose[keyPath: joint], around: pose.pelvis, axis: axis, angle: amount)
         }
     }
 
@@ -701,17 +708,17 @@ private extension MotionLibrary {
     }
 
     static func tuckLegs(_ pose: inout BodyPose, amount: Float) {
-        pose.leftKnee = mix(pose.leftKnee, SIMD3<Float>(0.02, 0.62, 0.17), t: amount)
-        pose.rightKnee = mix(pose.rightKnee, SIMD3<Float>(0.02, 0.62, -0.17), t: amount)
-        pose.leftAnkle = mix(pose.leftAnkle, SIMD3<Float>(0.3, 0.75, 0.17), t: amount)
-        pose.rightAnkle = mix(pose.rightAnkle, SIMD3<Float>(0.3, 0.75, -0.17), t: amount)
+        pose.leftKnee = mix(pose.leftKnee, SIMD3<Float>(0.02, 0.62, -0.17), t: amount)
+        pose.rightKnee = mix(pose.rightKnee, SIMD3<Float>(0.02, 0.62, 0.17), t: amount)
+        pose.leftAnkle = mix(pose.leftAnkle, SIMD3<Float>(0.3, 0.75, -0.17), t: amount)
+        pose.rightAnkle = mix(pose.rightAnkle, SIMD3<Float>(0.3, 0.75, 0.17), t: amount)
     }
 
     static func pedalLegs(_ pose: inout BodyPose, leftTuck: Float) {
-        let tuckedKnee = SIMD3<Float>(0.04, 0.66, 0.17)
-        let tuckedAnkle = SIMD3<Float>(0.32, 0.72, 0.17)
-        let openKnee = SIMD3<Float>(0.62, 0.4, 0.16)
-        let openAnkle = SIMD3<Float>(1.15, 0.3, 0.16)
+        let tuckedKnee = SIMD3<Float>(0.04, 0.66, -0.17)
+        let tuckedAnkle = SIMD3<Float>(0.32, 0.72, -0.17)
+        let openKnee = SIMD3<Float>(0.62, 0.4, -0.16)
+        let openAnkle = SIMD3<Float>(1.15, 0.3, -0.16)
 
         pose.leftKnee = mix(openKnee, tuckedKnee, t: leftTuck)
         pose.leftAnkle = mix(openAnkle, tuckedAnkle, t: leftTuck)
@@ -744,15 +751,15 @@ private extension MotionLibrary {
 
     static func extendOpposites(_ pose: inout BodyPose, leftLeg: Bool, amount: Float) {
         if leftLeg {
-            pose.leftKnee = mix(pose.leftKnee, SIMD3<Float>(0.6, 0.36, 0.17), t: amount)
-            pose.leftAnkle = mix(pose.leftAnkle, SIMD3<Float>(1.12, 0.24, 0.16), t: amount)
-            pose.rightElbow = mix(pose.rightElbow, SIMD3<Float>(-0.94, 0.42, -0.24), t: amount)
-            pose.rightHand = mix(pose.rightHand, SIMD3<Float>(-1.26, 0.24, -0.2), t: amount)
+            pose.leftKnee = mix(pose.leftKnee, SIMD3<Float>(0.6, 0.36, -0.17), t: amount)
+            pose.leftAnkle = mix(pose.leftAnkle, SIMD3<Float>(1.12, 0.24, -0.16), t: amount)
+            pose.rightElbow = mix(pose.rightElbow, SIMD3<Float>(-0.94, 0.42, 0.24), t: amount)
+            pose.rightHand = mix(pose.rightHand, SIMD3<Float>(-1.26, 0.24, 0.2), t: amount)
         } else {
-            pose.rightKnee = mix(pose.rightKnee, SIMD3<Float>(0.6, 0.36, -0.17), t: amount)
-            pose.rightAnkle = mix(pose.rightAnkle, SIMD3<Float>(1.12, 0.24, -0.16), t: amount)
-            pose.leftElbow = mix(pose.leftElbow, SIMD3<Float>(-0.94, 0.42, 0.24), t: amount)
-            pose.leftHand = mix(pose.leftHand, SIMD3<Float>(-1.26, 0.24, 0.2), t: amount)
+            pose.rightKnee = mix(pose.rightKnee, SIMD3<Float>(0.6, 0.36, 0.17), t: amount)
+            pose.rightAnkle = mix(pose.rightAnkle, SIMD3<Float>(1.12, 0.24, 0.16), t: amount)
+            pose.leftElbow = mix(pose.leftElbow, SIMD3<Float>(-0.94, 0.42, -0.24), t: amount)
+            pose.leftHand = mix(pose.leftHand, SIMD3<Float>(-1.26, 0.24, -0.2), t: amount)
         }
     }
 

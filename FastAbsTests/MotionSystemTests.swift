@@ -275,6 +275,59 @@ struct MotionSystemTests {
         }
     }
 
+    @Test("The athlete faces the right way in every stance")
+    func bodyFacesTheRightWay() {
+        // The facing direction drives where the feet point and which oblique is
+        // on which side, so getting a stance's handedness wrong turns the whole
+        // body inside out.
+        let facingUp: [MotionKind] = [.crunch, .legRaise, .reverseCrunch, .bridge, .hollowHold, .rest, .twist, .vSit]
+        let facingDown: [MotionKind] = [.plank, .plankReach, .mountainClimber, .birdDog, .bearHold, .superman]
+
+        for motion in facingUp {
+            let pose = MotionLibrary.pose(for: motion, phase: 0.25)
+            #expect(pose.front.y > 0.1, "\(motion.rawValue) is lying face down")
+        }
+        for motion in facingDown {
+            let pose = MotionLibrary.pose(for: motion, phase: 0.25)
+            #expect(pose.front.y < -0.1, "\(motion.rawValue) is lying on its back")
+        }
+    }
+
+    @Test("Feet rest on the mat rather than through it")
+    func feetStayOnTheGround() {
+        for motion in Self.allMotions {
+            for phase in Self.phases {
+                let pose = MotionLibrary.pose(for: motion, phase: phase)
+                #expect(
+                    min(pose.leftToe.y, pose.rightToe.y) >= MotionLibrary.groundLevel - 0.001,
+                    "\(motion.rawValue) at phase \(phase) pushes a toe to \(min(pose.leftToe.y, pose.rightToe.y))"
+                )
+            }
+        }
+    }
+
+    @Test("Feet point away from the shin, not back along it")
+    func feetPointForward() {
+        for motion in Self.allMotions {
+            for phase in [Float(0), 0.3, 0.6] {
+                let pose = MotionLibrary.pose(for: motion, phase: phase)
+                for (ankle, knee, toe) in [
+                    (pose.leftAnkle, pose.leftKnee, pose.leftToe),
+                    (pose.rightAnkle, pose.rightKnee, pose.rightToe)
+                ] {
+                    let shin = simd_normalize(ankle - knee)
+                    let foot = simd_normalize(toe - ankle)
+                    // A foot sits roughly square to the shin. Folded back along
+                    // it, the foot reads as pointing the wrong way.
+                    #expect(
+                        simd_dot(shin, foot) > -0.4,
+                        "\(motion.rawValue): the foot folds back along the shin"
+                    )
+                }
+            }
+        }
+    }
+
     private func maximumDistance(_ first: BodyPose, _ second: BodyPose) -> Float {
         zip(first.joints, second.joints)
             .map { simd_distance($0.0, $0.1) }
