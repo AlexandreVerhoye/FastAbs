@@ -53,6 +53,8 @@
 		39D031285B63221A324E1CCF /* ProgressVisualTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 897F8C66C556AF9572C13734 /* ProgressVisualTests.swift */; };
 		69AA899348F99D1B9798693D /* FrenchCopyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9965B366C27C5834E476A05C /* FrenchCopyTests.swift */; };
 		052105650CBA5966AED727AC /* MuscleHeatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF5540B1C60A1A456374D537 /* MuscleHeatTests.swift */; };
+		963F7D4ADEA71F7AF6846DDD /* BodySculpt.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A3BC82A10E742C21E209A9 /* BodySculpt.swift */; };
+		2299C9C5BC51105F7108314D /* BodySculptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18498F74C54BD50F9F7C5BDE /* BodySculptTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -115,6 +117,8 @@
 		897F8C66C556AF9572C13734 /* ProgressVisualTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressVisualTests.swift; sourceTree = "<group>"; };
 		9965B366C27C5834E476A05C /* FrenchCopyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrenchCopyTests.swift; sourceTree = "<group>"; };
 		CF5540B1C60A1A456374D537 /* MuscleHeatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleHeatTests.swift; sourceTree = "<group>"; };
+		D5A3BC82A10E742C21E209A9 /* BodySculpt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodySculpt.swift; sourceTree = "<group>"; };
+		18498F74C54BD50F9F7C5BDE /* BodySculptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodySculptTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -137,6 +141,7 @@
 		13CE8A0FD3321D858C13C49A /* FastAbsTests */ = {
 			isa = PBXGroup;
 			children = (
+				18498F74C54BD50F9F7C5BDE /* BodySculptTests.swift */,
 				CF5540B1C60A1A456374D537 /* MuscleHeatTests.swift */,
 				9965B366C27C5834E476A05C /* FrenchCopyTests.swift */,
 				897F8C66C556AF9572C13734 /* ProgressVisualTests.swift */,
@@ -198,6 +203,7 @@
 		3CFEC33DF271F568AB040EF4 /* ThreeD */ = {
 			isa = PBXGroup;
 			children = (
+				D5A3BC82A10E742C21E209A9 /* BodySculpt.swift */,
 				9ABD60FCE8C5457088990855 /* MuscleActivation.swift */,
 				285D1A8AEBC5BF40D2BDB123 /* MotionTempo.swift */,
 				741E83239F9C99822EBF20AE /* Skeleton.swift */,
@@ -396,6 +402,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2299C9C5BC51105F7108314D /* BodySculptTests.swift in Sources */,
 				052105650CBA5966AED727AC /* MuscleHeatTests.swift in Sources */,
 				69AA899348F99D1B9798693D /* FrenchCopyTests.swift in Sources */,
 				39D031285B63221A324E1CCF /* ProgressVisualTests.swift in Sources */,
@@ -418,6 +425,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				963F7D4ADEA71F7AF6846DDD /* BodySculpt.swift in Sources */,
 				C03FDA1B3FE73A2A7EFF799B /* MuscleActivation.swift in Sources */,
 				BB30C1EAB44BAEA64EEC22C6 /* MotionTempo.swift in Sources */,
 				B90A6D6D25BEB100EFE8AE3A /* Skeleton.swift in Sources */,

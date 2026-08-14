@@ -183,11 +183,13 @@ private extension MotionLibrary {
     static func framing(for motion: MotionKind) -> Framing {
         switch motion {
         case .twist, .vSit:
-            Framing(target: SIMD3<Float>(0.2, 0.6, 0), position: SIMD3<Float>(1.0, 1.35, 4.8))
+            Framing(target: SIMD3<Float>(0.15, 0.62, 0), position: SIMD3<Float>(0.95, 1.4, 5.1))
         case .plank, .sidePlank, .plankReach, .mountainClimber, .birdDog, .bearHold:
-            Framing(target: SIMD3<Float>(0.2, 0.5, 0), position: SIMD3<Float>(1.05, 1.45, 5.2))
+            // On all fours the athlete reaches further toward the head than any
+            // other stance, so this framing sits back and re-centres to keep it in.
+            Framing(target: SIMD3<Float>(0.05, 0.5, 0), position: SIMD3<Float>(0.85, 1.5, 5.8))
         default:
-            Framing(target: SIMD3<Float>(0.1, 0.45, 0), position: SIMD3<Float>(1.1, 1.6, 5.2))
+            Framing(target: SIMD3<Float>(0.05, 0.45, 0), position: SIMD3<Float>(1.0, 1.6, 5.5))
         }
     }
 }
