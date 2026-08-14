@@ -131,7 +131,7 @@ struct SettingsView: View {
             let granted = await NotificationScheduler.requestAndSchedule(hour: reminderHour)
             if !granted {
                 reminderEnabled = false
-                notificationMessage = "Activez les notifications de FastAbs dans Réglages."
+                notificationMessage = "Activez les notifications de Hara dans Réglages."
             } else {
                 notificationMessage = "Un rappel discret sera envoyé chaque jour."
             }
@@ -161,7 +161,7 @@ private struct SafetyView: View {
         List {
             Label("Choisissez un niveau où le mouvement reste contrôlé.", systemImage: "checkmark.shield")
             Label("Arrêtez immédiatement en cas de douleur inhabituelle.", systemImage: "hand.raised.fill")
-            Label("FastAbs ne remplace pas l’avis d’un professionnel de santé.", systemImage: "cross.case.fill")
+            Label("Hara ne remplace pas l’avis d’un professionnel de santé.", systemImage: "cross.case.fill")
         }
         .navigationTitle("Bouger en sécurité")
     }

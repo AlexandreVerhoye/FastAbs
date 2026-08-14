@@ -25,7 +25,7 @@ struct TodayView: View {
                 .padding(.bottom, 30)
             }
             .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("Aplomb")
+            .navigationTitle("Hara")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showsSettings = true } label: {

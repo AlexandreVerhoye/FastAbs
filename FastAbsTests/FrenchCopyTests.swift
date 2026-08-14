@@ -189,6 +189,15 @@ struct FrenchCopyTests {
         }
     }
 
+    @Test("No user-facing copy still carries the old app name")
+    func appNameIsConsistent() {
+        // The app is Hara; strings naming the old one would surface in
+        // notifications, badges and the safety notice.
+        for (source, text) in Self.allCopy {
+            #expect(!text.contains("FastAbs"), "\(source) still says FastAbs")
+        }
+    }
+
     @Test("Challenge units read correctly in French")
     func challengeUnitsAreFormatted() {
         #expect(ChallengeUnit.activeDays.formatted(3) == "3 j")

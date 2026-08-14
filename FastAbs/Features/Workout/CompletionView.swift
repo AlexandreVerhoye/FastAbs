@@ -21,14 +21,14 @@ struct CompletionView: View {
                 }
 
                 AchievementBadge3DView(
-                    title: "Badge quotidien FastAbs",
+                    title: "Badge quotidien Hara",
                     symbol: "bolt.heart.fill",
                     tint: .fastCoral,
                     isUnlocked: true,
                     isAnimated: true
                 )
                     .frame(height: 280)
-                    .accessibilityLabel("Badge quotidien FastAbs remporté")
+                    .accessibilityLabel("Badge quotidien Hara remporté")
 
                 HStack(spacing: 0) {
                     MetricPill(icon: "clock.fill", value: plan.duration.clockText, label: "durée")

@@ -222,7 +222,7 @@ struct RewardsEngine {
         return ChallengeProgress(
             id: "annual-\(dateComponentsID(for: cycle.start))",
             title: "Constellation annuelle",
-            detail: "100 jours actifs sur votre année FastAbs.",
+            detail: "100 jours actifs sur votre année Hara.",
             period: .year,
             unit: .activeDays,
             currentValue: activeDays,

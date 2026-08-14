@@ -12,7 +12,7 @@ enum NotificationScheduler {
             center.removePendingNotificationRequests(withIdentifiers: [identifier])
 
             let content = UNMutableNotificationContent()
-            content.title = "Votre programme FastAbs est prêt"
+            content.title = "Votre programme Hara est prêt"
             content.body = "Quelques minutes suffisent pour entretenir votre série."
             content.sound = .default
 
