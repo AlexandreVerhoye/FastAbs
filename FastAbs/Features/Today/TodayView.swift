@@ -14,18 +14,18 @@ struct TodayView: View {
             ScrollView {
                 LazyVStack(spacing: 26) {
                     greeting
+                    weekStrip
                     if let plan {
                         hero(plan)
                         todayMetrics(plan)
                         programPreview(plan)
-                        dailyProgress
                     }
                 }
                 .padding(.horizontal, 18)
                 .padding(.bottom, 30)
             }
             .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("FastAbs")
+            .navigationTitle("Aplomb")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showsSettings = true } label: {
@@ -52,7 +52,7 @@ struct TodayView: View {
     }
 
     private var greeting: some View {
-        HStack(alignment: .bottom) {
+        HStack(alignment: .center, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(todayTitle)
                     .textCase(.uppercase)
@@ -60,18 +60,54 @@ struct TodayView: View {
                     .foregroundStyle(Color.fastCoral)
                 Text(records.containsCompletedWorkoutToday ? "Objectif du jour atteint" : "Prêt à renforcer vos abdos ?")
                     .font(.title2.bold())
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            Spacer()
+            Spacer(minLength: 0)
             if records.currentStreak > 0 {
-                Label("\(records.currentStreak)", systemImage: "flame.fill")
-                    .font(.headline.monospacedDigit())
-                    .foregroundStyle(.orange)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(.orange.opacity(0.12), in: Capsule())
-                    .accessibilityLabel("Série de \(records.currentStreak) jours")
+                StreakBadge(days: records.currentStreak)
             }
         }
+    }
+
+    /// The week at a glance, so the home screen shows where you stand and not
+    /// only what is next.
+    private var weekStrip: some View {
+        let calendar = Calendar.current
+        let days = WorkoutHistoryAnalytics(calendar: calendar).days(records: records, count: 7)
+
+        return HStack(spacing: 0) {
+            ForEach(days) { day in
+                VStack(spacing: 7) {
+                    Text(day.date, format: .dateTime.weekday(.narrow))
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    ZStack {
+                        Circle()
+                            .fill(day.isActive ? Color.fastCoral : Color.secondary.opacity(0.13))
+                            .frame(width: 30, height: 30)
+                        if day.isActive {
+                            Image(systemName: "checkmark")
+                                .font(.caption2.weight(.black))
+                                .foregroundStyle(.white)
+                        }
+                        if calendar.isDateInToday(day.date) {
+                            Circle()
+                                .stroke(Color.fastCoral, lineWidth: 2)
+                                .frame(width: 38, height: 38)
+                        }
+                    }
+                    .frame(height: 40)
+                }
+                .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(
+                    "\(day.date.formatted(date: .complete, time: .omitted)), \(day.isActive ? "séance faite" : "repos")"
+                )
+            }
+        }
+        .padding(.vertical, 14)
+        .padding(.horizontal, 6)
+        .glassCard()
     }
 
     private var todayTitle: String {
@@ -202,6 +238,29 @@ struct TodayView: View {
 
     private func refreshPlan() {
         plan = appModel.makeTodayWorkout()
+    }
+}
+
+/// The current streak, sized to read at a glance without shouting.
+private struct StreakBadge: View {
+    let days: Int
+
+    var body: some View {
+        VStack(spacing: 1) {
+            HStack(spacing: 3) {
+                Image(systemName: "flame.fill").font(.caption)
+                Text("\(days)").font(.title3.weight(.bold).monospacedDigit())
+            }
+            Text(days == 1 ? "jour" : "jours")
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(.secondary)
+        }
+        .foregroundStyle(Color.fastCoral)
+        .padding(.horizontal, 13)
+        .padding(.vertical, 9)
+        .background(Color.fastCoral.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Série de \(days) jour\(days == 1 ? "" : "s")")
     }
 }
 

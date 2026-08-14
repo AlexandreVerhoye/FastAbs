@@ -309,3 +309,96 @@ private struct FigureCanvas: View {
         }
     }
 }
+
+/// Holes come from subpaths wound against each other under the non-zero fill
+/// rule. They are invisible in code review and glaring on screen.
+///
+/// The check is per body part, not on the assembled figure: the triangle under
+/// a raised bridge is genuinely enclosed by the pose and is meant to be empty,
+/// whereas a single part must always be solid.
+@MainActor
+@Suite("Figure solidity")
+struct FigureSolidityTests {
+    @Test("Every body part fills solid")
+    func partsAreSolid() {
+        for motion in MotionSystemTests.allMotions {
+            for phase in [Float(0), 0.3, 0.6] {
+                for part in FigureRenderer.Part.everything {
+                    guard let rendered = VisualProbe.require(
+                        PartCanvas(motion: motion, phase: phase, part: part),
+                        width: 240,
+                        height: 240,
+                        colorScheme: .dark,
+                        "\(motion.rawValue) \(part) at \(phase)"
+                    ) else { return }
+
+                    #expect(
+                        enclosedEmptyPixels(in: rendered) < 25,
+                        """
+                        \(motion.rawValue) \(part) at \(phase) has \
+                        \(enclosedEmptyPixels(in: rendered)) enclosed empty pixels
+                        """
+                    )
+                }
+            }
+        }
+    }
+
+    /// Empty pixels the background cannot reach by flooding in from the border.
+    private func enclosedEmptyPixels(in rendered: RenderedView) -> Int {
+        let width = rendered.width
+        let height = rendered.height
+        var empty = [Bool](repeating: false, count: width * height)
+        for y in 0..<height {
+            for x in 0..<width {
+                empty[y * width + x] = rendered.pixel(x: x, y: y).alpha <= 0.05
+            }
+        }
+
+        var reached = [Bool](repeating: false, count: width * height)
+        var queue: [Int] = []
+
+        func visit(_ x: Int, _ y: Int) {
+            guard x >= 0, y >= 0, x < width, y < height else { return }
+            let index = y * width + x
+            guard !reached[index], empty[index] else { return }
+            reached[index] = true
+            queue.append(index)
+        }
+
+        for x in 0..<width {
+            visit(x, 0)
+            visit(x, height - 1)
+        }
+        for y in 0..<height {
+            visit(0, y)
+            visit(width - 1, y)
+        }
+        while let index = queue.popLast() {
+            visit(index % width - 1, index / width)
+            visit(index % width + 1, index / width)
+            visit(index % width, index / width - 1)
+            visit(index % width, index / width + 1)
+        }
+
+        return (0..<(width * height)).count { empty[$0] && !reached[$0] }
+    }
+}
+
+private struct PartCanvas: View {
+    let motion: MotionKind
+    let phase: Float
+    let part: FigureRenderer.Part
+
+    var body: some View {
+        Canvas { context, size in
+            let layout = FigureProjection.layout(
+                pose: MotionLibrary.pose(for: motion, phase: phase),
+                within: FigureProjection.bounds(for: motion),
+                in: CGRect(origin: .zero, size: size)
+            )
+            let renderer = FigureRenderer(layout: layout, activation: .idle)
+            context.fill(renderer.path(for: part), with: .color(.white))
+        }
+    }
+}

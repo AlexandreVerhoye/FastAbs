@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "FastAbsIcon.png",
+      "filename" : "AplombIcon.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -12,4 +12,3 @@
     "version" : 1
   }
 }
-

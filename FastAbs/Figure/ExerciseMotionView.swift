@@ -157,6 +157,17 @@ struct FigureRenderer {
         context.fill(headPath(), with: .color(FigureShading.near))
     }
 
+    /// One body part on its own, so each can be checked for solidity in
+    /// isolation — negative space enclosed by a whole pose is legitimate, a
+    /// hole inside a single part never is.
+    func path(for part: Part) -> Path {
+        switch part {
+        case .trunk: trunkGroupPath(trunk: trunkPath())
+        case .arm(let side): armPath(side)
+        case .leg(let side): legPath(side)
+        }
+    }
+
     /// Cuts a shape out of the drawing so far, then fills it.
     ///
     /// The cut is a stroke along the shape's own outline: half of it falls
@@ -189,9 +200,14 @@ struct FigureRenderer {
 
 // MARK: - Ordering
 
-private extension FigureRenderer {
+extension FigureRenderer {
     enum Side { case left, right }
-    enum Part { case arm(Side), leg(Side), trunk }
+    enum Part {
+        case arm(Side), leg(Side), trunk
+
+        static let everything: [Part] = [.trunk, .arm(.left), .arm(.right), .leg(.left), .leg(.right)]
+    }
+
 
     func orderedParts() -> [Part] {
         let parts: [(Part, CGFloat)] = [
@@ -394,16 +410,20 @@ private extension FigureRenderer {
         let waistHalf = FigureMetrics.waistHalfDepth * scale
         let seatHalf = FigureMetrics.seatHalfDepth * scale
 
+        // Traced in the same direction as `appendSegment` traces a limb. Wound
+        // the other way, the neck and every other part sharing this path
+        // cancelled against it under the non-zero fill rule — which is what
+        // opened a hole through the chest exactly where the neck met it.
         var path = Path()
-        path.move(to: seat - across * seatHalf)
-        path.addQuadCurve(to: top - across * chestHalf, control: waist - across * (waistHalf * 0.78))
+        path.move(to: seat + across * seatHalf)
+        path.addQuadCurve(to: top + across * chestHalf, control: waist + across * (waistHalf * 0.78))
         path.addQuadCurve(
-            to: top + across * chestHalf,
+            to: top - across * chestHalf,
             control: top + axis * (FigureMetrics.shoulderCrown * scale)
         )
-        path.addQuadCurve(to: seat + across * seatHalf, control: waist + across * (waistHalf * 0.78))
+        path.addQuadCurve(to: seat - across * seatHalf, control: waist - across * (waistHalf * 0.78))
         path.addQuadCurve(
-            to: seat - across * seatHalf,
+            to: seat + across * seatHalf,
             control: seat - axis * (FigureMetrics.seatCrown * scale)
         )
         path.closeSubpath()
