@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 struct SettingsView: View {
@@ -9,6 +10,10 @@ struct SettingsView: View {
     @AppStorage("reminder-hour") private var reminderHour = 8
     @State private var reminderDate = Calendar.current.date(from: DateComponents(hour: 8)) ?? .now
     @State private var notificationMessage: String?
+
+    @Environment(\.modelContext) private var modelContext
+    @Query private var records: [WorkoutRecord]
+    @State private var showsEraseConfirmation = false
 
     var body: some View {
         @Bindable var appModel = appModel
@@ -42,8 +47,41 @@ struct SettingsView: View {
                 }
 
                 Section("Programme") {
-                    LabeledContent("Durée", value: "\(appModel.preferences.durationMinutes) min")
-                    LabeledContent("Difficulté", value: appModel.preferences.difficulty.title)
+                    // Read-only rows told you what you had already chosen and
+                    // gave you no way to change it. They are controls now.
+                    Stepper(
+                        "Durée : \(appModel.preferences.durationMinutes) min",
+                        value: Binding(
+                            get: { appModel.preferences.durationMinutes },
+                            set: { appModel.preferences.durationMinutes = $0 }
+                        ),
+                        in: 5...20
+                    )
+                    Picker(
+                        "Difficulté",
+                        selection: Binding(
+                            get: { appModel.preferences.difficulty },
+                            set: { appModel.preferences.difficulty = $0 }
+                        )
+                    ) {
+                        ForEach(WorkoutDifficulty.allCases) { level in
+                            Text(level.title).tag(level)
+                        }
+                    }
+                    Toggle(
+                        "Sans sauts",
+                        isOn: Binding(
+                            get: { appModel.preferences.apartmentFriendly },
+                            set: { appModel.preferences.apartmentFriendly = $0 }
+                        )
+                    )
+                    Toggle(
+                        "Préserver la nuque",
+                        isOn: Binding(
+                            get: { appModel.preferences.neckFriendly },
+                            set: { appModel.preferences.neckFriendly = $0 }
+                        )
+                    )
                     Button("Restaurer le programme recommandé") { appModel.restoreRecommendedPlan() }
                 }
 
@@ -52,8 +90,27 @@ struct SettingsView: View {
                     NavigationLink("Sécurité et mouvement") {
                         SafetyView()
                     }
-                    Link("Code source de SevenAbs", destination: URL(string: "https://github.com/AlexandreVerhoye/SevenAbs")!)
                 }
+
+                Section {
+                    Button("Effacer mes données", role: .destructive) {
+                        showsEraseConfirmation = true
+                    }
+                } header: {
+                    Text("Données")
+                } footer: {
+                    Text("Supprime l’historique des séances, les badges et les défis. Vos réglages sont conservés.")
+                }
+            }
+            .confirmationDialog(
+                "Effacer toutes vos données ?",
+                isPresented: $showsEraseConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Tout effacer", role: .destructive) { eraseHistory() }
+                Button("Annuler", role: .cancel) {}
+            } message: {
+                Text("\(records.count) séance\(records.count == 1 ? "" : "s") seront définitivement supprimées. Cette action est irréversible.")
             }
             .navigationTitle("Réglages")
             .navigationBarTitleDisplayMode(.inline)
@@ -83,9 +140,23 @@ struct SettingsView: View {
             notificationMessage = nil
         }
     }
+
+    /// Removes every stored workout. Badges, streaks and challenges are all
+    /// derived from these records, so deleting them clears the lot.
+    private func eraseHistory() {
+        for record in records {
+            modelContext.delete(record)
+        }
+        try? modelContext.save()
+    }
+
 }
 
 private struct SafetyView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query private var records: [WorkoutRecord]
+    @State private var showsEraseConfirmation = false
+
     var body: some View {
         List {
             Label("Choisissez un niveau où le mouvement reste contrôlé.", systemImage: "checkmark.shield")
@@ -94,5 +165,6 @@ private struct SafetyView: View {
         }
         .navigationTitle("Bouger en sécurité")
     }
+
 }
 

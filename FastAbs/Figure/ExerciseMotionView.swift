@@ -15,7 +15,10 @@ struct ExerciseMotionView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Framing for the whole movement, so the athlete never pulses in size.
-    @State private var bounds: CGRect = .zero
+    /// Seeded at init rather than in `onAppear`: a paused figure renders once,
+    /// and that render happened before `onAppear` could supply the framing —
+    /// which left every still thumbnail blank.
+    @State private var bounds: CGRect
     /// Cycles completed before the current run of playback.
     @State private var completedCycles: Double = 0
     @State private var runStartedAt = Date.now
@@ -30,6 +33,7 @@ struct ExerciseMotionView: View {
         self.isPlaying = isPlaying
         self.focusZones = focusZones
         self.accessibilityName = accessibilityName
+        _bounds = State(initialValue: FigureProjection.bounds(for: motion))
     }
 
     init(exercise: Exercise, isPlaying: Bool = true) {
@@ -54,7 +58,6 @@ struct ExerciseMotionView: View {
                 bounds: bounds
             )
         }
-        .onAppear { refreshFraming() }
         .onChange(of: motion) { _, _ in
             refreshFraming()
             completedCycles = 0

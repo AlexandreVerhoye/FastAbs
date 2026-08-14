@@ -143,7 +143,9 @@ struct WorkoutView: View {
 
             if let next = session.nextStep?.exercise {
                 Divider().overlay(.white.opacity(0.1))
+                Spacer(minLength: 0)
                 NextExerciseBriefing(exercise: next, duration: session.nextStep?.duration ?? 0)
+                Spacer(minLength: 0)
             } else {
                 Spacer(minLength: 0)
                 Text("Dernier effort, la séance se termine juste après.")
@@ -325,76 +327,43 @@ struct WorkoutView: View {
     }
 }
 
-/// What the athlete is about to do, laid out while they catch their breath.
+/// What is coming next, while the athlete catches their breath.
+///
+/// Deliberately short. Recovery lasts a few seconds and the athlete is out of
+/// breath: a full briefing here was more than anyone reads, so it is the name,
+/// where to start from, and the one mistake to avoid.
 struct NextExerciseBriefing: View {
     let exercise: Exercise
     let duration: Int
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading, spacing: 7) {
-                    Text("ENSUITE")
-                        .font(.caption2.weight(.heavy))
-                        .tracking(0.6)
-                        .foregroundStyle(.white.opacity(0.5))
-                    Text(exercise.name)
-                        .font(.system(.title2, design: .rounded, weight: .bold))
-                    HStack(spacing: 8) {
-                        ForEach(Array(exercise.zones).sorted { $0.rawValue < $1.rawValue }) { zone in
-                            Label(zone.shortTitle, systemImage: zone.symbol)
-                                .font(.caption2.weight(.semibold))
-                                .padding(.horizontal, 9)
-                                .frame(height: 26)
-                                .background(zone.color.opacity(0.18), in: Capsule())
-                                .foregroundStyle(zone.color)
-                        }
-                        Text("\(duration) s")
-                            .font(.caption2.weight(.semibold).monospacedDigit())
-                            .foregroundStyle(.white.opacity(0.5))
-                    }
-                }
-
-                briefingRow("figure.stand", "Position de départ", exercise.setup, .white.opacity(0.75))
-                briefingRow("arrow.triangle.turn.up.right.diamond.fill", "Exécution", exercise.instruction, .white.opacity(0.75))
-                briefingRow("wind", "Respiration", exercise.breathing, .white.opacity(0.65))
-                briefingRow("exclamationmark.triangle.fill", "À éviter", exercise.mistake, Color.fastOrange.opacity(0.9))
-            }
-            .padding(20)
-        }
-        .scrollIndicators(.hidden)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(
-            """
-            Prochain exercice : \(exercise.name), \(duration) secondes. \
-            Position de départ : \(exercise.setup) \(exercise.instruction) \
-            Respiration : \(exercise.breathing) À éviter : \(exercise.mistake)
-            """
-        )
-    }
-
-    private func briefingRow(
-        _ symbol: String,
-        _ title: String,
-        _ body: String,
-        _ tint: Color
-    ) -> some View {
-        HStack(alignment: .top, spacing: 11) {
-            Image(systemName: symbol)
-                .font(.caption)
-                .foregroundStyle(tint)
-                .frame(width: 20, height: 20)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.caption2.weight(.bold))
-                    .tracking(0.3)
-                    .foregroundStyle(.white.opacity(0.45))
-                Text(body)
-                    .font(.subheadline)
-                    .foregroundStyle(tint)
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("ENSUITE")
+                    .font(.caption2.weight(.heavy))
+                    .tracking(0.6)
+                    .foregroundStyle(.white.opacity(0.5))
+                Text(exercise.name)
+                    .font(.system(.title2, design: .rounded, weight: .bold))
                     .fixedSize(horizontal: false, vertical: true)
             }
+
+            Text(exercise.setup)
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.76))
+                .fixedSize(horizontal: false, vertical: true)
+
+            Label(exercise.mistake, systemImage: "exclamationmark.triangle.fill")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(Color.fastOrange.opacity(0.92))
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(20)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            "Prochain exercice : \(exercise.name), \(duration) secondes. \(exercise.setup) À éviter : \(exercise.mistake)"
+        )
     }
 }
 

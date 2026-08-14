@@ -52,6 +52,7 @@
 		FABD6932895309147510F632 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C05EC6076FC3E65EFA093649 /* TodayView.swift */; };
 		FAF33BD054D0E008D16B2038 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 521F2881C7116AD036EE6B45 /* PrivacyInfo.xcprivacy */; };
 		FF9099FFE2CF7FF2CEE9B3B0 /* WorkoutSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DF8A4C2548B1541C0F636B7 /* WorkoutSession.swift */; };
+		87661A525B671A91926699D1 /* ExerciseLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7F36EDD389397B59B7083C /* ExerciseLibraryView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -113,6 +114,7 @@
 		FB3E1862448AD621D2598878 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		FD04DB66037F6634929F7261 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		FEDFCC2CA07C3E31DB9CED15 /* FastAbsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastAbsApp.swift; sourceTree = "<group>"; };
+		DE7F36EDD389397B59B7083C /* ExerciseLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -296,6 +298,7 @@
 		F95EE48BEA6249A015018798 /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				622550CA979571042B711460 /* Library */,
 				035CC1BD870A5DABEE5E2B3A /* Onboarding */,
 				438AC93FF10D9B3A7F68C940 /* Progress */,
 				352C2AB0120EE13F9B7604E5 /* Rewards */,
@@ -304,6 +307,14 @@
 				27A51E6E1B54BCDC1318019F /* Workout */,
 			);
 			path = Features;
+			sourceTree = "<group>";
+		};
+		622550CA979571042B711460 /* Library */ = {
+			isa = PBXGroup;
+			children = (
+				DE7F36EDD389397B59B7083C /* ExerciseLibraryView.swift */,
+			);
+			path = Library;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -422,6 +433,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				87661A525B671A91926699D1 /* ExerciseLibraryView.swift in Sources */,
 				B9840D7E7366637451623833 /* ExerciseMotionView.swift in Sources */,
 				37DC5E5F776125649179258F /* FigureProjection.swift in Sources */,
 				7089B01232D00F32C25C60FB /* FigureStyle.swift in Sources */,

@@ -15,6 +15,10 @@ struct RootView: View {
                 .tabItem { Label("Progression", systemImage: "chart.xyaxis.line") }
                 .tag(AppTab.progress)
 
+            ExerciseLibraryView()
+                .tabItem { Label("Mouvements", systemImage: "figure.mixed.cardio") }
+                .tag(AppTab.library)
+
             NavigationStack { RewardsView() }
                 .tabItem { Label("Récompenses", systemImage: "medal.fill") }
                 .tag(AppTab.rewards)
@@ -30,5 +34,6 @@ struct RootView: View {
 }
 
 private enum AppTab: Hashable {
+    case library
     case today, progress, rewards
 }
