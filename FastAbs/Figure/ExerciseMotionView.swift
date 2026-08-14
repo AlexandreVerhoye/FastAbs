@@ -133,22 +133,26 @@ struct FigureRenderer {
             switch part {
             case .arm(let side):
                 let root = (side == .left ? layout.leftShoulder : layout.rightShoulder).point
+                let arm = armPath(side)
                 place(
-                    armPath(side),
+                    arm,
                     joinedAt: root,
                     jointWidth: FigureMetrics.upperArmTop,
                     shade: shade(forArm: side),
                     into: &context
                 )
+                drawLimbMuscles(on: .arm(side), clippedTo: arm, into: &context)
             case .leg(let side):
                 let root = (side == .left ? layout.leftHip : layout.rightHip).point
+                let leg = legPath(side)
                 place(
-                    legPath(side),
+                    leg,
                     joinedAt: root,
                     jointWidth: FigureMetrics.thighTop,
                     shade: shade(forLeg: side),
                     into: &context
                 )
+                drawLimbMuscles(on: .leg(side), clippedTo: leg, into: &context)
             case .trunk:
                 let trunk = trunkPath()
                 place(trunkGroupPath(trunk: trunk), shade: FigureShading.near, into: &context)
@@ -361,7 +365,119 @@ private extension FigureRenderer {
     }
 }
 
-// MARK: - Muscles
+// MARK: - Limb muscles
+
+/// A muscle group that lives on a limb rather than on the trunk.
+///
+/// Adding a leg or an upper-body movement needs no new drawing code: it needs
+/// a row here saying which segment the group sits on, how far along it runs and
+/// which face of the limb it is on.
+struct LimbMuscle {
+    enum Segment { case upperArm, forearm, thigh, shin }
+
+    let zone: MuscleZone
+    let segment: Segment
+    /// Where the group starts and ends along its segment, as a fraction.
+    let along: ClosedRange<CGFloat>
+    /// Which face of the limb: +1 is the side the body faces, -1 the back.
+    let facing: CGFloat
+    /// Share of the limb's width the group covers.
+    let spread: CGFloat
+
+    static let all: [LimbMuscle] = [
+        LimbMuscle(zone: .quadriceps, segment: .thigh, along: 0.18...0.88, facing: 1, spread: 0.62),
+        LimbMuscle(zone: .hamstrings, segment: .thigh, along: 0.2...0.85, facing: -1, spread: 0.58),
+        LimbMuscle(zone: .calves, segment: .shin, along: 0.12...0.65, facing: -1, spread: 0.6),
+        LimbMuscle(zone: .shoulders, segment: .upperArm, along: 0...0.34, facing: 0, spread: 0.86),
+        LimbMuscle(zone: .arms, segment: .upperArm, along: 0.32...0.92, facing: 1, spread: 0.6)
+    ]
+}
+
+private extension FigureRenderer {
+    /// Paints every muscle group that belongs to this limb, inside its outline.
+    func drawLimbMuscles(on part: Part, clippedTo limb: Path, into context: inout GraphicsContext) {
+        let segments: [LimbMuscle.Segment]
+        switch part {
+        case .arm: segments = [.upperArm, .forearm]
+        case .leg: segments = [.thigh, .shin]
+        case .trunk: return
+        }
+
+        context.drawLayer { layer in
+            layer.clip(to: limb)
+            for muscle in LimbMuscle.all where segments.contains(muscle.segment) {
+                let intensity = activation[muscle.zone]
+                guard intensity > 0.02 else { continue }
+                guard let bounds = bounds(of: muscle.segment, on: part) else { continue }
+                layer.fill(band(for: muscle, on: bounds), with: .color(paint(intensity)))
+            }
+        }
+    }
+
+    /// The two ends of a limb segment, and how wide it is at each.
+    func bounds(
+        of segment: LimbMuscle.Segment,
+        on part: Part
+    ) -> (start: CGPoint, end: CGPoint, startWidth: CGFloat, endWidth: CGFloat)? {
+        switch (part, segment) {
+        case (.arm(let side), .upperArm):
+            let joints = side == .left
+                ? (layout.leftShoulder, layout.leftElbow)
+                : (layout.rightShoulder, layout.rightElbow)
+            return (joints.0.point, joints.1.point, FigureMetrics.upperArmTop, FigureMetrics.upperArmBottom)
+        case (.arm(let side), .forearm):
+            let joints = side == .left
+                ? (layout.leftElbow, layout.leftHand)
+                : (layout.rightElbow, layout.rightHand)
+            return (joints.0.point, joints.1.point, FigureMetrics.forearmTop, FigureMetrics.forearmBottom)
+        case (.leg(let side), .thigh):
+            let joints = side == .left
+                ? (layout.leftHip, layout.leftKnee)
+                : (layout.rightHip, layout.rightKnee)
+            return (joints.0.point, joints.1.point, FigureMetrics.thighTop, FigureMetrics.thighBottom)
+        case (.leg(let side), .shin):
+            let joints = side == .left
+                ? (layout.leftKnee, layout.leftAnkle)
+                : (layout.rightKnee, layout.rightAnkle)
+            return (joints.0.point, joints.1.point, FigureMetrics.shinTop, FigureMetrics.shinBottom)
+        default:
+            return nil
+        }
+    }
+
+    func band(
+        for muscle: LimbMuscle,
+        on bounds: (start: CGPoint, end: CGPoint, startWidth: CGFloat, endWidth: CGFloat)
+    ) -> Path {
+        let axis = bounds.start.direction(to: bounds.end)
+        let length = hypot(bounds.end.x - bounds.start.x, bounds.end.y - bounds.start.y)
+
+        // The face of the limb the group sits on, taken from the way the body
+        // is turned so a quadriceps stays at the front however the leg swings.
+        var across = axis.perpendicular
+        if muscle.facing != 0 {
+            let sign: CGFloat = (across.dx * layout.front.dx + across.dy * layout.front.dy) >= 0 ? 1 : -1
+            across = across * (sign * muscle.facing)
+        }
+
+        let midpoint = (muscle.along.lowerBound + muscle.along.upperBound) / 2
+        let width = (bounds.startWidth + (bounds.endWidth - bounds.startWidth) * midpoint) * layout.scale
+        let centre = CGPoint(
+            x: bounds.start.x + (bounds.end.x - bounds.start.x) * midpoint,
+            y: bounds.start.y + (bounds.end.y - bounds.start.y) * midpoint
+        ) + (muscle.facing == 0 ? CGVector(dx: 0, dy: 0) : across * (width * 0.24))
+
+        return rounded(
+            centre: centre,
+            across: across,
+            along: axis,
+            halfWidth: width * muscle.spread / 2,
+            halfHeight: length * (muscle.along.upperBound - muscle.along.lowerBound) / 2
+        )
+    }
+}
+
+// MARK: - Trunk muscles
 
 private extension FigureRenderer {
     /// The abdominal map, painted inside the trunk so it takes the body's own
@@ -389,7 +505,8 @@ private extension FigureRenderer {
         // strip of tape rather than a muscle.
         let bands: [(intensity: Float, along: CGFloat, height: CGFloat)] = [
             (activation.lowerAbs, 0.3, 0.22),
-            (activation.upperAbs, 0.56, 0.22)
+            (activation.upperAbs, 0.56, 0.22),
+            (activation.chest, 0.85, 0.24)
         ]
 
         context.drawLayer { layer in
@@ -411,6 +528,27 @@ private extension FigureRenderer {
 
             // Obliques hug the flanks, so they sit at the trunk's edges rather
             // than across the middle of the belly.
+            // The posterior groups sit on the far face of the trunk, which is
+            // the same construction as an oblique on the flank.
+            for (intensity, along, height) in [
+                (activation.glutes, CGFloat(0.06), CGFloat(0.3)),
+                (activation.lowerBack, CGFloat(0.3), CGFloat(0.3)),
+                (activation.upperBack, CGFloat(0.72), CGFloat(0.3))
+            ] where intensity > 0.02 {
+                layer.fill(
+                    rounded(
+                        centre: layout.pelvis.point
+                            + axis * (along * length)
+                            - belly * (FigureMetrics.obliqueOffset * scale),
+                        across: belly,
+                        along: axis,
+                        halfWidth: FigureMetrics.obliqueWidth * scale / 2,
+                        halfHeight: height * length / 2
+                    ),
+                    with: .color(paint(intensity))
+                )
+            }
+
             for (intensity, side) in [
                 (activation.leftOblique, CGFloat(1)),
                 (activation.rightOblique, CGFloat(-1))

@@ -149,7 +149,8 @@ struct MotionSystemTests {
                 let pose = MotionLibrary.pose(for: motion, phase: phase)
                 for joint in pose.joints {
                     #expect(abs(joint.x) < 2.1, "\(motion.rawValue) reaches x=\(joint.x)")
-                    #expect(joint.y < 2.1, "\(motion.rawValue) reaches y=\(joint.y)")
+                    // Standing movements are taller than anything on the mat.
+                    #expect(joint.y < 2.4, "\(motion.rawValue) reaches y=\(joint.y)")
                     #expect(abs(joint.z) < 1.1, "\(motion.rawValue) reaches z=\(joint.z)")
                 }
             }

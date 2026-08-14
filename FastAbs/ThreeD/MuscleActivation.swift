@@ -12,6 +12,14 @@ struct MuscleActivation: Equatable, Sendable {
     var rightOblique: Float = 0
     var deepCore: Float = 0
     var lowerBack: Float = 0
+    var glutes: Float = 0
+    var quadriceps: Float = 0
+    var hamstrings: Float = 0
+    var calves: Float = 0
+    var chest: Float = 0
+    var shoulders: Float = 0
+    var arms: Float = 0
+    var upperBack: Float = 0
 
     static let idle = MuscleActivation()
 
@@ -21,10 +29,12 @@ struct MuscleActivation: Equatable, Sendable {
         max(max(upperAbs, lowerAbs), max(max(leftOblique, rightOblique), deepCore))
     }
 
-    /// Peak intensity across every tracked group, including the lower back.
-    /// Posterior-chain work such as a bridge or a superman barely touches the
-    /// abdominal wall, so `abdominal` alone would under-report the effort.
-    var overall: Float { max(abdominal, lowerBack) }
+    /// Peak intensity across every tracked group. Posterior-chain and lower-body
+    /// work barely touches the abdominal wall, so `abdominal` alone would
+    /// under-report the effort.
+    var overall: Float {
+        MuscleZone.allCases.reduce(abdominal) { max($0, self[$1]) }
+    }
 
     subscript(zone: MuscleZone) -> Float {
         switch zone {
@@ -34,12 +44,22 @@ struct MuscleActivation: Equatable, Sendable {
         case .obliques: max(leftOblique, rightOblique)
         case .deepCore: deepCore
         case .lowerBack: lowerBack
+        case .glutes: glutes
+        case .quadriceps: quadriceps
+        case .hamstrings: hamstrings
+        case .calves: calves
+        case .chest: chest
+        case .shoulders: shoulders
+        case .arms: arms
+        case .upperBack: upperBack
         }
     }
 
     var isValid: Bool {
-        [upperAbs, lowerAbs, leftOblique, rightOblique, deepCore, lowerBack]
-            .allSatisfy { $0.isFinite && $0 >= 0 && $0 <= 1 }
+        MuscleZone.allCases.allSatisfy {
+            let level = self[$0]
+            return level.isFinite && level >= 0 && level <= 1
+        } && [leftOblique, rightOblique].allSatisfy { $0.isFinite && $0 >= 0 && $0 <= 1 }
     }
 }
 
@@ -51,6 +71,14 @@ struct MuscleLoad: Equatable, Sendable {
     var obliques: Float = 0
     var deepCore: Float = 0
     var lowerBack: Float = 0
+    var glutes: Float = 0
+    var quadriceps: Float = 0
+    var hamstrings: Float = 0
+    var calves: Float = 0
+    var chest: Float = 0
+    var shoulders: Float = 0
+    var arms: Float = 0
+    var upperBack: Float = 0
 
     /// Baseline tension held even at the easiest point of the cycle. Isometric
     /// work never fully relaxes, so a plank should not flicker dark.
@@ -117,7 +145,15 @@ extension MuscleActivation {
             leftOblique: intensity(load.obliques, .obliques, side: leftShare),
             rightOblique: intensity(load.obliques, .obliques, side: rightShare),
             deepCore: intensity(load.deepCore, .deepCore),
-            lowerBack: intensity(load.lowerBack, .lowerBack)
+            lowerBack: intensity(load.lowerBack, .lowerBack),
+            glutes: intensity(load.glutes, .glutes),
+            quadriceps: intensity(load.quadriceps, .quadriceps),
+            hamstrings: intensity(load.hamstrings, .hamstrings),
+            calves: intensity(load.calves, .calves),
+            chest: intensity(load.chest, .chest),
+            shoulders: intensity(load.shoulders, .shoulders),
+            arms: intensity(load.arms, .arms),
+            upperBack: intensity(load.upperBack, .upperBack)
         )
     }
 

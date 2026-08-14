@@ -162,6 +162,40 @@ struct MuscleActivationTests {
         }
     }
 
+    @Test("Movements outside the core reach their own muscles")
+    func nonCoreMovementsActivate() {
+        // The whole point of generalising the muscle map: a squat has to light
+        // up quadriceps and glutes, not the abdominal wall.
+        let peak = Self.phases
+            .map { MuscleActivation.make(for: .squat, phase: $0, focus: [.quadriceps, .glutes]) }
+            .max { $0.quadriceps < $1.quadriceps }
+
+        guard let peak else {
+            Issue.record("squat produced no activation")
+            return
+        }
+        #expect(peak.quadriceps > 0.85, "a squat barely loads the quadriceps")
+        #expect(peak.glutes > 0.85, "a squat barely loads the glutes")
+        #expect(peak.upperAbs < 0.4, "a squat should not read as an abdominal exercise")
+    }
+
+    @Test("Every zone the catalog uses can actually be activated")
+    func everyCatalogZoneIsReachable() {
+        // A zone offered as a focus with nothing able to light it would leave a
+        // silent hole in the figure.
+        for zone in MuscleZone.available where zone != .fullCore {
+            let reached = ExerciseCatalog.all
+                .filter { $0.zones.contains(zone) }
+                .flatMap { exercise in
+                    Self.phases.map {
+                        MuscleActivation.make(for: exercise.motion, phase: $0, focus: exercise.zones)[zone]
+                    }
+                }
+                .max() ?? 0
+            #expect(reached > 0.3, "\(zone.rawValue) never lights up (\(reached))")
+        }
+    }
+
     @Test("Recovery keeps the body calm")
     func restIsQuiet() {
         for phase in Self.phases {

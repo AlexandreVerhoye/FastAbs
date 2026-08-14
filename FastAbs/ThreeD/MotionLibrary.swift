@@ -74,6 +74,8 @@ enum MotionLibrary {
             (title, description, cadence) = ("Superman", "Allongé sur le ventre, les bras et les jambes se soulèvent sur une faible amplitude.", 0.24)
         case .bridge:
             (title, description, cadence) = ("Pont fessier", "Le bassin monte jusqu’à aligner épaules, hanches et genoux, puis redescend.", 0.28)
+        case .squat:
+            (title, description, cadence) = ("Squat", "Le bassin recule et descend jusqu’à ce que les cuisses approchent l’horizontale, puis remonte.", 0.3)
         case .rest:
             (title, description, cadence) = ("Récupération", "Le corps reste allongé et le thorax accompagne une respiration lente.", 0.12)
         }
@@ -91,7 +93,7 @@ enum MotionLibrary {
     /// How a repetition is distributed across its cycle.
     static func tempo(for motion: MotionKind) -> MotionTempo {
         switch motion {
-        case .crunch, .reverseCrunch, .toeReach, .hipRaise, .obliqueCrunch, .bridge:
+        case .crunch, .reverseCrunch, .toeReach, .hipRaise, .obliqueCrunch, .bridge, .squat:
             .controlled
         case .legRaise, .vSit, .superman, .sidePlank, .plankReach, .deadBug, .birdDog, .seatedTuck:
             .deliberate
@@ -155,6 +157,12 @@ enum MotionLibrary {
             MuscleLoad(upperAbs: 0.15, lowerAbs: 0.2, obliques: 0.3, deepCore: 0.6, lowerBack: 1, restingTone: 0.2)
         case .bridge:
             MuscleLoad(upperAbs: 0.2, lowerAbs: 0.5, obliques: 0.3, deepCore: 0.7, lowerBack: 0.9, restingTone: 0.15)
+        case .squat:
+            MuscleLoad(
+                deepCore: 0.5, lowerBack: 0.4,
+                glutes: 1, quadriceps: 1, hamstrings: 0.6, calves: 0.45,
+                restingTone: 0.12
+            )
         case .rest:
             MuscleLoad(upperAbs: 0.1, lowerAbs: 0.1, obliques: 0.08, deepCore: 0.14, restingTone: 0.9)
         }
@@ -198,6 +206,10 @@ private extension MotionLibrary {
             // On all fours the athlete reaches further toward the head than any
             // other stance, so this framing sits back and re-centres to keep it in.
             Framing(target: SIMD3<Float>(0.05, 0.5, 0), position: SIMD3<Float>(0.85, 1.5, 5.8))
+        case .squat:
+            // Standing work is tall rather than long, so the camera comes in and
+            // rises to meet it.
+            Framing(target: SIMD3<Float>(0, 1.05, 0), position: SIMD3<Float>(0.6, 1.5, 4.6))
         case .bridge, .bridgeMarch:
             Framing(target: SIMD3<Float>(0.05, 0.5, 0), position: SIMD3<Float>(1.0, 1.6, 5.5))
         default:
@@ -470,6 +482,21 @@ private extension MotionLibrary {
             pose.pelvis.y += effort * 0.42
             return PoseSketch(pose, anchor: \.chest)
 
+        case .squat:
+            var pose = standing()
+            let drop = effort * 0.44
+            // Hips travel back as well as down — a squat that only sinks reads
+            // as a knee bend and puts the load in the wrong place.
+            pose.pelvis += SIMD3<Float>(-drop * 0.42, -drop, 0)
+            pose.leftKnee = aimLimb(
+                from: pose.leftHip, to: pose.leftAnkle, bend: SIMD3<Float>(1, 0, 0), offset: 0.2
+            )
+            pose.rightKnee = aimLimb(
+                from: pose.rightHip, to: pose.rightAnkle, bend: SIMD3<Float>(1, 0, 0), offset: 0.2
+            )
+            curlTorso(&pose, amount: effort * 0.5)
+            return PoseSketch(pose)
+
         case .rest:
             var pose = supineBentKnees()
             pose.chest.y += (breath + 1) * 0.014
@@ -618,6 +645,29 @@ private extension MotionLibrary {
             rightKnee: SIMD3<Float>(0.45, 0.64, 0.17),
             leftAnkle: SIMD3<Float>(0.93, 0.31, -0.17),
             rightAnkle: SIMD3<Float>(0.93, 0.31, 0.17)
+        )
+    }
+
+    /// Upright on both feet, facing along +X. The first stance in the library
+    /// that stands up, which is what any lower-body movement needs.
+    static func standing() -> BodyPose {
+        BodyPose(
+            head: SIMD3<Float>(0.02, 2.09, 0),
+            neck: SIMD3<Float>(0.01, 1.96, 0),
+            chest: SIMD3<Float>(0, 1.7, 0),
+            pelvis: SIMD3<Float>(0, 1.12, 0),
+            leftShoulder: SIMD3<Float>(0, 1.7, -0.25),
+            rightShoulder: SIMD3<Float>(0, 1.7, 0.25),
+            leftElbow: SIMD3<Float>(0.06, 1.33, -0.28),
+            rightElbow: SIMD3<Float>(0.06, 1.33, 0.28),
+            leftHand: SIMD3<Float>(0.12, 1.02, -0.3),
+            rightHand: SIMD3<Float>(0.12, 1.02, 0.3),
+            leftHip: SIMD3<Float>(0, 1.12, -0.155),
+            rightHip: SIMD3<Float>(0, 1.12, 0.155),
+            leftKnee: SIMD3<Float>(0.03, 0.6, -0.16),
+            rightKnee: SIMD3<Float>(0.03, 0.6, 0.16),
+            leftAnkle: SIMD3<Float>(0, 0.11, -0.16),
+            rightAnkle: SIMD3<Float>(0, 0.11, 0.16)
         )
     }
 

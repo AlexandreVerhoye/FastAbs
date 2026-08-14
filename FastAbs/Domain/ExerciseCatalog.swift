@@ -76,6 +76,11 @@ enum ExerciseCatalog {
            "Depuis la planche, pose un genou au sol à la fois sans changer la hauteur du bassin.", "Souffle à chaque appui.", unilateral: true, neck: true, setup: "Planche avant sur les avant-bras, corps aligné.", mistake: "Faire monter le bassin pour aller chercher le sol.", intensity: 1.15),
         ex("seated-knee-tuck", "Genoux-poitrine assis", [.lowerAbs, .fullCore], .hipFlexion, .balanced, .quiet, .seatedTuck,
            "Assis en appui léger sur les mains, éloigne puis ramène les genoux avec le buste fier.", "Expire en ramenant les genoux.", neck: true, setup: "Assis, mains en appui léger derrière les hanches, pieds décollés.", mistake: "S’asseoir sur le bas du dos au lieu de rester grandi.", intensity: 1.25),
+        ex("air-squat", "Squat au poids du corps", [.quadriceps, .glutes], .posterior, .beginner, .quiet, .squat,
+           "Recule le bassin et descends jusqu’à ce que les cuisses approchent l’horizontale, poitrine ouverte.", "Inspire en descendant, expire en remontant.",
+           neck: true, setup: "Debout, pieds largeur de bassin, pointes légèrement ouvertes, bras libres devant.",
+           mistake: "Laisser les genoux rentrer vers l’intérieur pendant la descente.", intensity: 1.2),
+
         ex("plank-jacks", "Planche sautée", [.fullCore, .obliques], .locomotion, .advanced, .dynamic, .plank,
            "Écarte et resserre les pieds en gardant le bassin bas et stable.", "Respire sur un rythme régulier.", neck: true, setup: "Planche haute ou sur avant-bras, pieds joints.", mistake: "Laisser le bassin osciller de haut en bas à chaque écart.", intensity: 1.75)
     ]
