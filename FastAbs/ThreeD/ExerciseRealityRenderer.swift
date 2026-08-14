@@ -149,7 +149,7 @@ private extension ExerciseRealityRenderer {
     func tick(deltaTime: TimeInterval) {
         guard isPlaying, !reduceMotion else { return }
         let cadence = MotionLibrary.metadata(for: motion).cyclesPerSecond
-        phase += min(Float(deltaTime), 1 / 15) * cadence
+        phase += min(Float(deltaTime), 1 / 15) * cadence * 1.2
         if phase >= 1 { phase -= floor(phase) }
         renderCurrentPose()
     }

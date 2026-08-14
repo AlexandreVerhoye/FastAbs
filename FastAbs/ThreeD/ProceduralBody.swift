@@ -8,6 +8,7 @@ final class ProceduralBody {
 
     private let head: ModelEntity
     private let neck: ModelEntity
+    private let upperSpine: ModelEntity
     private let spine: ModelEntity
     private let shoulderLine: ModelEntity
     private let hipLine: ModelEntity
@@ -64,6 +65,7 @@ final class ProceduralBody {
 
         head = Self.sphere(radius: 0.145, material: bodyMaterial)
         neck = Self.segment(material: jointMaterial)
+        upperSpine = Self.segment(material: bodyMaterial)
         spine = Self.segment(material: bodyMaterial)
         shoulderLine = Self.segment(material: bodyMaterial)
         hipLine = Self.segment(material: bodyMaterial)
@@ -90,7 +92,7 @@ final class ProceduralBody {
         jointMarkers = (0..<10).map { _ in Self.sphere(radius: 0.082, material: createdJointMaterial) }
 
         let entities: [Entity] = [
-            torso, pelvis, spine, shoulderLine, hipLine, neck, head,
+            torso, pelvis, spine, upperSpine, shoulderLine, hipLine, neck, head,
             leftUpperArm, leftForearm, rightUpperArm, rightForearm,
             leftThigh, leftShin, rightThigh, rightShin,
             leftHand, rightHand, leftFoot, rightFoot,
@@ -101,6 +103,7 @@ final class ProceduralBody {
 
     func update(pose: BodyPose, highlightedZones: Set<MuscleZone>) {
         Self.placeSegment(neck, from: pose.neck, to: pose.head, radius: 0.072)
+        Self.placeSegment(upperSpine, from: pose.chest, to: pose.neck, radius: 0.085)
         Self.placeSegment(spine, from: pose.pelvis, to: pose.chest, radius: 0.12)
         Self.placeSegment(shoulderLine, from: pose.rightShoulder, to: pose.leftShoulder, radius: 0.1)
         Self.placeSegment(hipLine, from: pose.rightHip, to: pose.leftHip, radius: 0.11)

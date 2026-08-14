@@ -12,7 +12,6 @@ struct ExerciseMotionView: View {
     var accent: Color
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
 
     init(
@@ -43,7 +42,7 @@ struct ExerciseMotionView: View {
         let metadata = MotionLibrary.metadata(for: motion)
         ExerciseRealityView(
             motion: motion,
-            isPlaying: isPlaying && scenePhase == .active,
+            isPlaying: isPlaying,
             reduceMotion: reduceMotion,
             highlightedZones: highlightedZones,
             accent: accent,

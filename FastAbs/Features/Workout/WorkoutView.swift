@@ -5,6 +5,7 @@ struct WorkoutView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage("sound-enabled") private var soundEnabled = true
     @State private var session: WorkoutSession
     @State private var showsExitConfirmation = false
     @State private var didSave = false
@@ -50,133 +51,189 @@ struct WorkoutView: View {
     }
 
     private var workoutContent: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 14) {
             topBar
-            ProgressView(value: session.totalProgress)
-                .tint(.fastCoral)
-                .padding(.horizontal, 20)
-                .padding(.top, 6)
-
-            VStack(spacing: 16) {
-                exerciseHeader
-                motionStage
-                timerAndControls
-            }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 18)
+            motionStage
+            nextStepCard
+            playbackControls
         }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 16)
         .foregroundStyle(.white)
     }
 
     private var topBar: some View {
-        HStack {
-            Button {
-                session.pause()
-                showsExitConfirmation = true
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.headline)
-                    .frame(width: 44, height: 44)
-                    .background(.white.opacity(0.1), in: Circle())
-            }
-            .accessibilityLabel("Quitter la séance")
-            Spacer()
-            Text("\(session.stepIndex + 1) / \(session.plan.steps.count)")
-                .font(.subheadline.monospacedDigit().weight(.semibold))
-                .foregroundStyle(.white.opacity(0.7))
-            Spacer()
-            Image(systemName: session.currentStep.kind == .recovery ? "heart.fill" : "figure.core.training")
-                .frame(width: 44, height: 44)
-                .foregroundStyle(session.currentStep.kind == .recovery ? Color.fastMint : Color.fastCoral)
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 8)
-    }
+        VStack(spacing: 10) {
+            HStack {
+                Button {
+                    session.pause()
+                    showsExitConfirmation = true
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 15, weight: .bold))
+                        .frame(width: 44, height: 44)
+                        .background(.white.opacity(0.1), in: Circle())
+                }
+                .accessibilityLabel("Quitter la séance")
 
-    private var exerciseHeader: some View {
-        VStack(spacing: 8) {
-            if let zone = session.currentStep.exercise?.zones.first {
-                Text(zone.title.uppercased())
-                    .font(.caption.weight(.heavy))
-                    .foregroundStyle(zone.color)
-            } else {
-                Text("RESPIRER").font(.caption.weight(.heavy)).foregroundStyle(Color.fastMint)
+                Spacer()
+
+                Text("ÉTAPE \(session.stepIndex + 1) SUR \(session.plan.steps.count)")
+                    .font(.caption.weight(.bold))
+                    .tracking(0.5)
+                    .foregroundStyle(.white.opacity(0.76))
+                    .padding(.horizontal, 16)
+                    .frame(height: 36)
+                    .background(.white.opacity(0.08), in: Capsule())
+
+                Spacer()
+
+                Button {
+                    soundEnabled.toggle()
+                } label: {
+                    Image(systemName: soundEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .frame(width: 44, height: 44)
+                        .background(.white.opacity(0.1), in: Circle())
+                }
+                .foregroundStyle(soundEnabled ? Color.fastCoral : .white.opacity(0.55))
+                .accessibilityLabel(soundEnabled ? "Désactiver les sons" : "Activer les sons")
             }
-            Text(session.currentStep.title)
-                .font(.system(.title, design: .rounded, weight: .bold))
-                .multilineTextAlignment(.center)
-                .contentTransition(.opacity)
-            Text(session.currentStep.exercise?.instruction ?? "Relâchez les épaules, inspirez lentement et préparez le mouvement suivant.")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.68))
-                .multilineTextAlignment(.center)
-                .lineLimit(3)
-                .frame(minHeight: 54)
+
+            ProgressView(value: session.totalProgress)
+                .tint(.fastCoral)
+                .background(.white.opacity(0.12))
+                .clipShape(Capsule())
         }
     }
 
     private var motionStage: some View {
-        ExerciseMotionView(
-            motion: session.currentStep.motion,
-            isPlaying: session.phase == .running,
-            highlightedZones: session.currentStep.exercise?.zones ?? [.deepCore]
-        )
-        .id(session.currentStep.id)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 30, style: .continuous))
-        .overlay(alignment: .bottomTrailing) {
-            Label("3D native", systemImage: "view.3d")
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.56))
-                .padding(12)
+        ZStack {
+            ExerciseMotionView(
+                motion: session.currentStep.motion,
+                isPlaying: session.phase == .running,
+                highlightedZones: session.currentStep.exercise?.zones ?? [.deepCore]
+            )
+            .id(session.currentStep.id)
+
+            LinearGradient(
+                stops: [
+                    .init(color: .clear, location: 0.48),
+                    .init(color: Color.fastNavy.opacity(0.42), location: 0.68),
+                    .init(color: Color.fastNavy.opacity(0.96), location: 1)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .allowsHitTesting(false)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.fastNavy.opacity(0.72))
+        .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .stroke(.white.opacity(0.08), lineWidth: 1)
+        }
+        .overlay(alignment: .topLeading) { zonePill.padding(16) }
+        .overlay(alignment: .topTrailing) {
+            CircularTimerRing(
+                progress: session.stepProgress,
+                seconds: Int(ceil(session.secondsRemaining)),
+                color: session.currentStep.kind == .recovery ? .fastMint : .fastCoral,
+                diameter: 64
+            )
+            .padding(14)
+        }
+        .overlay(alignment: .bottomLeading) { exerciseSummary.padding(20) }
         .layoutPriority(1)
+        .accessibilityIdentifier("workout.motionStage")
     }
 
-    private var timerAndControls: some View {
-        VStack(spacing: 16) {
-            HStack(spacing: 18) {
-                CircularTimerRing(
-                    progress: session.stepProgress,
-                    seconds: Int(ceil(session.secondsRemaining)),
-                    color: session.currentStep.kind == .recovery ? .fastMint : .fastCoral
-                )
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("Ensuite").font(.caption.weight(.bold)).foregroundStyle(.white.opacity(0.55))
-                    Text(session.nextStep?.title ?? "Séance terminée")
-                        .font(.headline)
-                    if let breathing = session.currentStep.exercise?.breathing {
-                        Label(breathing, systemImage: "wind")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.62))
-                            .lineLimit(2)
-                    }
-                }
-                Spacer()
-            }
+    @ViewBuilder
+    private var zonePill: some View {
+        if let zone = session.currentStep.exercise?.zones.first {
+            Label(zone.title.uppercased(), systemImage: "scope")
+                .foregroundStyle(zone.color)
+                .workoutPill()
+        } else {
+            Label("RÉCUPÉRATION", systemImage: "wind")
+                .foregroundStyle(Color.fastMint)
+                .workoutPill()
+        }
+    }
 
-            HStack(spacing: 14) {
-                Button { session.togglePause() } label: {
-                    Label(session.phase == .paused ? "Reprendre" : "Pause", systemImage: session.phase == .paused ? "play.fill" : "pause.fill")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 15)
-                }
-                .buttonStyle(.plain)
-                .background(.white, in: Capsule())
-                .foregroundStyle(Color.fastNavy)
-
-                Button { session.skip() } label: {
-                    Image(systemName: "forward.end.fill")
-                        .font(.headline)
-                        .frame(width: 52, height: 52)
-                        .background(.white.opacity(0.12), in: Circle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Passer à l’étape suivante")
+    private var exerciseSummary: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text(session.currentStep.title)
+                .font(.system(.title, design: .rounded, weight: .bold))
+                .contentTransition(.opacity)
+            Text(session.currentStep.exercise?.instruction ?? "Relâchez les épaules, inspirez lentement et préparez le mouvement suivant.")
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.74))
+                .lineLimit(3)
+            if let breathing = session.currentStep.exercise?.breathing {
+                Label(breathing, systemImage: "wind")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.62))
+                    .lineLimit(1)
             }
         }
-        .padding(.top, 2)
+        .frame(maxWidth: 300, alignment: .leading)
+    }
+
+    private var nextStepCard: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "forward.fill")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.fastCoral)
+                .frame(width: 34, height: 34)
+                .background(Color.fastCoral.opacity(0.14), in: Circle())
+            VStack(alignment: .leading, spacing: 2) {
+                Text("ENSUITE")
+                    .font(.caption2.weight(.bold))
+                    .tracking(0.6)
+                    .foregroundStyle(.white.opacity(0.5))
+                Text(session.nextStep?.title ?? "Séance terminée")
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+            }
+            Spacer()
+            if let nextStep = session.nextStep {
+                Text("\(nextStep.duration) s")
+                    .font(.caption.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.54))
+            }
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 58)
+        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+
+    private var playbackControls: some View {
+        HStack(spacing: 14) {
+            Button { session.togglePause() } label: {
+                Label(
+                    session.phase == .paused ? "Reprendre" : "Pause",
+                    systemImage: session.phase == .paused ? "play.fill" : "pause.fill"
+                )
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .frame(height: 54)
+            }
+            .buttonStyle(.plain)
+            .background(.white, in: Capsule())
+            .foregroundStyle(Color.fastNavy)
+
+            Button { session.skip() } label: {
+                Image(systemName: "forward.end.fill")
+                    .font(.headline)
+                    .frame(width: 54, height: 54)
+                    .background(.white.opacity(0.12), in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Passer à l’étape suivante")
+        }
     }
 
     private func preparationOverlay(_ count: Int) -> some View {
@@ -209,6 +266,7 @@ private struct CircularTimerRing: View {
     let progress: Double
     let seconds: Int
     let color: Color
+    var diameter: CGFloat = 76
 
     var body: some View {
         ZStack {
@@ -222,8 +280,18 @@ private struct CircularTimerRing: View {
                 .font(.system(.title2, design: .rounded, weight: .bold))
                 .contentTransition(.numericText())
         }
-        .frame(width: 76, height: 76)
+        .frame(width: diameter, height: diameter)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(seconds) secondes restantes")
+    }
+}
+
+private extension View {
+    func workoutPill() -> some View {
+        font(.caption2.weight(.heavy))
+            .tracking(0.4)
+            .padding(.horizontal, 12)
+            .frame(height: 34)
+            .background(.ultraThinMaterial, in: Capsule())
     }
 }
