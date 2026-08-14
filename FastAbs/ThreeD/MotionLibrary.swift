@@ -412,8 +412,8 @@ extension MotionLibrary {
             // Knees hover under the hips with the toes still planted. Simply
             // raising the quadruped's knees left the shins floating flat, which
             // read as nothing recognisable at all.
-            let bearAnkle = SIMD3<Float>(0.56, 0.13, -0.17)
-            let bearKnee = SIMD3<Float>(0.08, 0.3, -0.17)
+            let bearAnkle = SIMD3<Float>(0.60, 0.13, -0.17)
+            let bearKnee = SIMD3<Float>(0.13, 0.25, -0.17)
             pose.leftAnkle = bearAnkle
             pose.rightAnkle = mirrored(bearAnkle)
             pose.leftKnee = bearKnee
@@ -520,6 +520,13 @@ extension MotionLibrary {
             pose.chest.y += rise * 0.34
             pose.neck.y += rise * 0.52
             pose.head.y += rise * 0.62
+            // Hands wide of the head rather than in front of it: run together
+            // and the arms, head and mat merged into one flat white bar with
+            // nothing in it to read as a lift.
+            pose.leftHand.z = 0.31
+            pose.rightHand.z = -0.31
+            pose.leftElbow.z = 0.27
+            pose.rightElbow.z = -0.27
             return PoseSketch(pose, anchor: \.pelvis)
 
         case .bridge:
@@ -605,18 +612,26 @@ private extension MotionLibrary {
         return pose
     }
 
+    /// Hands under the shoulders, arms straight but not locked.
+    ///
+    /// The shoulders used to sit 0.73 above the hands while an arm measures
+    /// 0.70, so the target was out of reach and the solver answered the only
+    /// way it can: full extension, every frame. That is why every plank in the
+    /// app drew its arms as two identical pencil lines with no elbow — the pose
+    /// left no room for one. Lowered to 0.66, the arm keeps a little slack and
+    /// the elbow shows.
     static func highPlank() -> BodyPose {
         BodyPose(
-            head: SIMD3<Float>(-1.0, 0.87, 0),
-            neck: SIMD3<Float>(-0.8, 0.9, 0),
-            chest: SIMD3<Float>(-0.5, 0.86, 0),
+            head: SIMD3<Float>(-0.98, 0.8, 0),
+            neck: SIMD3<Float>(-0.78, 0.82, 0),
+            chest: SIMD3<Float>(-0.48, 0.79, 0),
             pelvis: SIMD3<Float>(0.04, 0.66, 0),
-            leftShoulder: SIMD3<Float>(-0.5, 0.86, 0.27),
-            rightShoulder: SIMD3<Float>(-0.5, 0.86, -0.27),
-            leftElbow: SIMD3<Float>(-0.5, 0.5, 0.41),
-            rightElbow: SIMD3<Float>(-0.5, 0.5, -0.41),
-            leftHand: SIMD3<Float>(-0.5, 0.13, 0.27),
-            rightHand: SIMD3<Float>(-0.5, 0.13, -0.27),
+            leftShoulder: SIMD3<Float>(-0.48, 0.79, 0.27),
+            rightShoulder: SIMD3<Float>(-0.48, 0.79, -0.27),
+            leftElbow: SIMD3<Float>(-0.46, 0.46, 0.33),
+            rightElbow: SIMD3<Float>(-0.46, 0.46, -0.33),
+            leftHand: SIMD3<Float>(-0.48, 0.13, 0.27),
+            rightHand: SIMD3<Float>(-0.48, 0.13, -0.27),
             leftHip: SIMD3<Float>(0.04, 0.66, 0.16),
             rightHip: SIMD3<Float>(0.04, 0.66, -0.16),
             leftKnee: SIMD3<Float>(0.6, 0.53, 0.16),
@@ -647,24 +662,30 @@ private extension MotionLibrary {
         return pose
     }
 
+    /// Back level, not sloping.
+    ///
+    /// The chest sat 0.14 above the pelvis, which drew every all-fours movement
+    /// as someone bent over their own hands — and put the shoulders 0.73 above
+    /// the floor when an arm only reaches 0.70, so the arms came out straight
+    /// sticks for the same reason the plank's did. A table top fixes both.
     static func quadruped() -> BodyPose {
         BodyPose(
-            head: SIMD3<Float>(-0.95, 0.88, 0),
-            neck: SIMD3<Float>(-0.75, 0.92, 0),
-            chest: SIMD3<Float>(-0.45, 0.86, 0),
-            pelvis: SIMD3<Float>(0.1, 0.72, 0),
-            leftShoulder: SIMD3<Float>(-0.45, 0.86, 0.27),
-            rightShoulder: SIMD3<Float>(-0.45, 0.86, -0.27),
-            leftElbow: SIMD3<Float>(-0.45, 0.5, 0.4),
-            rightElbow: SIMD3<Float>(-0.45, 0.5, -0.4),
+            head: SIMD3<Float>(-0.95, 0.78, 0),
+            neck: SIMD3<Float>(-0.76, 0.79, 0),
+            chest: SIMD3<Float>(-0.45, 0.76, 0),
+            pelvis: SIMD3<Float>(0.13, 0.75, 0),
+            leftShoulder: SIMD3<Float>(-0.45, 0.76, 0.27),
+            rightShoulder: SIMD3<Float>(-0.45, 0.76, -0.27),
+            leftElbow: SIMD3<Float>(-0.44, 0.45, 0.32),
+            rightElbow: SIMD3<Float>(-0.44, 0.45, -0.32),
             leftHand: SIMD3<Float>(-0.45, 0.13, 0.25),
             rightHand: SIMD3<Float>(-0.45, 0.13, -0.25),
-            leftHip: SIMD3<Float>(0.1, 0.72, 0.16),
-            rightHip: SIMD3<Float>(0.1, 0.72, -0.16),
-            leftKnee: SIMD3<Float>(0.16, 0.14, 0.17),
-            rightKnee: SIMD3<Float>(0.16, 0.14, -0.17),
-            leftAnkle: SIMD3<Float>(0.74, 0.15, 0.17),
-            rightAnkle: SIMD3<Float>(0.74, 0.15, -0.17)
+            leftHip: SIMD3<Float>(0.13, 0.75, 0.16),
+            rightHip: SIMD3<Float>(0.13, 0.75, -0.16),
+            leftKnee: SIMD3<Float>(0.16, 0.23, 0.17),
+            rightKnee: SIMD3<Float>(0.16, 0.23, -0.17),
+            leftAnkle: SIMD3<Float>(0.64, 0.14, 0.17),
+            rightAnkle: SIMD3<Float>(0.64, 0.14, -0.17)
         )
     }
 

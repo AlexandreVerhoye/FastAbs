@@ -51,10 +51,14 @@ enum MuscleHeat {
 enum FigureMetrics {
     // Limbs taper: a shoulder is thicker than an elbow, a hip than a knee.
     // Drawing every segment at one width is what made the figure read as tubing.
-    static let upperArmTop: CGFloat = 0.125
-    static let upperArmBottom: CGFloat = 0.098
-    static let forearmTop: CGFloat = 0.094
-    static let forearmBottom: CGFloat = 0.072
+    // Arms carried roughly two thirds the girth of a thigh, which is correct on
+    // a person and too thin on a 200-point figure: a straight arm seen in
+    // profile had nothing left to read as a limb and came out a pencil line.
+    // Widened toward three quarters, which is still visibly lighter than a leg.
+    static let upperArmTop: CGFloat = 0.148
+    static let upperArmBottom: CGFloat = 0.114
+    static let forearmTop: CGFloat = 0.108
+    static let forearmBottom: CGFloat = 0.084
     static let thighTop: CGFloat = 0.192
     static let thighBottom: CGFloat = 0.136
     static let shinTop: CGFloat = 0.128
