@@ -16,9 +16,7 @@
 		46F1846C225BF52C6690BC22 /* AchievementBadge3DView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40AA56018AB5FA2C5E21EEEB /* AchievementBadge3DView.swift */; };
 		54A6FD16007114F11E341AA9 /* FastAbsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEDFCC2CA07C3E31DB9CED15 /* FastAbsApp.swift */; };
 		59BC7AA6B5D7AF2B3256AFF5 /* WorkoutExperienceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 203276C2FC8588B695C4C372 /* WorkoutExperienceTests.swift */; };
-		628C556A48CCE9BF65477A2F /* ExerciseMotionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4C3E39C5E3BF7CF37DD2E20 /* ExerciseMotionView.swift */; };
 		62BEDAE709884FCC61B8E5E6 /* RewardsEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9A9BC3CB7EC794833FDE9ED /* RewardsEngine.swift */; };
-		62D5F2CD8D469120F5E29BB1 /* AvatarMeshLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 520E318EA214CA42F0645AA0 /* AvatarMeshLibrary.swift */; };
 		744164288291C36F24FDC202 /* WorkoutEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18DA98ABDF2289EDF4F25E8A /* WorkoutEngineTests.swift */; };
 		815C639D3BAFB8017E7852A6 /* MotionLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24B2ED897FF759606A68B5E6 /* MotionLibrary.swift */; };
 		830D86021B614EC722B454AE /* WorkoutEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1181BB055B967C5810C3367A /* WorkoutEngine.swift */; };
@@ -32,9 +30,7 @@
 		BE4AA46D5C26B142027E9D8C /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB3E1862448AD621D2598878 /* AppModel.swift */; };
 		C3301734709FDD103A0FF93B /* ExerciseCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4FACEE0AEFD0C648395F9C3 /* ExerciseCatalog.swift */; };
 		D17886C8EA90F1336A3F3D63 /* WorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F329FC583BA138BF3A5F43AC /* WorkoutView.swift */; };
-		D98AD3CB7DDA5C534C22C7A2 /* ProceduralBody.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF8B1C130623D37320384208 /* ProceduralBody.swift */; };
 		DCF6D52DF15BF11138E0801E /* RewardsEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AE12B091F10DCD34CDEE8CD /* RewardsEngineTests.swift */; };
-		EBF06BE574B586E565094863 /* ExerciseRealityRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADAE7D1DD333FBFF59BD498B /* ExerciseRealityRenderer.swift */; };
 		ECB68F0E806FFCDBEB036930 /* CustomizationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02BC7BA434DE1444FDE40CDF /* CustomizationView.swift */; };
 		ED6E61206617B2A2B90A918F /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FDEB5FAEC80C1A915752120 /* Theme.swift */; };
 		F643D4D05243E54AFB004D43 /* ExerciseCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A20626BE493ACC4D55783AA /* ExerciseCatalogTests.swift */; };
@@ -52,9 +48,10 @@
 		BDEBBFB7F6E384A233EF407F /* BadgeVisualTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6BCFBA987EAABE0D90D22AE /* BadgeVisualTests.swift */; };
 		39D031285B63221A324E1CCF /* ProgressVisualTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 897F8C66C556AF9572C13734 /* ProgressVisualTests.swift */; };
 		69AA899348F99D1B9798693D /* FrenchCopyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9965B366C27C5834E476A05C /* FrenchCopyTests.swift */; };
-		052105650CBA5966AED727AC /* MuscleHeatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF5540B1C60A1A456374D537 /* MuscleHeatTests.swift */; };
-		963F7D4ADEA71F7AF6846DDD /* BodySculpt.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A3BC82A10E742C21E209A9 /* BodySculpt.swift */; };
-		2299C9C5BC51105F7108314D /* BodySculptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18498F74C54BD50F9F7C5BDE /* BodySculptTests.swift */; };
+		7089B01232D00F32C25C60FB /* FigureStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 097C4A678AF847A9CBFEE88E /* FigureStyle.swift */; };
+		37DC5E5F776125649179258F /* FigureProjection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3694EB6D9CA09D5E38C3A7FB /* FigureProjection.swift */; };
+		B9840D7E7366637451623833 /* ExerciseMotionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4656D8AFFB2CCCDD9453E3AA /* ExerciseMotionView.swift */; };
+		22785201E224790D774E3207 /* FigureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC1EC70AFE07580C969DBA30 /* FigureTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -84,20 +81,16 @@
 		3FDEB5FAEC80C1A915752120 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		40AA56018AB5FA2C5E21EEEB /* AchievementBadge3DView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementBadge3DView.swift; sourceTree = "<group>"; };
 		51717F755A0EFD4E1628D18A /* TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSupport.swift; sourceTree = "<group>"; };
-		520E318EA214CA42F0645AA0 /* AvatarMeshLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarMeshLibrary.swift; sourceTree = "<group>"; };
 		521F2881C7116AD036EE6B45 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		84AD6BC45F55225A4E00CCDC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8DF8A4C2548B1541C0F636B7 /* WorkoutSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSession.swift; sourceTree = "<group>"; };
 		9D40CE65711FF19D8A88D59F /* CompletionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionView.swift; sourceTree = "<group>"; };
-		ADAE7D1DD333FBFF59BD498B /* ExerciseRealityRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseRealityRenderer.swift; sourceTree = "<group>"; };
-		AF8B1C130623D37320384208 /* ProceduralBody.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProceduralBody.swift; sourceTree = "<group>"; };
 		B0C8C5442F689BF42B256415 /* WorkoutModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutModels.swift; sourceTree = "<group>"; };
 		B2BE4CF9C7F23D904AF14C88 /* FastAbs.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FastAbs.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B4FACEE0AEFD0C648395F9C3 /* ExerciseCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseCatalog.swift; sourceTree = "<group>"; };
 		BDB67B8640388D5D3B3F15A8 /* NotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScheduler.swift; sourceTree = "<group>"; };
 		C05EC6076FC3E65EFA093649 /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
 		C9A9BC3CB7EC794833FDE9ED /* RewardsEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardsEngine.swift; sourceTree = "<group>"; };
-		E4C3E39C5E3BF7CF37DD2E20 /* ExerciseMotionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseMotionView.swift; sourceTree = "<group>"; };
 		E9F8581408FFFBEECE2496A1 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		F329FC583BA138BF3A5F43AC /* WorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutView.swift; sourceTree = "<group>"; };
 		F991D5668E1A543D5415BEDA /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
@@ -116,9 +109,10 @@
 		D6BCFBA987EAABE0D90D22AE /* BadgeVisualTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadgeVisualTests.swift; sourceTree = "<group>"; };
 		897F8C66C556AF9572C13734 /* ProgressVisualTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressVisualTests.swift; sourceTree = "<group>"; };
 		9965B366C27C5834E476A05C /* FrenchCopyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrenchCopyTests.swift; sourceTree = "<group>"; };
-		CF5540B1C60A1A456374D537 /* MuscleHeatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleHeatTests.swift; sourceTree = "<group>"; };
-		D5A3BC82A10E742C21E209A9 /* BodySculpt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodySculpt.swift; sourceTree = "<group>"; };
-		18498F74C54BD50F9F7C5BDE /* BodySculptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodySculptTests.swift; sourceTree = "<group>"; };
+		097C4A678AF847A9CBFEE88E /* FigureStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigureStyle.swift; sourceTree = "<group>"; };
+		3694EB6D9CA09D5E38C3A7FB /* FigureProjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigureProjection.swift; sourceTree = "<group>"; };
+		4656D8AFFB2CCCDD9453E3AA /* ExerciseMotionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseMotionView.swift; sourceTree = "<group>"; };
+		BC1EC70AFE07580C969DBA30 /* FigureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigureTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -141,8 +135,7 @@
 		13CE8A0FD3321D858C13C49A /* FastAbsTests */ = {
 			isa = PBXGroup;
 			children = (
-				18498F74C54BD50F9F7C5BDE /* BodySculptTests.swift */,
-				CF5540B1C60A1A456374D537 /* MuscleHeatTests.swift */,
+				BC1EC70AFE07580C969DBA30 /* FigureTests.swift */,
 				9965B366C27C5834E476A05C /* FrenchCopyTests.swift */,
 				897F8C66C556AF9572C13734 /* ProgressVisualTests.swift */,
 				D6BCFBA987EAABE0D90D22AE /* BadgeVisualTests.swift */,
@@ -203,16 +196,11 @@
 		3CFEC33DF271F568AB040EF4 /* ThreeD */ = {
 			isa = PBXGroup;
 			children = (
-				D5A3BC82A10E742C21E209A9 /* BodySculpt.swift */,
 				9ABD60FCE8C5457088990855 /* MuscleActivation.swift */,
 				285D1A8AEBC5BF40D2BDB123 /* MotionTempo.swift */,
 				741E83239F9C99822EBF20AE /* Skeleton.swift */,
 				40AA56018AB5FA2C5E21EEEB /* AchievementBadge3DView.swift */,
-				520E318EA214CA42F0645AA0 /* AvatarMeshLibrary.swift */,
-				E4C3E39C5E3BF7CF37DD2E20 /* ExerciseMotionView.swift */,
-				ADAE7D1DD333FBFF59BD498B /* ExerciseRealityRenderer.swift */,
 				24B2ED897FF759606A68B5E6 /* MotionLibrary.swift */,
-				AF8B1C130623D37320384208 /* ProceduralBody.swift */,
 			);
 			path = ThreeD;
 			sourceTree = "<group>";
@@ -289,6 +277,7 @@
 				F95EE48BEA6249A015018798 /* Features */,
 				83A730540D6CB2FFA861F554 /* Platform */,
 				5FED73175762271CBE5781F5 /* Resources */,
+				844FA2E114E28C30C1EB73B9 /* Figure */,
 				3CFEC33DF271F568AB040EF4 /* ThreeD */,
 			);
 			path = FastAbs;
@@ -305,6 +294,16 @@
 				27A51E6E1B54BCDC1318019F /* Workout */,
 			);
 			path = Features;
+			sourceTree = "<group>";
+		};
+		844FA2E114E28C30C1EB73B9 /* Figure */ = {
+			isa = PBXGroup;
+			children = (
+				097C4A678AF847A9CBFEE88E /* FigureStyle.swift */,
+				3694EB6D9CA09D5E38C3A7FB /* FigureProjection.swift */,
+				4656D8AFFB2CCCDD9453E3AA /* ExerciseMotionView.swift */,
+			);
+			path = Figure;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -402,8 +401,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2299C9C5BC51105F7108314D /* BodySculptTests.swift in Sources */,
-				052105650CBA5966AED727AC /* MuscleHeatTests.swift in Sources */,
+				22785201E224790D774E3207 /* FigureTests.swift in Sources */,
 				69AA899348F99D1B9798693D /* FrenchCopyTests.swift in Sources */,
 				39D031285B63221A324E1CCF /* ProgressVisualTests.swift in Sources */,
 				BDEBBFB7F6E384A233EF407F /* BadgeVisualTests.swift in Sources */,
@@ -425,22 +423,20 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				963F7D4ADEA71F7AF6846DDD /* BodySculpt.swift in Sources */,
+				B9840D7E7366637451623833 /* ExerciseMotionView.swift in Sources */,
+				37DC5E5F776125649179258F /* FigureProjection.swift in Sources */,
+				7089B01232D00F32C25C60FB /* FigureStyle.swift in Sources */,
 				C03FDA1B3FE73A2A7EFF799B /* MuscleActivation.swift in Sources */,
 				BB30C1EAB44BAEA64EEC22C6 /* MotionTempo.swift in Sources */,
 				B90A6D6D25BEB100EFE8AE3A /* Skeleton.swift in Sources */,
 				46F1846C225BF52C6690BC22 /* AchievementBadge3DView.swift in Sources */,
 				BE4AA46D5C26B142027E9D8C /* AppModel.swift in Sources */,
-				62D5F2CD8D469120F5E29BB1 /* AvatarMeshLibrary.swift in Sources */,
 				9B90D702CE99EC32DCAC5216 /* CompletionView.swift in Sources */,
 				ECB68F0E806FFCDBEB036930 /* CustomizationView.swift in Sources */,
 				C3301734709FDD103A0FF93B /* ExerciseCatalog.swift in Sources */,
-				628C556A48CCE9BF65477A2F /* ExerciseMotionView.swift in Sources */,
-				EBF06BE574B586E565094863 /* ExerciseRealityRenderer.swift in Sources */,
 				54A6FD16007114F11E341AA9 /* FastAbsApp.swift in Sources */,
 				815C639D3BAFB8017E7852A6 /* MotionLibrary.swift in Sources */,
 				300AF008AB32927D1187AC5A /* NotificationScheduler.swift in Sources */,
-				D98AD3CB7DDA5C534C22C7A2 /* ProceduralBody.swift in Sources */,
 				A0D73DAAEE4F04E7D73F1577 /* ProgressView.swift in Sources */,
 				62BEDAE709884FCC61B8E5E6 /* RewardsEngine.swift in Sources */,
 				B1EAAA2A1EF8EF0B6DDFB25A /* RewardsView.swift in Sources */,

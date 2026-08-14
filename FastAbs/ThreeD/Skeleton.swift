@@ -24,6 +24,40 @@ struct BodyPose: Equatable, Sendable {
     var rightAnkle: SIMD3<Float>
 }
 
+extension BodyPose {
+    /// The direction the athlete's chest faces.
+    var front: SIMD3<Float> {
+        BodyPose.normalised(
+            simd_cross(leftShoulder - rightShoulder, chest - pelvis),
+            fallback: SIMD3<Float>(0, 0, 1)
+        )
+    }
+
+    /// The direction from hips to shoulders.
+    var up: SIMD3<Float> {
+        BodyPose.normalised(chest - pelvis, fallback: SIMD3<Float>(0, 1, 0))
+    }
+
+    var leftToe: SIMD3<Float> { toe(ankle: leftAnkle, knee: leftKnee) }
+    var rightToe: SIMD3<Float> { toe(ankle: rightAnkle, knee: rightKnee) }
+
+    /// The foot points the way the body faces, square to the shin — lying on
+    /// your back your toes point up, in a plank they point at the floor.
+    private func toe(ankle: SIMD3<Float>, knee: SIMD3<Float>) -> SIMD3<Float> {
+        let shin = BodyPose.normalised(ankle - knee, fallback: SIMD3<Float>(0, -1, 0))
+        let forward = BodyPose.normalised(
+            front - shin * simd_dot(front, shin),
+            fallback: SIMD3<Float>(0, 0, 1)
+        )
+        return ankle + forward * 0.145 + shin * 0.03
+    }
+
+    static func normalised(_ vector: SIMD3<Float>, fallback: SIMD3<Float>) -> SIMD3<Float> {
+        let length = simd_length(vector)
+        return length > 1e-5 ? vector / length : simd_normalize(fallback)
+    }
+}
+
 /// Fixed bone lengths for the avatar.
 ///
 /// Poses are authored as target *points* because that is how a movement reads
