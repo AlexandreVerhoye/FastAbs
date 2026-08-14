@@ -245,7 +245,7 @@ extension MotionLibrary {
         case .crunch:
             var pose = supineBentKnees()
             curlTorso(&pose, amount: effort * 0.62)
-            handsBehindHead(&pose)
+            armsCrossedOnChest(&pose)
             return PoseSketch(pose)
 
         case .reverseCrunch:
@@ -305,7 +305,7 @@ extension MotionLibrary {
             var pose = supineBentKnees()
             pedalLegs(&pose, leftTuck: 0.5 + swing * 0.5)
             curlTorso(&pose, amount: 0.4)
-            handsBehindHead(&pose)
+            armsCrossedOnChest(&pose)
             twistTorso(&pose, amount: -swing * 0.34)
             return PoseSketch(pose)
 
@@ -336,7 +336,7 @@ extension MotionLibrary {
         case .obliqueCrunch:
             var pose = supineBentKnees()
             curlTorso(&pose, amount: 0.2 + abs(swing) * 0.4)
-            handsBehindHead(&pose)
+            armsCrossedOnChest(&pose)
             twistTorso(&pose, amount: swing * 0.44)
             return PoseSketch(pose)
 
@@ -527,6 +527,11 @@ extension MotionLibrary {
             pose.rightHand.z = -0.31
             pose.leftElbow.z = 0.27
             pose.rightElbow.z = -0.27
+            // And turned toward the viewer, because side-on a prone athlete is
+            // a horizontal bar: the lift happens along the one axis the profile
+            // compresses hardest. A three-quarter angle gives the arch somewhere
+            // to go without giving this movement its own camera.
+            yaw(&pose, by: 0.62)
             return PoseSketch(pose, anchor: \.pelvis)
 
         case .bridge:
@@ -848,13 +853,44 @@ private extension MotionLibrary {
         }
     }
 
-    static func handsBehindHead(_ pose: inout BodyPose) {
+    /// Turns the whole athlete about the vertical through their hips.
+    ///
+    /// The projection is a single fixed viewpoint for every movement, which is
+    /// what keeps the figure consistent — so a pose that reads badly from the
+    /// side cannot ask for its own camera. It can turn instead, which comes to
+    /// the same thing and costs nothing anywhere else.
+    static func yaw(_ pose: inout BodyPose, by angle: Float) {
+        let pivot = pose.pelvis
+        let axis = SIMD3<Float>(0, 1, 0)
+        for joint in allJoints {
+            pose[keyPath: joint] = rotate(pose[keyPath: joint], around: pivot, axis: axis, angle: angle)
+        }
+    }
+
+    /// Arms folded across the chest.
+    ///
+    /// Was hands behind the head, and no arrangement of the elbows could fix
+    /// what that draws: two arms straddling the skull leave a pocket of
+    /// background between them, and a small dark shape ringed by white reads as
+    /// a hole punched in the athlete however real it is. Crossing the arms
+    /// removes it — and it is the better cue anyway. Hands at the head is what
+    /// makes people haul on their own neck, which is exactly why these
+    /// movements were the ones excluded from neck-friendly sessions.
+    static func armsCrossedOnChest(_ pose: inout BodyPose) {
         let lateral = safeAxis(pose.leftShoulder - pose.rightShoulder, fallback: SIMD3<Float>(0, 0, 1))
-        let back = safeAxis(pose.head - pose.chest, fallback: SIMD3<Float>(-1, 0, 0))
-        pose.leftHand = pose.neck + lateral * 0.14 + back * 0.07
-        pose.rightHand = pose.neck - lateral * 0.14 + back * 0.07
-        pose.leftElbow = pose.leftShoulder + lateral * 0.3 + back * 0.05
-        pose.rightElbow = pose.rightShoulder - lateral * 0.3 + back * 0.05
+        let up = safeAxis(pose.chest - pose.pelvis, fallback: SIMD3<Float>(0, 1, 0))
+        let front = safeAxis(pose.front, fallback: SIMD3<Float>(0, 0, 1))
+
+        // Each hand rests on the opposite shoulder, so the forearms lie across
+        // the chest and touch: one mass, nothing enclosed.
+        pose.leftHand = pose.rightShoulder + lateral * 0.04 + front * 0.09 - up * 0.02
+        pose.rightHand = pose.leftShoulder - lateral * 0.04 + front * 0.09 - up * 0.02
+        pose.leftElbow = aimLimb(
+            from: pose.leftShoulder, to: pose.leftHand, bend: front * 0.6 - up
+        )
+        pose.rightElbow = aimLimb(
+            from: pose.rightShoulder, to: pose.rightHand, bend: front * 0.6 - up
+        )
     }
 
     /// Hands slide under the seat, which is where they belong for flutter and
@@ -1010,6 +1046,12 @@ private extension MotionLibrary {
             pose.leftAnkle = mix(pose.leftAnkle, ankle, t: amount)
         }
     }
+
+    static let allJoints: [any WritableKeyPath<BodyPose, SIMD3<Float>> & Sendable] = [
+        \.head, \.neck, \.chest, \.pelvis,
+        \.leftShoulder, \.rightShoulder, \.leftElbow, \.rightElbow, \.leftHand, \.rightHand,
+        \.leftHip, \.rightHip, \.leftKnee, \.rightKnee, \.leftAnkle, \.rightAnkle
+    ]
 
     static let upperBodyJoints: [any WritableKeyPath<BodyPose, SIMD3<Float>> & Sendable] = [
         \.chest, \.neck, \.head,
