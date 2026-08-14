@@ -9,6 +9,9 @@ struct WorkoutView: View {
     @State private var session: WorkoutSession
     @State private var showsExitConfirmation = false
     @State private var didSave = false
+    /// Held so the effort rating lands on this session's record rather than on
+    /// whatever happens to be newest in the store.
+    @State private var saved: WorkoutRecord?
 
     init(plan: WorkoutPlan) {
         _session = State(initialValue: WorkoutSession(plan: plan))
@@ -19,8 +22,13 @@ struct WorkoutView: View {
             LinearGradient.fastNight.ignoresSafeArea()
 
             if session.phase == .completed {
-                CompletionView(plan: session.plan, onDone: { dismiss() })
-                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                CompletionView(
+                    plan: session.plan,
+                    activeSeconds: Int(session.activeSeconds.rounded()),
+                    onRate: { record(effort: $0) },
+                    onDone: { dismiss() }
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.96)))
             } else {
                 workoutContent
             }
@@ -33,20 +41,29 @@ struct WorkoutView: View {
         .interactiveDismissDisabled()
         .confirmationDialog("Arrêter la séance ?", isPresented: $showsExitConfirmation, titleVisibility: .visible) {
             Button("Quitter la séance", role: .destructive) {
+                saveAbandonedIfWorthKeeping()
                 session.abandon()
                 dismiss()
             }
-            Button("Reprendre", role: .cancel) { session.resume() }
+            // Only picks the session back up if the app was the one that put it
+            // down. Resuming unconditionally restarted a session the athlete
+            // had paused on purpose.
+            Button("Reprendre", role: .cancel) { session.resumeIfSystemPaused() }
         } message: {
-            Text("Votre progression sur cette séance ne sera pas enregistrée.")
+            Text("Les séances de plus de trois minutes restent dans votre historique.")
         }
-        .onAppear { session.start() }
+        .onAppear {
+            Haptics.warmUp()
+            session.start()
+        }
         .onDisappear { session.stop() }
         .onChange(of: session.phase) { _, phase in
             if phase == .completed { saveCompletionOnce() }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase != .active { session.handleAppBecameInactive() }
+            // Only a real trip to the background. Reacting to every inactive
+            // phase meant a notification banner paused the workout.
+            if phase == .background { session.handleAppEnteredBackground() }
         }
     }
 
@@ -54,7 +71,11 @@ struct WorkoutView: View {
         VStack(spacing: 14) {
             topBar
             motionStage
-            nextStepCard
+            // The recovery and transition screens already announce what is
+            // coming; repeating it underneath was the clutter.
+            if session.currentStep.kind == .exercise {
+                nextStepCard
+            }
             playbackControls
         }
         .padding(.horizontal, 16)
@@ -67,7 +88,8 @@ struct WorkoutView: View {
         VStack(spacing: 10) {
             HStack {
                 Button {
-                    session.pause()
+                    Haptics.tap()
+                    session.pause(bySystem: true)
                     showsExitConfirmation = true
                 } label: {
                     Image(systemName: "xmark")
@@ -79,7 +101,7 @@ struct WorkoutView: View {
 
                 Spacer()
 
-                Text("ÉTAPE \(session.stepIndex + 1) SUR \(session.plan.steps.count)")
+                Text("\(session.completedExerciseCount + 1) SUR \(session.plan.exerciseCount)")
                     .font(.caption.weight(.bold))
                     .tracking(0.5)
                     .foregroundStyle(.white.opacity(0.76))
@@ -90,6 +112,7 @@ struct WorkoutView: View {
                 Spacer()
 
                 Button {
+                    Haptics.selection()
                     soundEnabled.toggle()
                 } label: {
                     Image(systemName: soundEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
@@ -110,60 +133,44 @@ struct WorkoutView: View {
 
     @ViewBuilder
     private var motionStage: some View {
-        if session.currentStep.kind == .recovery {
-            recoveryStage
-        } else {
-            exerciseStage
+        switch session.currentStep.kind {
+        case .recovery: recoveryStage
+        case .transition: transitionStage
+        case .exercise: exerciseStage
         }
     }
 
     /// Recovery is dead time on screen: an idle animation teaches nothing,
     /// while the seconds before a movement are the best moment to explain it.
     private var recoveryStage: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Label("RÉCUPÉRATION", systemImage: "wind")
-                        .font(.caption2.weight(.heavy))
-                        .tracking(0.4)
-                        .foregroundStyle(Color.fastMint)
-                    Text("Relâchez les épaules et respirez profondément.")
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.7))
-                }
-                Spacer(minLength: 12)
-                CircularTimerRing(
-                    progress: session.stepProgress,
-                    seconds: Int(ceil(session.secondsRemaining)),
-                    color: .fastMint,
-                    diameter: 64
-                )
-            }
-            .padding(20)
-
-            if let next = session.nextStep?.exercise {
-                Divider().overlay(.white.opacity(0.1))
-                Spacer(minLength: 0)
-                NextExerciseBriefing(exercise: next, duration: session.nextStep?.duration ?? 0)
-                Spacer(minLength: 0)
-            } else {
-                Spacer(minLength: 0)
-                Text("Dernier effort, la séance se termine juste après.")
-                    .font(.headline)
-                    .foregroundStyle(.white.opacity(0.82))
-                    .padding(20)
-                Spacer(minLength: 0)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(Color.fastNavy.opacity(0.72))
-        .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .stroke(.white.opacity(0.08), lineWidth: 1)
-        }
-        .layoutPriority(1)
+        UpNextStage(
+            eyebrow: "RÉCUPÉRATION",
+            symbol: "wind",
+            tint: .fastMint,
+            caption: "Relâchez les épaules et respirez profondément.",
+            progress: session.stepProgress,
+            seconds: Int(ceil(session.secondsRemaining)),
+            showsRing: true,
+            next: session.nextExerciseStep
+        )
         .accessibilityIdentifier("workout.recoveryStage")
+    }
+
+    /// Five seconds to change position. Same layout as recovery so the two read
+    /// as one idea, with a bar instead of a ring — a countdown this short is a
+    /// nudge, not something to watch.
+    private var transitionStage: some View {
+        UpNextStage(
+            eyebrow: "EN PLACE",
+            symbol: "figure.stand",
+            tint: .fastCoral,
+            caption: "Installez-vous pour le mouvement suivant.",
+            progress: session.stepProgress,
+            seconds: Int(ceil(session.secondsRemaining)),
+            showsRing: false,
+            next: session.nextExerciseStep
+        )
+        .accessibilityIdentifier("workout.transitionStage")
     }
 
     private var exerciseStage: some View {
@@ -172,15 +179,16 @@ struct WorkoutView: View {
                 motion: session.currentStep.motion,
                 isPlaying: session.phase == .running,
                 focusZones: session.currentStep.exercise?.zones ?? [.deepCore],
+                mirrored: session.currentStep.isMirrored,
                 accessibilityName: session.currentStep.exercise?.name
             )
             .id(session.currentStep.id)
 
             LinearGradient(
                 stops: [
-                    .init(color: .clear, location: 0.48),
-                    .init(color: Color.fastNavy.opacity(0.42), location: 0.68),
-                    .init(color: Color.fastNavy.opacity(0.96), location: 1)
+                    .init(color: .clear, location: 0.44),
+                    .init(color: Color.fastNavy.opacity(0.46), location: 0.64),
+                    .init(color: Color.fastNavy.opacity(0.97), location: 1)
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -199,7 +207,7 @@ struct WorkoutView: View {
             CircularTimerRing(
                 progress: session.stepProgress,
                 seconds: Int(ceil(session.secondsRemaining)),
-                color: session.currentStep.kind == .recovery ? .fastMint : .fastCoral,
+                color: .fastCoral,
                 diameter: 64
             )
             .padding(14)
@@ -211,40 +219,43 @@ struct WorkoutView: View {
 
     @ViewBuilder
     private var zonePill: some View {
-        if let zone = session.currentStep.exercise?.zones.first {
-            Label(zone.title.uppercased(), systemImage: "scope")
-                .foregroundStyle(zone.color)
-                .workoutPill()
-        } else {
-            Label("RÉCUPÉRATION", systemImage: "wind")
-                .foregroundStyle(Color.fastMint)
-                .workoutPill()
+        HStack(spacing: 8) {
+            if let pattern = session.currentStep.exercise?.pattern {
+                Label(pattern.shortTitle.uppercased(), systemImage: pattern.symbol)
+                    .foregroundStyle(pattern.color)
+                    .workoutPill()
+            }
+            if let side = session.currentStep.side {
+                Label(side.title.uppercased(), systemImage: "arrow.left.and.right")
+                    .foregroundStyle(Color.fastOrange)
+                    .workoutPill()
+                    .transition(.scale.combined(with: .opacity))
+            }
         }
+        .animation(.snappy, value: session.currentStep.id)
     }
 
     private var exerciseSummary: some View {
-        VStack(alignment: .leading, spacing: 7) {
+        VStack(alignment: .leading, spacing: 10) {
             Text(session.currentStep.title)
                 .font(.system(.title, design: .rounded, weight: .bold))
                 .contentTransition(.opacity)
-            Text(session.currentStep.exercise?.instruction ?? "Relâchez les épaules, inspirez lentement et préparez le mouvement suivant.")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.74))
-                .lineLimit(3)
-            if let breathing = session.currentStep.exercise?.breathing {
-                Label(breathing, systemImage: "wind")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.62))
-                    .lineLimit(1)
-            }
-            if let mistake = session.currentStep.exercise?.mistake {
-                Label(mistake, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(Color.fastOrange.opacity(0.85))
-                    .lineLimit(2)
-            }
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+
+            CoachingTicker(
+                cues: session.currentStep.exercise.map(cues(for:)) ?? [],
+                isPlaying: session.phase == .running
+            )
+            .id(session.currentStep.exercise?.id ?? "none")
         }
-        .frame(maxWidth: 300, alignment: .leading)
+        .frame(maxWidth: 320, alignment: .leading)
+    }
+
+    /// What the coach says, in the order they would say it: the movement first,
+    /// then the breath, then the details.
+    private func cues(for exercise: Exercise) -> [String] {
+        [exercise.instruction, exercise.breathing] + exercise.tips
     }
 
     private var nextStepCard: some View {
@@ -279,10 +290,11 @@ struct WorkoutView: View {
         HStack(spacing: 14) {
             Button { session.togglePause() } label: {
                 Label(
-                    session.phase == .paused ? "Reprendre" : "Pause",
-                    systemImage: session.phase == .paused ? "play.fill" : "pause.fill"
+                    session.phase.isPaused ? "Reprendre" : "Pause",
+                    systemImage: session.phase.isPaused ? "play.fill" : "pause.fill"
                 )
                 .font(.headline)
+                .contentTransition(.symbolEffect(.replace))
                 .frame(maxWidth: .infinity)
                 .frame(height: 54)
             }
@@ -290,7 +302,10 @@ struct WorkoutView: View {
             .background(.white, in: Capsule())
             .foregroundStyle(Color.fastNavy)
 
-            Button { session.skip() } label: {
+            Button {
+                Haptics.tap()
+                session.skip()
+            } label: {
                 Image(systemName: "forward.end.fill")
                     .font(.headline)
                     .frame(width: 54, height: 54)
@@ -299,6 +314,7 @@ struct WorkoutView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Passer à l’étape suivante")
         }
+        .animation(.snappy(duration: 0.22), value: session.phase)
     }
 
     private func preparationOverlay(_ count: Int) -> some View {
@@ -319,51 +335,229 @@ struct WorkoutView: View {
         .accessibilityLabel("Départ dans \(count) secondes. Premier exercice : \(session.currentStep.title)")
     }
 
+    // MARK: - Recording
+
     private func saveCompletionOnce() {
         guard !didSave else { return }
         didSave = true
-        modelContext.insert(WorkoutRecord(plan: session.plan))
+        let record = WorkoutRecord(
+            plan: session.plan,
+            activeDuration: Int(session.activeSeconds.rounded())
+        )
+        modelContext.insert(record)
+        saved = record
         try? modelContext.save()
+    }
+
+    /// A session ended early is still training. Dropping it entirely made
+    /// streaks lie about days the athlete had genuinely worked.
+    private func saveAbandonedIfWorthKeeping() {
+        guard !didSave else { return }
+        let worked = Int(session.activeSeconds.rounded())
+        guard worked >= WorkoutHistoryAnalytics.minimumActiveDuration else { return }
+        didSave = true
+        let record = WorkoutRecord(plan: session.plan, activeDuration: worked, wasCompleted: false)
+        // Filed against what was actually attempted, so the completion ratio
+        // reflects the session rather than the plan it was cut from.
+        record.plannedDuration = worked
+        record.exerciseIDs = Array(
+            session.plan.movements.prefix(max(1, session.completedExerciseCount)).map(\.id)
+        )
+        modelContext.insert(record)
+        try? modelContext.save()
+    }
+
+    private func record(effort: PerceivedEffort) {
+        guard let saved else { return }
+        saved.perceivedEffortRaw = effort.rawValue
+        try? modelContext.save()
+    }
+}
+
+/// The screen between two movements — recovery or a change of position.
+///
+/// One layout for both, because they answer the same question: what is coming,
+/// and what should I do about it right now.
+struct UpNextStage: View {
+    let eyebrow: String
+    let symbol: String
+    let tint: Color
+    let caption: String
+    let progress: Double
+    let seconds: Int
+    let showsRing: Bool
+    let next: WorkoutStep?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Label(eyebrow, systemImage: symbol)
+                        .font(.caption2.weight(.heavy))
+                        .tracking(0.4)
+                        .foregroundStyle(tint)
+                    Text(caption)
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.7))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 12)
+                if showsRing {
+                    CircularTimerRing(progress: progress, seconds: seconds, color: tint, diameter: 64)
+                } else {
+                    Text("\(seconds)")
+                        .font(.system(.title, design: .rounded, weight: .bold))
+                        .contentTransition(.numericText())
+                        .foregroundStyle(tint)
+                }
+            }
+            .padding(20)
+
+            if !showsRing {
+                ProgressView(value: min(1, max(0, progress)))
+                    .tint(tint)
+                    .background(.white.opacity(0.1))
+                    .clipShape(Capsule())
+                    .padding(.horizontal, 20)
+            }
+
+            if let next, let exercise = next.exercise {
+                Divider().overlay(.white.opacity(0.1)).padding(.top, 16)
+                Spacer(minLength: 0)
+                NextExerciseBriefing(exercise: exercise, side: next.side, duration: next.duration)
+                Spacer(minLength: 0)
+            } else {
+                Spacer(minLength: 0)
+                Text("Dernier effort, la séance se termine juste après.")
+                    .font(.headline)
+                    .foregroundStyle(.white.opacity(0.82))
+                    .padding(20)
+                Spacer(minLength: 0)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(Color.fastNavy.opacity(0.72))
+        .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .stroke(.white.opacity(0.08), lineWidth: 1)
+        }
+        .layoutPriority(1)
     }
 }
 
 /// What is coming next, while the athlete catches their breath.
 ///
-/// Deliberately short. Recovery lasts a few seconds and the athlete is out of
-/// breath: a full briefing here was more than anyone reads, so it is the name,
-/// where to start from, and the one mistake to avoid.
+/// Deliberately short. The athlete is out of breath and has a few seconds: it
+/// is the movement, what it looks like, where to start from, and the one
+/// mistake to avoid.
 struct NextExerciseBriefing: View {
     let exercise: Exercise
+    var side: BodySide?
     let duration: Int
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("ENSUITE")
-                    .font(.caption2.weight(.heavy))
-                    .tracking(0.6)
-                    .foregroundStyle(.white.opacity(0.5))
-                Text(exercise.name)
-                    .font(.system(.title2, design: .rounded, weight: .bold))
+        HStack(alignment: .top, spacing: 16) {
+            ExerciseMotionView(
+                motion: exercise.motion,
+                isPlaying: true,
+                focusZones: exercise.zones,
+                mirrored: side == .right
+            )
+            .frame(width: 92, height: 104)
+            .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 8) {
+                        Text("ENSUITE · \(duration) S")
+                            .font(.caption2.weight(.heavy))
+                            .tracking(0.6)
+                            .foregroundStyle(.white.opacity(0.5))
+                        if let side {
+                            Text(side.title.uppercased())
+                                .font(.caption2.weight(.heavy))
+                                .tracking(0.6)
+                                .foregroundStyle(Color.fastOrange)
+                        }
+                    }
+                    Text(exercise.name)
+                        .font(.system(.title3, design: .rounded, weight: .bold))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Text(exercise.setup)
+                    .font(.footnote)
+                    .foregroundStyle(.white.opacity(0.76))
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Label(exercise.mistake, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(Color.fastOrange.opacity(0.92))
                     .fixedSize(horizontal: false, vertical: true)
             }
-
-            Text(exercise.setup)
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.76))
-                .fixedSize(horizontal: false, vertical: true)
-
-            Label(exercise.mistake, systemImage: "exclamationmark.triangle.fill")
-                .font(.caption.weight(.medium))
-                .foregroundStyle(Color.fastOrange.opacity(0.92))
-                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
-            "Prochain exercice : \(exercise.name), \(duration) secondes. \(exercise.setup) À éviter : \(exercise.mistake)"
+            "Prochain exercice : \(exercise.name)\(side.map { ", côté \($0.title)" } ?? ""), "
+                + "\(duration) secondes. \(exercise.setup) À éviter : \(exercise.mistake)"
         )
+    }
+}
+
+/// Coaching cues, one at a time.
+///
+/// Four cues shown at once and all truncated is four things nobody reads. One
+/// at a time, held long enough to finish, is the same information delivered at
+/// the speed someone mid-plank can take it.
+struct CoachingTicker: View {
+    let cues: [String]
+    var isPlaying: Bool
+    var interval: Double = 4.2
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var index = 0
+
+    private var current: String { cues.isEmpty ? "" : cues[index % cues.count] }
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            // Reserves the tallest line so the layout underneath never jumps
+            // between cues.
+            Text(cues.max(by: { $0.count < $1.count }) ?? "")
+                .font(.subheadline)
+                .fixedSize(horizontal: false, vertical: true)
+                .hidden()
+
+            Text(current)
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.82))
+                .fixedSize(horizontal: false, vertical: true)
+                .id(index)
+                .transition(
+                    reduceMotion
+                        ? .opacity
+                        : .asymmetric(
+                            insertion: .move(edge: .bottom).combined(with: .opacity),
+                            removal: .move(edge: .bottom).combined(with: .opacity)
+                        )
+                )
+        }
+        .clipped()
+        .animation(.smooth(duration: 0.45), value: index)
+        .task(id: cues.count) { await run() }
+        .accessibilityLabel(cues.joined(separator: ". "))
+    }
+
+    private func run() async {
+        guard cues.count > 1 else { return }
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(interval))
+            guard !Task.isCancelled, isPlaying else { continue }
+            index += 1
+        }
     }
 }
 

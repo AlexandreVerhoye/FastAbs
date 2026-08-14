@@ -55,6 +55,8 @@
 		87661A525B671A91926699D1 /* ExerciseLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7F36EDD389397B59B7083C /* ExerciseLibraryView.swift */; };
 		E35145385FB6EE816709D51C /* StartupCostTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0753973DBB0C09D2C9E7D2D5 /* StartupCostTests.swift */; };
 		9DF9856D105DE309FC16349C /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 441BF1F4AA9371444B302FE2 /* Haptics.swift */; };
+		0BB17402921D4E2E205E021F /* WorkoutSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 491C076B54B11B8D2D22332F /* WorkoutSessionTests.swift */; };
+		8DB54D4A59BF8516BF6C7248 /* WorkoutPlaylist.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844F2B6B6459D69341159F3B /* WorkoutPlaylist.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -119,6 +121,8 @@
 		DE7F36EDD389397B59B7083C /* ExerciseLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryView.swift; sourceTree = "<group>"; };
 		0753973DBB0C09D2C9E7D2D5 /* StartupCostTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupCostTests.swift; sourceTree = "<group>"; };
 		441BF1F4AA9371444B302FE2 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
+		491C076B54B11B8D2D22332F /* WorkoutSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionTests.swift; sourceTree = "<group>"; };
+		844F2B6B6459D69341159F3B /* WorkoutPlaylist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutPlaylist.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -141,6 +145,7 @@
 		13CE8A0FD3321D858C13C49A /* FastAbsTests */ = {
 			isa = PBXGroup;
 			children = (
+				491C076B54B11B8D2D22332F /* WorkoutSessionTests.swift */,
 				0753973DBB0C09D2C9E7D2D5 /* StartupCostTests.swift */,
 				BC1EC70AFE07580C969DBA30 /* FigureTests.swift */,
 				9965B366C27C5834E476A05C /* FrenchCopyTests.swift */,
@@ -166,6 +171,7 @@
 			children = (
 				B4FACEE0AEFD0C648395F9C3 /* ExerciseCatalog.swift */,
 				1181BB055B967C5810C3367A /* WorkoutEngine.swift */,
+				844F2B6B6459D69341159F3B /* WorkoutPlaylist.swift */,
 				B0C8C5442F689BF42B256415 /* WorkoutModels.swift */,
 			);
 			path = Domain;
@@ -417,6 +423,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0BB17402921D4E2E205E021F /* WorkoutSessionTests.swift in Sources */,
 				E35145385FB6EE816709D51C /* StartupCostTests.swift in Sources */,
 				22785201E224790D774E3207 /* FigureTests.swift in Sources */,
 				69AA899348F99D1B9798693D /* FrenchCopyTests.swift in Sources */,
@@ -465,6 +472,7 @@
 				18B45D4F51DF46A80079A4E3 /* WelcomeView.swift in Sources */,
 				830D86021B614EC722B454AE /* WorkoutEngine.swift in Sources */,
 				B477EB95263CD355DBC14427 /* WorkoutFeedback.swift in Sources */,
+				8DB54D4A59BF8516BF6C7248 /* WorkoutPlaylist.swift in Sources */,
 				9DF9856D105DE309FC16349C /* Haptics.swift in Sources */,
 				9F3C8930C77C202AD1792B16 /* WorkoutHistoryAnalytics.swift in Sources */,
 				0775B37D4B46E83D18A305E4 /* WorkoutModels.swift in Sources */,

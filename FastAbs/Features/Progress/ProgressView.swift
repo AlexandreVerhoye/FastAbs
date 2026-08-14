@@ -41,7 +41,7 @@ struct ProgressDashboardView: View {
 
                     WeeklyComparisonCard(overview: overview)
 
-                    ActivityGridCard(days: activityDays, calendar: localCalendar)
+                    ActivityGridCard(days: activityDays, calendar: localCalendar, allRecords: records)
 
                     if !patterns.isEmpty {
                         PatternBalanceCard(items: patterns)
@@ -410,6 +410,9 @@ struct WeeklyComparisonCard: View {
 struct ActivityGridCard: View {
     let days: [WorkoutHistoryDay]
     let calendar: Calendar
+    var allRecords: [WorkoutRecord] = []
+
+    @State private var selected: WorkoutHistoryDay?
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 7), count: 7)
 
@@ -419,17 +422,26 @@ struct ActivityGridCard: View {
 
             LazyVGrid(columns: columns, spacing: 7) {
                 ForEach(days) { day in
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(activityColor(for: day))
-                        .aspectRatio(1, contentMode: .fit)
-                        .overlay {
-                            if calendar.isDateInToday(day.date) {
-                                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                    .stroke(Color.fastCoral, lineWidth: 2)
+                    Button {
+                        guard day.activeSeconds > 0 else { return }
+                        Haptics.tap()
+                        selected = day
+                    } label: {
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(activityColor(for: day))
+                            .aspectRatio(1, contentMode: .fit)
+                            .overlay {
+                                if calendar.isDateInToday(day.date) {
+                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                        .stroke(Color.fastCoral, lineWidth: 2)
+                                }
                             }
-                        }
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(dayLabel(day))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(day.activeSeconds == 0)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(dayLabel(day))
+                    .accessibilityAddTraits(day.activeSeconds > 0 ? .isButton : [])
                 }
             }
 
@@ -448,6 +460,13 @@ struct ActivityGridCard: View {
         }
         .padding(18)
         .glassCard()
+        .sheet(item: $selected) { day in
+            DayDetailView(day: day, records: records(on: day.date))
+        }
+    }
+
+    private func records(on date: Date) -> [WorkoutRecord] {
+        allRecords.filter { calendar.isDate($0.completedAt, inSameDayAs: date) }
     }
 
     private func activityColor(for day: WorkoutHistoryDay) -> Color {
@@ -567,5 +586,99 @@ private struct RecentWorkoutRow: View {
         let minutes = max(0, seconds) / 60
         let remainder = max(0, seconds) % 60
         return remainder == 0 ? "\(minutes) min" : "\(minutes):\(String(format: "%02d", remainder))"
+    }
+}
+
+/// One day of the activity grid, opened.
+///
+/// The grid used to be the only thing on this tab with any density and nothing
+/// to say when you touched it — a square that is darker than its neighbour
+/// raises a question the screen refused to answer.
+struct DayDetailView: View {
+    let day: WorkoutHistoryDay
+    let records: [WorkoutRecord]
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 20) {
+                    HStack(spacing: 0) {
+                        MetricPill(icon: "clock.fill", value: day.activeSeconds.clockText, label: "effort")
+                        Divider().frame(height: 44)
+                        MetricPill(
+                            icon: "figure.core.training",
+                            value: "\(day.sessionCount)",
+                            label: day.sessionCount > 1 ? "séances" : "séance"
+                        )
+                        Divider().frame(height: 44)
+                        MetricPill(icon: "flame.fill", value: "≈\(day.calories)", label: "kcal")
+                    }
+                    .padding(.vertical, 14)
+                    .glassCard()
+
+                    ForEach(records) { record in
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Text(record.completedAt, format: .dateTime.hour().minute())
+                                    .font(.headline)
+                                Spacer()
+                                if !record.wasCompleted {
+                                    Text("Écourtée")
+                                        .font(.caption2.weight(.bold))
+                                        .padding(.horizontal, 9)
+                                        .frame(height: 22)
+                                        .background(Color.fastOrange.opacity(0.16), in: Capsule())
+                                        .foregroundStyle(Color.fastOrange)
+                                }
+                                Text(record.difficulty.title)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            HStack(spacing: 8) {
+                                Label(record.activeDuration.clockText, systemImage: "timer")
+                                if record.perceivedEffort != .unrated {
+                                    Label(record.perceivedEffort.title, systemImage: record.perceivedEffort.symbol)
+                                }
+                            }
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                            let movements = record.exerciseIDs.compactMap { ExerciseCatalog.byID[$0] }
+                            if !movements.isEmpty {
+                                Divider()
+                                ForEach(Array(movements.enumerated()), id: \.offset) { _, movement in
+                                    HStack(spacing: 10) {
+                                        Circle()
+                                            .fill(movement.pattern.color.opacity(0.16))
+                                            .frame(width: 26, height: 26)
+                                            .overlay {
+                                                Image(systemName: movement.pattern.symbol)
+                                                    .font(.caption2)
+                                                    .foregroundStyle(movement.pattern.color)
+                                            }
+                                        Text(movement.name).font(.subheadline)
+                                        Spacer(minLength: 0)
+                                    }
+                                }
+                            }
+                        }
+                        .padding(18)
+                        .glassCard()
+                    }
+                }
+                .padding(Metric.gutter)
+            }
+            .background(Color(uiColor: .systemGroupedBackground))
+            .navigationTitle(day.date.formatted(.dateTime.weekday(.wide).day().month(.wide)))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Fermer") { dismiss() }
+                }
+            }
+        }
     }
 }

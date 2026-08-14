@@ -10,6 +10,9 @@ struct ExerciseMotionView: View {
     let motion: MotionKind
     var isPlaying: Bool
     var focusZones: Set<MuscleZone>
+    /// The right-side half of a movement held per side is the same
+    /// choreography seen from the other side.
+    var mirrored: Bool
     var accessibilityName: String?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -27,20 +30,23 @@ struct ExerciseMotionView: View {
         motion: MotionKind,
         isPlaying: Bool = true,
         focusZones: Set<MuscleZone> = [.fullCore],
+        mirrored: Bool = false,
         accessibilityName: String? = nil
     ) {
         self.motion = motion
         self.isPlaying = isPlaying
         self.focusZones = focusZones
+        self.mirrored = mirrored
         self.accessibilityName = accessibilityName
         _bounds = State(initialValue: FigureProjection.bounds(for: motion))
     }
 
-    init(exercise: Exercise, isPlaying: Bool = true) {
+    init(exercise: Exercise, isPlaying: Bool = true, mirrored: Bool = false) {
         self.init(
             motion: exercise.motion,
             isPlaying: isPlaying,
             focusZones: exercise.zones,
+            mirrored: mirrored,
             accessibilityName: exercise.name
         )
     }
@@ -57,6 +63,10 @@ struct ExerciseMotionView: View {
                 focusZones: focusZones,
                 bounds: bounds
             )
+            // Flipping the drawing rather than the pose: mirroring a skeleton
+            // means re-handing every joint, and the figure is symmetric on
+            // screen, so the picture is the cheaper place to do it.
+            .scaleEffect(x: mirrored ? -1 : 1, y: 1, anchor: .center)
         }
         .onChange(of: motion) { _, _ in
             refreshFraming()

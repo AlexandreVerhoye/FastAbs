@@ -195,6 +195,8 @@ struct ChallengeCard: View {
 struct BadgeGallery: View {
     let badges: [DailyBadge]
 
+    @State private var selected: DailyBadge?
+
     private let columns = [GridItem(.adaptive(minimum: 72, maximum: 92), spacing: 14)]
 
     var body: some View {
@@ -215,11 +217,132 @@ struct BadgeGallery: View {
             } else {
                 LazyVGrid(columns: columns, spacing: 18) {
                     ForEach(badges) { badge in
-                        MiniBadgeView(badge: badge)
+                        Button {
+                            Haptics.tap()
+                            selected = badge
+                        } label: {
+                            MiniBadgeView(badge: badge)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(.isButton)
                     }
                 }
                 .padding(18)
                 .glassCard()
+            }
+        }
+        .sheet(item: $selected) { badge in
+            BadgeDetailView(badge: badge)
+        }
+    }
+}
+
+/// What is behind a medal, the way the Health app opens an award: the medallion
+/// itself, the day it stands for, and the work that earned it.
+struct BadgeDetailView: View {
+    let badge: DailyBadge
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 22) {
+                    AchievementBadge3DView(
+                        title: badge.tier.title,
+                        symbol: badge.symbol,
+                        tint: badge.tier.tint,
+                        isUnlocked: true,
+                        isAnimated: true
+                    )
+                    .frame(height: 250)
+                    .frame(maxWidth: .infinity)
+                    .background(LinearGradient.fastNight, in: RoundedRectangle(cornerRadius: Metric.Radius.hero, style: .continuous))
+
+                    VStack(spacing: 6) {
+                        Text(badge.tier.title)
+                            .font(.fastCardTitle)
+                        Text(badge.day, format: .dateTime.weekday(.wide).day().month(.wide))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    HStack(spacing: 0) {
+                        MetricPill(
+                            icon: "clock.fill",
+                            value: badge.activeSeconds.clockText,
+                            label: "effort"
+                        )
+                        Divider().frame(height: 44)
+                        MetricPill(
+                            icon: "figure.core.training",
+                            value: "\(badge.sessionCount)",
+                            label: badge.sessionCount > 1 ? "séances" : "séance"
+                        )
+                        Divider().frame(height: 44)
+                        MetricPill(
+                            icon: "square.grid.2x2.fill",
+                            value: "\(badge.patterns.count)",
+                            label: "types"
+                        )
+                    }
+                    .padding(.vertical, 14)
+                    .glassCard()
+
+                    if !badge.patterns.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            SectionHeader(title: "Travail de la journée")
+                            ForEach(CorePattern.allCases.filter(badge.patterns.contains)) { pattern in
+                                HStack(spacing: 12) {
+                                    Image(systemName: pattern.symbol)
+                                        .font(.subheadline)
+                                        .foregroundStyle(pattern.color)
+                                        .frame(width: 34, height: 34)
+                                        .background(pattern.color.opacity(0.14), in: Circle())
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(pattern.title).font(.subheadline.weight(.semibold))
+                                        Text(pattern.detail).font(.caption).foregroundStyle(.secondary)
+                                    }
+                                    Spacer(minLength: 0)
+                                }
+                            }
+                        }
+                        .padding(18)
+                        .glassCard()
+                    }
+
+                    let movements = badge.movements
+                    if !movements.isEmpty {
+                        VStack(alignment: .leading, spacing: 10) {
+                            SectionHeader(title: "Mouvements")
+                            ForEach(Array(movements.enumerated()), id: \.offset) { _, movement in
+                                HStack(spacing: 12) {
+                                    Circle()
+                                        .fill(movement.pattern.color.opacity(0.16))
+                                        .frame(width: 30, height: 30)
+                                        .overlay {
+                                            Image(systemName: movement.pattern.symbol)
+                                                .font(.caption)
+                                                .foregroundStyle(movement.pattern.color)
+                                        }
+                                    Text(movement.name).font(.subheadline)
+                                    Spacer(minLength: 0)
+                                }
+                            }
+                        }
+                        .padding(18)
+                        .glassCard()
+                    }
+                }
+                .padding(Metric.gutter)
+            }
+            .background(Color(uiColor: .systemGroupedBackground))
+            .navigationTitle("Badge")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Fermer") { dismiss() }
+                }
             }
         }
     }

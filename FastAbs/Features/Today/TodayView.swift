@@ -18,6 +18,7 @@ struct TodayView: View {
                     if let plan {
                         hero(plan)
                         todayMetrics(plan)
+                        playlists
                         programPreview(plan)
                     }
                 }
@@ -48,6 +49,32 @@ struct TodayView: View {
             }
             .onAppear { refreshPlan() }
             .onChange(of: appModel.preferences) { _, _ in refreshPlan() }
+        }
+    }
+
+    /// Sessions someone already decided on, for the days you have no opinion.
+    private var playlists: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SectionHeader(title: "Séances prêtes", subtitle: "Choisissez un angle et lancez-vous")
+
+            ScrollView(.horizontal) {
+                HStack(spacing: 14) {
+                    ForEach(WorkoutPlaylist.all) { playlist in
+                        PlaylistCard(playlist: playlist) {
+                            Haptics.begin()
+                            presentedPlan = WorkoutEngine().makePlan(
+                                preferences: playlist.preferences,
+                                seed: appModel.seed(for: playlist)
+                            )
+                        }
+                    }
+                }
+                .padding(.horizontal, Metric.gutter)
+                .padding(.vertical, 4)
+            }
+            .scrollIndicators(.hidden)
+            .scrollClipDisabled()
+            .padding(.horizontal, -Metric.gutter)
         }
     }
 
@@ -279,5 +306,63 @@ extension Array where Element == WorkoutRecord {
 
     var currentStreak: Int {
         WorkoutHistoryAnalytics().currentStreak(records: self)
+    }
+}
+
+/// One ready-made session in the home carousel.
+struct PlaylistCard: View {
+    let playlist: WorkoutPlaylist
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 0) {
+                ZStack(alignment: .topLeading) {
+                    LinearGradient(
+                        colors: [playlist.tint.opacity(0.95), playlist.tint.opacity(0.55)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    Image(systemName: playlist.symbol)
+                        .font(.title2.bold())
+                        .foregroundStyle(.white)
+                        .padding(14)
+                }
+                .frame(height: 78)
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(playlist.title)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Text(playlist.detail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2, reservesSpace: true)
+                        .multilineTextAlignment(.leading)
+                    HStack(spacing: 6) {
+                        Label(playlist.durationText, systemImage: "clock.fill")
+                        Text("·")
+                        Text(playlist.preferences.difficulty.title)
+                    }
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(playlist.tint)
+                }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(width: 208)
+            .background(
+                RoundedRectangle(cornerRadius: Metric.Radius.card, style: .continuous)
+                    .fill(Color(uiColor: .secondarySystemGroupedBackground))
+            )
+            .clipShape(RoundedRectangle(cornerRadius: Metric.Radius.card, style: .continuous))
+            .shadow(color: .black.opacity(0.08), radius: 12, y: 6)
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            "\(playlist.title), \(playlist.durationText), \(playlist.preferences.difficulty.title). \(playlist.detail)"
+        )
+        .accessibilityAddTraits(.isButton)
     }
 }

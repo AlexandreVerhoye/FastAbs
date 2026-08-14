@@ -54,11 +54,25 @@ final class AppModel {
             preferences.focusZones.map(\.rawValue).sorted().joined(separator: ","),
             String(preferences.apartmentFriendly),
             String(preferences.neckFriendly),
-            String(preferences.extraRecovery)
+            String(preferences.extraRecovery),
+            String(preferences.positionTransitions)
         ].joined(separator: "|")
         let plan = WorkoutEngine().makePlan(preferences: preferences, seed: signature.fnv1a64)
         activePlan = plan
         return plan
+    }
+
+    /// Stable per playlist per day, so tapping the same card twice in a row
+    /// gives the same session and tomorrow gives a different one.
+    func seed(for playlist: WorkoutPlaylist, calendar: Calendar = .current, date: Date = .now) -> UInt64 {
+        var components = calendar.dateComponents([.year, .month, .day], from: date)
+        components.timeZone = calendar.timeZone
+        return [
+            playlist.id,
+            String(components.year ?? 0),
+            String(components.month ?? 0),
+            String(components.day ?? 0)
+        ].joined(separator: "|").fnv1a64
     }
 
     func restoreRecommendedPlan() {
