@@ -11,14 +11,34 @@ struct RewardsView: View {
         return calendar
     }
 
+    @State private var summary: RewardsSummary?
+
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 60)) { context in
-            let summary = RewardsEngine(calendar: localCalendar).summary(records: records, now: context.date)
-            RewardsDashboard(summary: summary)
+        Group {
+            if let summary {
+                RewardsDashboard(summary: summary)
+            } else {
+                Color(.systemGroupedBackground)
+            }
         }
         .navigationTitle("Récompenses")
         .navigationBarTitleDisplayMode(.large)
         .background(Color(.systemGroupedBackground))
+        .onAppear(perform: refresh)
+        .onChange(of: records.count) { _, _ in refresh() }
+        // Badges only change on a new session or a new day, so the summary is
+        // built on those two events instead of on every redraw of the tab.
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                guard !Task.isCancelled else { return }
+                refresh()
+            }
+        }
+    }
+
+    private func refresh() {
+        summary = RewardsEngine(calendar: localCalendar).summary(records: records)
     }
 }
 
@@ -71,12 +91,13 @@ private struct DailyBadgeHero: View {
                     .blur(radius: 44)
                     .offset(y: -22)
 
-                AchievementBadge3DView(
+                AchievementBadgeView(
                     title: badge?.tier.title ?? "Badge du jour",
+                    caption: badge.map { $0.day.formatted(.dateTime.day().month(.abbreviated)) }
+                        ?? "À débloquer",
                     symbol: badge?.symbol ?? "flame.fill",
                     tint: tint,
-                    isUnlocked: badge != nil,
-                    isAnimated: true
+                    isUnlocked: badge != nil
                 )
                 .frame(height: 230)
                 .padding(.top, 8)
@@ -248,12 +269,11 @@ struct BadgeDetailView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 22) {
-                    AchievementBadge3DView(
+                    AchievementBadgeView(
                         title: badge.tier.title,
+                        caption: badge.day.formatted(.dateTime.day().month(.wide).year()),
                         symbol: badge.symbol,
-                        tint: badge.tier.tint,
-                        isUnlocked: true,
-                        isAnimated: true
+                        tint: badge.tier.tint
                     )
                     .frame(height: 250)
                     .frame(maxWidth: .infinity)

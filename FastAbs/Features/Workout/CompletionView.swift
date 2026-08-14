@@ -34,12 +34,11 @@ struct CompletionView: View {
                     .opacity(stage >= 1 ? 1 : 0)
                     .offset(y: stage >= 1 ? 0 : 14)
 
-                AchievementBadge3DView(
-                    title: "Badge quotidien Hara",
+                AchievementBadgeView(
+                    title: "Séance du jour",
+                    caption: Date.now.formatted(.dateTime.day().month(.wide)),
                     symbol: "bolt.heart.fill",
-                    tint: .fastCoral,
-                    isUnlocked: true,
-                    isAnimated: true
+                    tint: .fastCoral
                 )
                 .frame(height: 260)
                 .accessibilityLabel("Badge quotidien Hara remporté")

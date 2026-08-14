@@ -2,11 +2,51 @@ import Charts
 import SwiftData
 import SwiftUI
 
+/// Everything the tab shows, worked out once.
+///
+/// These six passes used to sit inside the body, wrapped in a `TimelineView`.
+/// That meant the whole set was recomputed on every redraw — including every
+/// frame of a finger dragging across the chart, and on any tab change, since
+/// the shell builds this screen whether or not you open it.
+struct ProgressSnapshot {
+    var overview = WorkoutHistoryOverview(
+        totalSessions: 0, totalActiveSeconds: 0, totalCalories: 0, activeDays: 0,
+        currentStreak: 0, longestStreak: 0, currentWeekSeconds: 0,
+        previousWeekSeconds: 0, currentMonthSessions: 0
+    )
+    var chartDays: [WorkoutHistoryDay] = []
+    var activityDays: [WorkoutHistoryDay] = []
+    var focus: [WorkoutFocusBreakdown] = []
+    var patterns: [PatternLoad] = []
+    var bests = PersonalRecords(
+        longestStreak: 0, bestWeekMinutes: 0, longestSessionSeconds: 0,
+        busiestDaySessions: 0, totalSessions: 0
+    )
+
+    static func make(
+        records: [WorkoutRecord],
+        range: Int,
+        calendar: Calendar,
+        now: Date
+    ) -> ProgressSnapshot {
+        let analytics = WorkoutHistoryAnalytics(calendar: calendar)
+        return ProgressSnapshot(
+            overview: analytics.overview(records: records, now: now),
+            chartDays: analytics.days(records: records, endingAt: now, count: range),
+            activityDays: analytics.days(records: records, endingAt: now, count: 35),
+            focus: analytics.focusBreakdown(records: records),
+            patterns: analytics.patternLoad(records: records),
+            bests: analytics.personalRecords(records: records)
+        )
+    }
+}
+
 struct ProgressDashboardView: View {
     @Query(sort: \WorkoutRecord.completedAt, order: .reverse) private var records: [WorkoutRecord]
     @Environment(\.calendar) private var environmentCalendar
     @State private var selectedRange = ProgressRange.month
     @State private var selectedDate: Date?
+    @State private var snapshot = ProgressSnapshot()
 
     private var localCalendar: Calendar {
         var calendar = environmentCalendar
@@ -15,57 +55,68 @@ struct ProgressDashboardView: View {
     }
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 60)) { context in
-            let analytics = WorkoutHistoryAnalytics(calendar: localCalendar)
-            let overview = analytics.overview(records: records, now: context.date)
-            let chartDays = analytics.days(
-                records: records,
-                endingAt: context.date,
-                count: selectedRange.dayCount
-            )
-            let activityDays = analytics.days(records: records, endingAt: context.date, count: 35)
-            let focus = analytics.focusBreakdown(records: records)
-            let patterns = analytics.patternLoad(records: records)
-            let bests = analytics.personalRecords(records: records)
+        ScrollView {
+            LazyVStack(spacing: 24) {
+                ProgressHero(overview: snapshot.overview)
 
-            ScrollView {
-                LazyVStack(spacing: 24) {
-                    ProgressHero(overview: overview)
+                ActivityChartCard(
+                    days: snapshot.chartDays,
+                    range: $selectedRange,
+                    selectedDate: $selectedDate,
+                    calendar: localCalendar
+                )
 
-                    ActivityChartCard(
-                        days: chartDays,
-                        range: $selectedRange,
-                        selectedDate: $selectedDate,
-                        calendar: localCalendar
-                    )
+                WeeklyComparisonCard(overview: snapshot.overview)
 
-                    WeeklyComparisonCard(overview: overview)
+                ActivityGridCard(
+                    days: snapshot.activityDays,
+                    calendar: localCalendar,
+                    allRecords: records
+                )
 
-                    ActivityGridCard(days: activityDays, calendar: localCalendar, allRecords: records)
-
-                    if !patterns.isEmpty {
-                        PatternBalanceCard(items: patterns)
-                    }
-
-                    if bests.hasAny {
-                        PersonalRecordsCard(records: bests)
-                    }
-
-                    if !focus.isEmpty {
-                        FocusDistributionCard(items: focus)
-                    }
-
-                    RecentWorkoutsCard(records: Array(records.prefix(5)))
+                if !snapshot.patterns.isEmpty {
+                    PatternBalanceCard(items: snapshot.patterns)
                 }
-                .padding(.horizontal, 18)
-                .padding(.top, 8)
-                .padding(.bottom, 36)
+
+                if snapshot.bests.hasAny {
+                    PersonalRecordsCard(records: snapshot.bests)
+                }
+
+                if !snapshot.focus.isEmpty {
+                    FocusDistributionCard(items: snapshot.focus)
+                }
+
+                RecentWorkoutsCard(records: Array(records.prefix(5)))
             }
-            .scrollIndicators(.hidden)
+            .padding(.horizontal, 18)
+            .padding(.top, 8)
+            .padding(.bottom, 36)
         }
+        .scrollIndicators(.hidden)
         .navigationTitle("Progression")
         .navigationBarTitleDisplayMode(.large)
         .background(Color(.systemGroupedBackground))
+        .onAppear(perform: refresh)
+        .onChange(of: records.count) { _, _ in refresh() }
+        .onChange(of: selectedRange) { _, _ in refresh() }
+        // Only the day boundary needs watching, and once a minute is plenty for
+        // that. It used to redraw the entire tab on the same schedule.
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                guard !Task.isCancelled else { return }
+                refresh()
+            }
+        }
+    }
+
+    private func refresh() {
+        snapshot = ProgressSnapshot.make(
+            records: records,
+            range: selectedRange.dayCount,
+            calendar: localCalendar,
+            now: .now
+        )
     }
 }
 
