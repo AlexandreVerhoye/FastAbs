@@ -106,7 +106,7 @@ enum MotionKind: String, Codable, Sendable {
     case crunch, reverseCrunch, toeReach, legRaise, hipRaise, flutter, scissors
     case bicycle, twist, obliqueCrunch, heelTap
     case plank, sidePlank, plankReach, mountainClimber, hollowHold
-    case deadBug, birdDog, bearHold, vSit, superman, bridge, rest
+    case deadBug, birdDog, bearHold, vSit, seatedTuck, superman, bridge, bridgeMarch, rest
 }
 
 enum ExerciseImpact: String, Codable, Sendable {

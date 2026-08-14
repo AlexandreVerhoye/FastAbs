@@ -52,11 +52,23 @@ extension BodyPose {
             front - shin * simd_dot(front, shin),
             fallback: SIMD3<Float>(0, 0, 1)
         )
-        let tip = ankle + forward * 0.145 + shin * 0.03
-        // The foot stops at the mat rather than driving through it. Letting the
-        // toes pull the whole athlete up instead made the body jump whenever a
-        // foot swung low.
-        return SIMD3<Float>(tip.x, max(tip.y, BodyPose.matHeight), tip.z)
+        let length: Float = 0.148
+        var direction = BodyPose.normalised(forward * 0.98 + shin * 0.2, fallback: forward)
+
+        // A foot that would go through the mat tilts up to lie along it rather
+        // than being cut off at mat height, which left a backward stub instead
+        // of a foot. Letting the toes pull the whole athlete up instead made the
+        // body jump whenever a foot swung low, so the foot alone gives way.
+        if ankle.y + direction.y * length < BodyPose.matHeight {
+            let rise = min(max((BodyPose.matHeight - ankle.y) / length, -1), 1)
+            let flat = SIMD3<Float>(direction.x, 0, direction.z)
+            let flatLength = simd_length(flat)
+            let spread = (1 - rise * rise).squareRoot()
+            direction = flatLength > 1e-5
+                ? SIMD3<Float>(flat.x / flatLength * spread, rise, flat.z / flatLength * spread)
+                : SIMD3<Float>(0, rise, 0)
+        }
+        return ankle + direction * length
     }
 
     static func normalised(_ vector: SIMD3<Float>, fallback: SIMD3<Float>) -> SIMD3<Float> {

@@ -132,9 +132,23 @@ struct FigureRenderer {
         for part in orderedParts() {
             switch part {
             case .arm(let side):
-                place(armPath(side), shade: shade(forArm: side), into: &context)
+                let root = (side == .left ? layout.leftShoulder : layout.rightShoulder).point
+                place(
+                    armPath(side),
+                    joinedAt: root,
+                    jointWidth: FigureMetrics.upperArmTop,
+                    shade: shade(forArm: side),
+                    into: &context
+                )
             case .leg(let side):
-                place(legPath(side), shade: shade(forLeg: side), into: &context)
+                let root = (side == .left ? layout.leftHip : layout.rightHip).point
+                place(
+                    legPath(side),
+                    joinedAt: root,
+                    jointWidth: FigureMetrics.thighTop,
+                    shade: shade(forLeg: side),
+                    into: &context
+                )
             case .trunk:
                 let trunk = trunkPath()
                 place(trunkGroupPath(trunk: trunk), shade: FigureShading.near, into: &context)
@@ -148,11 +162,27 @@ struct FigureRenderer {
     /// The cut is a stroke along the shape's own outline: half of it falls
     /// outside the shape and survives the fill, which is exactly the gap that
     /// separates this part from whatever sits behind it.
-    private func place(_ path: Path, shade: Color, into context: inout GraphicsContext) {
+    private func place(
+        _ path: Path,
+        joinedAt root: CGPoint? = nil,
+        jointWidth: CGFloat = 0,
+        shade: Color,
+        into context: inout GraphicsContext
+    ) {
+        // A limb is separated from everything it crosses, but not from the body
+        // it grows out of: the cut is held back from its root joint, so the hip
+        // and the shoulder stay attached instead of showing a dark seam.
+        var cutShape = path
+        if let root {
+            cutShape = cutShape.subtracting(
+                circle(at: root, radius: jointWidth * layout.scale * 0.8)
+            )
+        }
+
         var cut = context
         cut.blendMode = .destinationOut
         cut.stroke(
-            path,
+            cutShape,
             with: .color(.white),
             style: StrokeStyle(
                 lineWidth: FigureMetrics.separation * 2 * layout.scale,

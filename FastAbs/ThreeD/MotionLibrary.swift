@@ -64,6 +64,10 @@ enum MotionLibrary {
             (title, description, cadence) = ("Bird dog", "À quatre pattes, un bras et la jambe opposée s’allongent à l’horizontale.", 0.26)
         case .bearHold:
             (title, description, cadence) = ("Gainage de l’ours", "Les genoux restent décollés du sol et les appuis alternent doucement.", 0.3)
+        case .seatedTuck:
+            (title, description, cadence) = ("Genoux-poitrine assis", "Assis en appui sur les mains, les genoux se ramènent vers la poitrine puis les jambes s’allongent.", 0.34)
+        case .bridgeMarch:
+            (title, description, cadence) = ("Marche en pont", "Le bassin reste haut et immobile pendant qu’un genou se lève, puis l’autre.", 0.34)
         case .vSit:
             (title, description, cadence) = ("Maintien en V", "Le buste et les jambes s’éloignent puis reviennent autour d’un bassin stable.", 0.28)
         case .superman:
@@ -89,8 +93,10 @@ enum MotionLibrary {
         switch motion {
         case .crunch, .reverseCrunch, .toeReach, .hipRaise, .obliqueCrunch, .bridge:
             .controlled
-        case .legRaise, .vSit, .superman, .sidePlank, .plankReach, .deadBug, .birdDog:
+        case .legRaise, .vSit, .superman, .sidePlank, .plankReach, .deadBug, .birdDog, .seatedTuck:
             .deliberate
+        case .bridgeMarch:
+            .controlled
         case .flutter, .scissors, .bicycle, .twist, .heelTap, .mountainClimber:
             .explosive
         case .plank, .hollowHold, .bearHold, .rest:
@@ -141,6 +147,10 @@ enum MotionLibrary {
             MuscleLoad(upperAbs: 0.4, lowerAbs: 0.6, obliques: 0.5, deepCore: 1, restingTone: 0.72)
         case .vSit:
             MuscleLoad(upperAbs: 0.85, lowerAbs: 1, obliques: 0.45, deepCore: 0.9, restingTone: 0.42)
+        case .seatedTuck:
+            MuscleLoad(upperAbs: 0.6, lowerAbs: 1, obliques: 0.4, deepCore: 0.85, restingTone: 0.4)
+        case .bridgeMarch:
+            MuscleLoad(upperAbs: 0.2, lowerAbs: 0.6, obliques: 0.55, deepCore: 0.9, lowerBack: 1, restingTone: 0.5, alternatesSides: true)
         case .superman:
             MuscleLoad(upperAbs: 0.15, lowerAbs: 0.2, obliques: 0.3, deepCore: 0.6, lowerBack: 1, restingTone: 0.2)
         case .bridge:
@@ -182,12 +192,14 @@ private extension MotionLibrary {
     /// units out, which cropped the legs and foreshortened everything else.
     static func framing(for motion: MotionKind) -> Framing {
         switch motion {
-        case .twist, .vSit:
+        case .twist, .vSit, .seatedTuck:
             Framing(target: SIMD3<Float>(0.15, 0.62, 0), position: SIMD3<Float>(0.95, 1.4, 5.1))
         case .plank, .sidePlank, .plankReach, .mountainClimber, .birdDog, .bearHold:
             // On all fours the athlete reaches further toward the head than any
             // other stance, so this framing sits back and re-centres to keep it in.
             Framing(target: SIMD3<Float>(0.05, 0.5, 0), position: SIMD3<Float>(0.85, 1.5, 5.8))
+        case .bridge, .bridgeMarch:
+            Framing(target: SIMD3<Float>(0.05, 0.5, 0), position: SIMD3<Float>(1.0, 1.6, 5.5))
         default:
             Framing(target: SIMD3<Float>(0.05, 0.45, 0), position: SIMD3<Float>(1.0, 1.6, 5.5))
         }
@@ -279,7 +291,7 @@ private extension MotionLibrary {
             // up turning against the shoulders.
             // Far enough from the shoulders that the elbows stay softly bent:
             // hands tucked in close fold the arms into a flail over the chest.
-            let handCentre = pose.chest + SIMD3<Float>(0.46, -0.04, 0)
+            let handCentre = pose.chest + SIMD3<Float>(0.5, -0.19, 0)
             pose.leftHand = handCentre + SIMD3<Float>(0, 0, 0.05)
             pose.rightHand = handCentre - SIMD3<Float>(0, 0, 0.05)
             pose.leftElbow = aimLimb(
@@ -371,7 +383,15 @@ private extension MotionLibrary {
 
         case .bearHold:
             var pose = quadruped()
-            hoverKnees(&pose, amount: 1)
+            // Knees hover under the hips with the toes still planted. Simply
+            // raising the quadruped's knees left the shins floating flat, which
+            // read as nothing recognisable at all.
+            let bearAnkle = SIMD3<Float>(0.56, 0.13, -0.17)
+            let bearKnee = SIMD3<Float>(0.08, 0.3, -0.17)
+            pose.leftAnkle = bearAnkle
+            pose.rightAnkle = mirrored(bearAnkle)
+            pose.leftKnee = bearKnee
+            pose.rightKnee = mirrored(bearKnee)
             let lift = abs(swing) * 0.07
             if swing >= 0 {
                 pose.leftHand.y += lift
@@ -392,6 +412,43 @@ private extension MotionLibrary {
             pose.leftHand = mix(pose.leftHand, SIMD3<Float>(0.44, 0.66, 0.2), t: effort)
             pose.rightHand = mix(pose.rightHand, SIMD3<Float>(0.44, 0.66, -0.2), t: effort)
             return PoseSketch(pose, anchor: \.pelvis)
+
+        case .seatedTuck:
+            var pose = seated()
+            // Hands planted behind the hips: the whole point of the movement is
+            // that the upper body is propped and only the legs travel.
+            pose.leftHand = pose.pelvis + SIMD3<Float>(-0.34, -0.1, -0.26)
+            pose.rightHand = pose.pelvis + SIMD3<Float>(-0.34, -0.1, 0.26)
+            pose.leftElbow = aimLimb(
+                from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(1, 0, -0.5)
+            )
+            pose.rightElbow = aimLimb(
+                from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(1, 0, 0.5)
+            )
+            curlTorso(&pose, amount: -0.24)
+
+            let tuckedAnkle = SIMD3<Float>(0.44, 0.62, -0.16)
+            let openAnkle = SIMD3<Float>(1.12, 0.32, -0.16)
+            let reach = 1 - effort
+            pose.leftAnkle = mix(tuckedAnkle, openAnkle, t: reach)
+            pose.rightAnkle = mix(mirrored(tuckedAnkle), mirrored(openAnkle), t: reach)
+            pose.leftKnee = aimLimb(from: pose.leftHip, to: pose.leftAnkle, bend: SIMD3<Float>(0, 1, 0))
+            pose.rightKnee = aimLimb(from: pose.rightHip, to: pose.rightAnkle, bend: SIMD3<Float>(0, 1, 0))
+            return PoseSketch(pose, anchor: \.pelvis)
+
+        case .bridgeMarch:
+            var pose = supineBentKnees()
+            // The bridge is already up and stays there; only a knee travels.
+            pose.pelvis.y += 0.4
+            let lift = abs(swing)
+            if swing >= 0 {
+                pose.leftKnee = mix(pose.leftKnee, SIMD3<Float>(0.24, 0.86, -0.17), t: lift)
+                pose.leftAnkle = mix(pose.leftAnkle, SIMD3<Float>(0.62, 0.72, -0.17), t: lift)
+            } else {
+                pose.rightKnee = mix(pose.rightKnee, SIMD3<Float>(0.24, 0.86, 0.17), t: lift)
+                pose.rightAnkle = mix(pose.rightAnkle, SIMD3<Float>(0.62, 0.72, 0.17), t: lift)
+            }
+            return PoseSketch(pose, anchor: \.chest)
 
         case .superman:
             var pose = prone()
@@ -597,12 +654,12 @@ private extension MotionLibrary {
             rightElbow: SIMD3<Float>(-0.44, 1.18, -0.16),
             leftHand: SIMD3<Float>(-0.85, 0.13, 0.14),
             rightHand: SIMD3<Float>(-0.4, 1.5, -0.16),
-            leftHip: SIMD3<Float>(0.11, 0.4, 0.1),
-            rightHip: SIMD3<Float>(0.11, 0.56, -0.1),
-            leftKnee: SIMD3<Float>(0.66, 0.3, 0.09),
-            rightKnee: SIMD3<Float>(0.66, 0.38, -0.09),
-            leftAnkle: SIMD3<Float>(1.21, 0.16, 0.09),
-            rightAnkle: SIMD3<Float>(1.21, 0.22, -0.09)
+            leftHip: SIMD3<Float>(0.11, 0.4, 0.05),
+            rightHip: SIMD3<Float>(0.11, 0.56, -0.05),
+            leftKnee: SIMD3<Float>(0.66, 0.28, 0.04),
+            rightKnee: SIMD3<Float>(0.66, 0.44, -0.04),
+            leftAnkle: SIMD3<Float>(1.2, 0.13, 0.04),
+            rightAnkle: SIMD3<Float>(1.2, 0.29, -0.04)
         )
     }
 }
@@ -740,13 +797,6 @@ private extension MotionLibrary {
         pose.leftAnkle = mix(openAnkle, tuckedAnkle, t: leftTuck)
         pose.rightKnee = mix(rightTucked, rightOpen, t: leftTuck)
         pose.rightAnkle = mix(mirrored(tuckedAnkle), mirrored(openAnkle), t: leftTuck)
-    }
-
-    static func hoverKnees(_ pose: inout BodyPose, amount: Float) {
-        pose.leftKnee.y += 0.11 * amount
-        pose.rightKnee.y += 0.11 * amount
-        pose.leftAnkle.y += 0.07 * amount
-        pose.rightAnkle.y += 0.07 * amount
     }
 
     static func extendOpposites(_ pose: inout BodyPose, leftLeg: Bool, amount: Float) {
