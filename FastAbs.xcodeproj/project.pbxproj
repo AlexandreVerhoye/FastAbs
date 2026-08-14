@@ -53,6 +53,7 @@
 		FAF33BD054D0E008D16B2038 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 521F2881C7116AD036EE6B45 /* PrivacyInfo.xcprivacy */; };
 		FF9099FFE2CF7FF2CEE9B3B0 /* WorkoutSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DF8A4C2548B1541C0F636B7 /* WorkoutSession.swift */; };
 		87661A525B671A91926699D1 /* ExerciseLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7F36EDD389397B59B7083C /* ExerciseLibraryView.swift */; };
+		E35145385FB6EE816709D51C /* StartupCostTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0753973DBB0C09D2C9E7D2D5 /* StartupCostTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -115,6 +116,7 @@
 		FD04DB66037F6634929F7261 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		FEDFCC2CA07C3E31DB9CED15 /* FastAbsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastAbsApp.swift; sourceTree = "<group>"; };
 		DE7F36EDD389397B59B7083C /* ExerciseLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryView.swift; sourceTree = "<group>"; };
+		0753973DBB0C09D2C9E7D2D5 /* StartupCostTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupCostTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -137,6 +139,7 @@
 		13CE8A0FD3321D858C13C49A /* FastAbsTests */ = {
 			isa = PBXGroup;
 			children = (
+				0753973DBB0C09D2C9E7D2D5 /* StartupCostTests.swift */,
 				BC1EC70AFE07580C969DBA30 /* FigureTests.swift */,
 				9965B366C27C5834E476A05C /* FrenchCopyTests.swift */,
 				897F8C66C556AF9572C13734 /* ProgressVisualTests.swift */,
@@ -411,6 +414,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E35145385FB6EE816709D51C /* StartupCostTests.swift in Sources */,
 				22785201E224790D774E3207 /* FigureTests.swift in Sources */,
 				69AA899348F99D1B9798693D /* FrenchCopyTests.swift in Sources */,
 				39D031285B63221A324E1CCF /* ProgressVisualTests.swift in Sources */,
