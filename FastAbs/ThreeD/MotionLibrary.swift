@@ -254,8 +254,16 @@ private extension MotionLibrary {
 
         case .toeReach:
             var pose = supineLegsRaised()
-            curlTorso(&pose, amount: effort * 0.5)
-            reachHands(&pose, toward: pose.leftAnkle, and: pose.rightAnkle, amount: 0.55 + effort * 0.35)
+            // Legs tip slightly toward the head so the reaching arms are not
+            // parallel to them; parallel, the two merged into one shape.
+            setLegAngle(&pose, angle: 1.28)
+            curlTorso(&pose, amount: effort * 0.52)
+            reachHands(
+                &pose,
+                toward: pose.leftAnkle - SIMD3<Float>(0, 0.16, 0),
+                and: pose.rightAnkle - SIMD3<Float>(0, 0.16, 0),
+                amount: 0.5 + effort * 0.34
+            )
             return PoseSketch(pose)
 
         case .legRaise:
@@ -272,19 +280,21 @@ private extension MotionLibrary {
         case .flutter:
             var pose = supineStraight()
             setLegAngle(&pose, angle: 0.22)
-            pose.leftAnkle.y += swing * 0.2
-            pose.rightAnkle.y -= swing * 0.2
-            pose.leftKnee.y += swing * 0.09
-            pose.rightKnee.y -= swing * 0.09
+            pose.leftAnkle.y += swing * 0.34
+            pose.rightAnkle.y -= swing * 0.34
+            pose.leftKnee.y += swing * 0.15
+            pose.rightKnee.y -= swing * 0.15
             return PoseSketch(pose)
 
         case .scissors:
             var pose = supineStraight()
-            setLegAngle(&pose, angle: 0.28)
-            pose.leftAnkle.z += swing * 0.24
-            pose.rightAnkle.z -= swing * 0.24
-            pose.leftKnee.z += swing * 0.12
-            pose.rightKnee.z -= swing * 0.12
+            setLegAngle(&pose, angle: 0.3)
+            pose.leftAnkle.z += swing * 0.42
+            pose.rightAnkle.z -= swing * 0.42
+            pose.leftAnkle.y += swing * 0.08
+            pose.rightAnkle.y -= swing * 0.08
+            pose.leftKnee.z += swing * 0.2
+            pose.rightKnee.z -= swing * 0.2
             return PoseSketch(pose)
 
         case .bicycle:
@@ -464,17 +474,21 @@ private extension MotionLibrary {
 
         case .superman:
             var pose = prone()
-            let rise = effort * 0.24
+            // Lying flat, a small lift reads as no lift at all — the whole
+            // movement disappeared into a horizontal line. The arch is now
+            // unmistakable, and the chest lifts with the arms.
+            let rise = effort * 0.42
             pose.leftHand.y += rise
             pose.rightHand.y += rise
-            pose.leftElbow.y += rise * 0.7
-            pose.rightElbow.y += rise * 0.7
-            pose.leftAnkle.y += rise * 0.8
-            pose.rightAnkle.y += rise * 0.8
-            pose.leftKnee.y += rise * 0.4
-            pose.rightKnee.y += rise * 0.4
-            pose.neck.y += rise * 0.4
-            pose.head.y += rise * 0.5
+            pose.leftElbow.y += rise * 0.72
+            pose.rightElbow.y += rise * 0.72
+            pose.leftAnkle.y += rise * 0.92
+            pose.rightAnkle.y += rise * 0.92
+            pose.leftKnee.y += rise * 0.45
+            pose.rightKnee.y += rise * 0.45
+            pose.chest.y += rise * 0.34
+            pose.neck.y += rise * 0.52
+            pose.head.y += rise * 0.62
             return PoseSketch(pose, anchor: \.pelvis)
 
         case .bridge:
@@ -557,10 +571,18 @@ private extension MotionLibrary {
         pose.rightKnee = SIMD3<Float>(0.09, 0.8, 0.17)
         pose.leftAnkle = SIMD3<Float>(0.67, 0.83, -0.17)
         pose.rightAnkle = SIMD3<Float>(0.67, 0.83, 0.17)
-        pose.leftElbow = SIMD3<Float>(-0.54, 0.6, -0.27)
-        pose.rightElbow = SIMD3<Float>(-0.54, 0.6, 0.27)
-        pose.leftHand = SIMD3<Float>(-0.53, 0.94, -0.26)
-        pose.rightHand = SIMD3<Float>(-0.53, 0.94, 0.26)
+        // Arms reach for the ceiling but splay apart, otherwise the two land on
+        // top of each other in profile and read as one stick. Kept inside the
+        // arm's reach: pushed to full extension the elbow has nowhere to bend
+        // and its hint goes unstable.
+        pose.leftHand = SIMD3<Float>(-0.46, 0.86, -0.36)
+        pose.rightHand = SIMD3<Float>(-0.46, 0.86, 0.36)
+        pose.leftElbow = aimLimb(
+            from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(0.4, 0, -1)
+        )
+        pose.rightElbow = aimLimb(
+            from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(0.4, 0, 1)
+        )
         return pose
     }
 
@@ -750,18 +772,18 @@ private extension MotionLibrary {
     static func handsBehindHead(_ pose: inout BodyPose) {
         let lateral = safeAxis(pose.leftShoulder - pose.rightShoulder, fallback: SIMD3<Float>(0, 0, 1))
         let back = safeAxis(pose.head - pose.chest, fallback: SIMD3<Float>(-1, 0, 0))
-        pose.leftHand = pose.neck + lateral * 0.09 + back * 0.1
-        pose.rightHand = pose.neck - lateral * 0.09 + back * 0.1
-        pose.leftElbow = pose.leftShoulder + lateral * 0.16 + back * 0.16
-        pose.rightElbow = pose.rightShoulder - lateral * 0.16 + back * 0.16
+        pose.leftHand = pose.neck + lateral * 0.14 + back * 0.07
+        pose.rightHand = pose.neck - lateral * 0.14 + back * 0.07
+        pose.leftElbow = pose.leftShoulder + lateral * 0.3 + back * 0.05
+        pose.rightElbow = pose.rightShoulder - lateral * 0.3 + back * 0.05
     }
 
     static func armsOverhead(_ pose: inout BodyPose) {
         let back = safeAxis(pose.head - pose.chest, fallback: SIMD3<Float>(-1, 0, 0))
-        pose.leftHand = pose.leftShoulder + back * 0.7 + SIMD3<Float>(0, 0.18, -0.07)
-        pose.rightHand = pose.rightShoulder + back * 0.7 + SIMD3<Float>(0, 0.18, 0.07)
-        pose.leftElbow = pose.leftShoulder + back * 0.37 + SIMD3<Float>(0, 0.08, 0)
-        pose.rightElbow = pose.rightShoulder + back * 0.37 + SIMD3<Float>(0, 0.08, 0)
+        pose.leftHand = pose.leftShoulder + back * 0.66 + SIMD3<Float>(0, 0.34, -0.06)
+        pose.rightHand = pose.rightShoulder + back * 0.66 + SIMD3<Float>(0, 0.34, 0.06)
+        pose.leftElbow = pose.leftShoulder + back * 0.35 + SIMD3<Float>(0, 0.19, -0.02)
+        pose.rightElbow = pose.rightShoulder + back * 0.35 + SIMD3<Float>(0, 0.19, 0.02)
     }
 
     static func reachHands(
@@ -866,8 +888,8 @@ private extension MotionLibrary {
     static func extendBirdDog(_ pose: inout BodyPose, leftArm: Bool, amount: Float) {
         let drop = SIMD3<Float>(0, -1, 0)
         if leftArm {
-            let hand = SIMD3<Float>(-1.19, 0.9, 0.21)
-            let ankle = SIMD3<Float>(1.24, 0.72, -0.16)
+            let hand = SIMD3<Float>(-1.2, 1.0, 0.21)
+            let ankle = SIMD3<Float>(1.24, 0.82, -0.16)
             pose.leftElbow = mix(
                 pose.leftElbow,
                 aimLimb(from: pose.leftShoulder, to: hand, bend: SIMD3<Float>(0, 0, 1)),
@@ -881,8 +903,8 @@ private extension MotionLibrary {
             )
             pose.rightAnkle = mix(pose.rightAnkle, ankle, t: amount)
         } else {
-            let hand = SIMD3<Float>(-1.19, 0.9, -0.21)
-            let ankle = SIMD3<Float>(1.24, 0.72, 0.16)
+            let hand = SIMD3<Float>(-1.2, 1.0, -0.21)
+            let ankle = SIMD3<Float>(1.24, 0.82, 0.16)
             pose.rightElbow = mix(
                 pose.rightElbow,
                 aimLimb(from: pose.rightShoulder, to: hand, bend: SIMD3<Float>(0, 0, -1)),

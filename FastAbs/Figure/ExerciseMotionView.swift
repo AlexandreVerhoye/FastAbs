@@ -150,6 +150,11 @@ struct FigureRenderer {
                 drawMuscles(clippedTo: trunk, into: &context)
             }
         }
+
+        // The head goes on last and is never cut. As part of the trunk group a
+        // limb passing near the shoulder took a bite out of it, and a bite out
+        // of the head is the one place the eye cannot forgive.
+        context.fill(headPath(), with: .color(FigureShading.near))
     }
 
     /// Cuts a shape out of the drawing so far, then fills it.
@@ -349,10 +354,7 @@ private extension FigureRenderer {
     /// instead of being separated from them by a gap.
     func trunkGroupPath(trunk: Path) -> Path {
         let scale = layout.scale
-        let headCentre = CGPoint(
-            x: layout.chest.point.x + (layout.head.point.x - layout.chest.point.x) * FigureMetrics.headSeating,
-            y: layout.chest.point.y + (layout.head.point.y - layout.chest.point.y) * FigureMetrics.headSeating
-        )
+        let headCentre = self.headCentre
 
         var path = trunk
         appendSegment(
@@ -360,6 +362,19 @@ private extension FigureRenderer {
             startWidth: FigureMetrics.neck, endWidth: FigureMetrics.neck * 0.85
         )
         appendCircle(to: &path, centre: headCentre, radius: FigureMetrics.headRadius * scale)
+        return path
+    }
+
+    var headCentre: CGPoint {
+        CGPoint(
+            x: layout.chest.point.x + (layout.head.point.x - layout.chest.point.x) * FigureMetrics.headSeating,
+            y: layout.chest.point.y + (layout.head.point.y - layout.chest.point.y) * FigureMetrics.headSeating
+        )
+    }
+
+    func headPath() -> Path {
+        var path = Path()
+        appendCircle(to: &path, centre: headCentre, radius: FigureMetrics.headRadius * layout.scale)
         return path
     }
 
