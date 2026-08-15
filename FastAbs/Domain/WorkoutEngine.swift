@@ -31,7 +31,11 @@ struct WorkoutEngine: Sendable {
     /// Beyond this an athlete goes cold and starts checking their phone.
     static let maximumRest = 90
 
-    func makePlan(preferences: WorkoutPreferences, seed: UInt64) -> WorkoutPlan {
+    func makePlan(
+        preferences: WorkoutPreferences,
+        seed: UInt64,
+        guidance: CoachGuidance = .none
+    ) -> WorkoutPlan {
         var random = SplitMix64(seed: seed)
         let target = max(300, min(1_800, preferences.durationMinutes * 60))
         let candidates = eligibleExercises(for: preferences)
@@ -45,6 +49,7 @@ struct WorkoutEngine: Sendable {
             count: budget.slots,
             preferences: preferences,
             candidates: candidates,
+            guidance: guidance,
             random: &random
         )
         let repaired = repairFamilyAdjacency(slots)
@@ -153,6 +158,7 @@ struct WorkoutEngine: Sendable {
         count: Int,
         preferences: WorkoutPreferences,
         candidates: [Exercise],
+        guidance: CoachGuidance,
         random: inout SplitMix64
     ) -> [Slot] {
         var slots: [Slot] = []
@@ -181,6 +187,7 @@ struct WorkoutEngine: Sendable {
                 explicitFocus: explicitFocus,
                 slotsRemaining: remaining,
                 slotCount: count,
+                guidance: guidance,
                 random: &random
             )
 
@@ -219,6 +226,7 @@ struct WorkoutEngine: Sendable {
         explicitFocus: Set<MuscleZone>,
         slotsRemaining: Int,
         slotCount: Int,
+        guidance: CoachGuidance,
         random: inout SplitMix64
     ) -> Exercise {
         // A movement may only come back when the pool genuinely runs out, and
@@ -297,11 +305,19 @@ struct WorkoutEngine: Sendable {
             // A held movement needs both its halves; it cannot take the last slot.
             let sideGate = exercise.sideMode == .heldPerSide && slotsRemaining < 2 ? -1_000.0 : 0
 
+            // What yesterday changes about today. A movement done in the last
+            // two sessions is not wrong, it is just less interesting than one
+            // untouched for a week; and a job the week has not asked for is
+            // worth more than one it already has.
+            let staleness = guidance.recentMovementIDs.contains(exercise.id) ? -3.4 : 0.0
+            let weeklyGap = guidance.underworkedPatterns.contains(exercise.pattern) ? 2.8 : 0.0
+
             let jitter = Double.random(in: 0...1.6, using: &random)
             return (
                 exercise,
                 focusScore + levelScore + novelty + familyPenalty + fullCoreBonus
-                    + compoundBonus + patternGap + zoneGap + patternGlut + sideGate + jitter
+                    + compoundBonus + patternGap + zoneGap + patternGlut + sideGate
+                    + staleness + weeklyGap + jitter
             )
         }
 

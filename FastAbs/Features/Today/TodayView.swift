@@ -8,12 +8,21 @@ struct TodayView: View {
     @State private var presentedPlan: WorkoutPlan?
     @State private var showsCustomization = false
     @State private var showsSettings = false
+    @State private var guidance = CoachGuidance.none
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(spacing: 26) {
                     greeting
+                    if let note = guidance.note {
+                        CoachNoteCard(note: note) { difficulty in
+                            Haptics.begin()
+                            var updated = appModel.preferences
+                            updated.difficulty = difficulty
+                            appModel.preferences = updated
+                        }
+                    }
                     weekStrip
                     if let plan {
                         hero(plan)
@@ -40,15 +49,25 @@ struct TodayView: View {
             .sheet(isPresented: $showsCustomization) {
                 CustomizationView { preferences in
                     appModel.preferences = preferences
-                    plan = appModel.makeTodayWorkout()
+                    plan = appModel.makeTodayWorkout(records: records)
                 }
             }
             .sheet(isPresented: $showsSettings) { SettingsView() }
             .fullScreenCover(item: $presentedPlan) { plan in
                 WorkoutView(plan: plan)
             }
-            .onAppear { refreshPlan() }
-            .onChange(of: appModel.preferences) { _, _ in refreshPlan() }
+            .onAppear {
+                refreshGuidance()
+                refreshPlan()
+            }
+            .onChange(of: appModel.preferences) { _, _ in
+                refreshGuidance()
+                refreshPlan()
+            }
+            .onChange(of: records.count) { _, _ in
+                refreshGuidance()
+                refreshPlan()
+            }
         }
     }
 
@@ -263,8 +282,12 @@ struct TodayView: View {
         }
     }
 
+    private func refreshGuidance() {
+        guidance = CoachAdvisor().guidance(records: records, preferences: appModel.preferences)
+    }
+
     private func refreshPlan() {
-        plan = appModel.makeTodayWorkout()
+        plan = appModel.makeTodayWorkout(records: records)
     }
 }
 
@@ -364,5 +387,46 @@ struct PlaylistCard: View {
             "\(playlist.title), \(playlist.durationText), \(playlist.preferences.difficulty.title). \(playlist.detail)"
         )
         .accessibilityAddTraits(.isButton)
+    }
+}
+
+/// The one thing a coach would say before you start.
+///
+/// Deliberately at most one, and only when there is something to say: an app
+/// that comments on every session is noise, and noise is what people learn to
+/// scroll past.
+struct CoachNoteCard: View {
+    let note: CoachNote
+    let onAccept: (WorkoutDifficulty) -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 13) {
+            Image(systemName: note.symbol)
+                .font(.headline)
+                .foregroundStyle(.white)
+                .frame(width: 38, height: 38)
+                .background(LinearGradient.fastHero, in: Circle())
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text(note.title)
+                    .font(.subheadline.weight(.bold))
+                Text(note.detail)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let suggested = note.suggestedDifficulty {
+                    Button("Passer en \(suggested.title.lowercased())") {
+                        onAccept(suggested)
+                    }
+                    .font(.footnote.weight(.semibold))
+                    .padding(.top, 2)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(15)
+        .glassCard()
+        .accessibilityElement(children: .combine)
     }
 }

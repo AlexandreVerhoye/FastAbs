@@ -42,7 +42,11 @@ final class AppModel {
         return plan
     }
 
-    func makeTodayWorkout(calendar: Calendar = .current, date: Date = .now) -> WorkoutPlan {
+    func makeTodayWorkout(
+        records: [WorkoutRecord] = [],
+        calendar: Calendar = .current,
+        date: Date = .now
+    ) -> WorkoutPlan {
         var components = calendar.dateComponents([.year, .month, .day], from: date)
         components.timeZone = calendar.timeZone
         let signature = [
@@ -57,7 +61,13 @@ final class AppModel {
             String(preferences.extraRecovery),
             String(preferences.positionTransitions)
         ].joined(separator: "|")
-        let plan = WorkoutEngine().makePlan(preferences: preferences, seed: signature.fnv1a64)
+        let guidance = CoachAdvisor(calendar: calendar)
+            .guidance(records: records, preferences: preferences, now: date)
+        let plan = WorkoutEngine().makePlan(
+            preferences: preferences,
+            seed: signature.fnv1a64,
+            guidance: guidance
+        )
         activePlan = plan
         return plan
     }

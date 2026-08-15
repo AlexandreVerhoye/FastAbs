@@ -58,6 +58,8 @@
 		8DB54D4A59BF8516BF6C7248 /* WorkoutPlaylist.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844F2B6B6459D69341159F3B /* WorkoutPlaylist.swift */; };
 		4D21497470B08DC00AA27458 /* MotionContactSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 535A36AB8E425BDB7DE04AB0 /* MotionContactSheet.swift */; };
 		592D5C24A66F44869D6E826B /* AchievementBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AC85BF632D91292F825536C /* AchievementBadgeView.swift */; };
+		7BE9C36A5CE57352B6B8B3CD /* CoachAdvisor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E60F35A5ADC29152BEF999BC /* CoachAdvisor.swift */; };
+		F7A38692A84E1022550EDB4F /* CoachAdvisorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D74674466B6AD5F69D068BF /* CoachAdvisorTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -125,6 +127,8 @@
 		844F2B6B6459D69341159F3B /* WorkoutPlaylist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutPlaylist.swift; sourceTree = "<group>"; };
 		535A36AB8E425BDB7DE04AB0 /* MotionContactSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionContactSheet.swift; sourceTree = "<group>"; };
 		9AC85BF632D91292F825536C /* AchievementBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementBadgeView.swift; sourceTree = "<group>"; };
+		E60F35A5ADC29152BEF999BC /* CoachAdvisor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachAdvisor.swift; sourceTree = "<group>"; };
+		5D74674466B6AD5F69D068BF /* CoachAdvisorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachAdvisorTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -147,6 +151,7 @@
 		13CE8A0FD3321D858C13C49A /* FastAbsTests */ = {
 			isa = PBXGroup;
 			children = (
+				5D74674466B6AD5F69D068BF /* CoachAdvisorTests.swift */,
 				535A36AB8E425BDB7DE04AB0 /* MotionContactSheet.swift */,
 				491C076B54B11B8D2D22332F /* WorkoutSessionTests.swift */,
 				0753973DBB0C09D2C9E7D2D5 /* StartupCostTests.swift */,
@@ -175,6 +180,7 @@
 				B4FACEE0AEFD0C648395F9C3 /* ExerciseCatalog.swift */,
 				1181BB055B967C5810C3367A /* WorkoutEngine.swift */,
 				844F2B6B6459D69341159F3B /* WorkoutPlaylist.swift */,
+				E60F35A5ADC29152BEF999BC /* CoachAdvisor.swift */,
 				B0C8C5442F689BF42B256415 /* WorkoutModels.swift */,
 			);
 			path = Domain;
@@ -426,6 +432,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F7A38692A84E1022550EDB4F /* CoachAdvisorTests.swift in Sources */,
 				4D21497470B08DC00AA27458 /* MotionContactSheet.swift in Sources */,
 				0BB17402921D4E2E205E021F /* WorkoutSessionTests.swift in Sources */,
 				E35145385FB6EE816709D51C /* StartupCostTests.swift in Sources */,
@@ -477,6 +484,7 @@
 				830D86021B614EC722B454AE /* WorkoutEngine.swift in Sources */,
 				B477EB95263CD355DBC14427 /* WorkoutFeedback.swift in Sources */,
 				8DB54D4A59BF8516BF6C7248 /* WorkoutPlaylist.swift in Sources */,
+				7BE9C36A5CE57352B6B8B3CD /* CoachAdvisor.swift in Sources */,
 				9DF9856D105DE309FC16349C /* Haptics.swift in Sources */,
 				9F3C8930C77C202AD1792B16 /* WorkoutHistoryAnalytics.swift in Sources */,
 				0775B37D4B46E83D18A305E4 /* WorkoutModels.swift in Sources */,
