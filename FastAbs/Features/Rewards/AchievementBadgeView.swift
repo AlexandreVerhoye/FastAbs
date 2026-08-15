@@ -60,20 +60,22 @@ struct AchievementBadgeView: View {
                 edge(size: size)
 
                 ZStack {
-                    if showsBack {
-                        back(size: size)
-                            // Counter-turned, or the engraving comes out mirrored.
-                            .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
-                    } else {
-                        front(size: size)
-                    }
+                    front(size: size)
+                        .opacity(showsBack ? 0 : 1)
+                    back(size: size)
+                        // Counter-turned, or the engraving comes out mirrored.
+                        .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
+                        .opacity(showsBack ? 1 : 0)
                 }
                 .frame(width: size, height: size)
                 .rotation3DEffect(.degrees(angle), axis: (x: 0, y: 1, z: 0), perspective: 0.55)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(Rectangle())
-            .gesture(turn(across: proxy.size.width), isEnabled: isInteractive)
+            // High priority and horizontal-only: the badge sits inside a scroll
+            // view on both screens that show it, and a plain gesture there
+            // either loses to the scroll or fights it.
+            .highPriorityGesture(turn(across: proxy.size.width), isEnabled: isInteractive)
         }
         .task(id: isAnimated) { await breathe() }
         .accessibilityElement(children: .ignore)
@@ -90,14 +92,23 @@ struct AchievementBadgeView: View {
 
     /// The struck edge, revealed as the disc turns away from you.
     ///
-    /// An ellipse rather than a bar: the side of a disc is curved, and a
-    /// straight sliver at the rim reads as a stray line rather than as metal.
-    /// It widens and brightens with the turn, so face-on there is nothing to
-    /// see and edge-on it is the only thing left.
+    /// Built from the geometry rather than drawn beside it. A disc of diameter
+    /// `d` and thickness `t` turned by θ has a silhouette `d·cos θ + t·sin θ`
+    /// wide and still `d` tall; the face covers `d·cos θ` of that. So the edge
+    /// is simply what the wider ellipse leaves showing — a true crescent,
+    /// tapering to nothing at top and bottom, with no masking involved.
+    ///
+    /// Two earlier attempts drew a band of even height at the rim instead, and
+    /// both stuck out past the poles as a straight-sided sliver glued to the
+    /// medal. The second tried to cut it back with a mask, which does nothing:
+    /// `.mask` after `.offset` works in the offset view's own space, so the
+    /// circle travelled with the band it was meant to trim.
     private func edge(size: CGFloat) -> some View {
-        let depth = size * thicknessRatio
-        let width = depth * abs(turn) * 2
-        let offset = -(turn < 0 ? -1.0 : 1.0) * (size / 2) * abs(facing)
+        let face = size * abs(facing)
+        let band = size * thicknessRatio * abs(turn)
+        let hull = face + band
+        // The edge shows on the side turning away from the viewer.
+        let shift = (turn < 0 ? 1.0 : -1.0) * band / 2
 
         return Ellipse()
             .fill(
@@ -105,25 +116,18 @@ struct AchievementBadgeView: View {
                     // Milled metal: the light catches both corners of the band
                     // and dies in the middle of it.
                     colors: [
-                        metal.opacity(0.55),
-                        metal.opacity(0.98),
-                        metal.opacity(0.34),
-                        metal.opacity(0.8),
-                        metal.opacity(0.45)
+                        metal.opacity(0.5),
+                        metal.opacity(0.95),
+                        metal.opacity(0.3),
+                        metal.opacity(0.75),
+                        metal.opacity(0.42)
                     ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
             )
-            .frame(width: max(width, 0.1), height: size * 0.995)
-            .offset(x: offset)
-            // Held inside the disc's own outline. The side of a turned coin is
-            // a crescent — widest across the middle, tapering to nothing at the
-            // poles — and a band of even height instead stuck out top and
-            // bottom like a line drawn beside the medal.
-            .mask { Circle().frame(width: size, height: size) }
-            // And it fades in with the turn rather than switching on.
-            .opacity(min(1, abs(turn) * 3.2))
+            .frame(width: max(hull, 1), height: size)
+            .offset(x: shift)
     }
 
     // MARK: - Faces
@@ -253,13 +257,17 @@ struct AchievementBadgeView: View {
     // MARK: - Motion
 
     private func turn(across width: CGFloat) -> some Gesture {
-        DragGesture()
+        DragGesture(minimumDistance: 6)
             .updating($dragging) { value, state, _ in
+                // Sideways drags only. Claiming a vertical one would stop the
+                // page scrolling under the athlete's finger.
+                guard abs(value.translation.width) > abs(value.translation.height) else { return }
                 // A full drag across the badge is a little over half a turn, so
                 // the back is reachable in one movement without flying past it.
                 state = Double(value.translation.width / max(width, 1)) * 220
             }
             .onEnded { value in
+                guard abs(value.translation.width) > abs(value.translation.height) else { return }
                 // Carries the throw, not just where the finger stopped, so a
                 // flick turns the medal over the way a real one would.
                 let thrown = Double(value.predictedEndTranslation.width / max(width, 1)) * 220
