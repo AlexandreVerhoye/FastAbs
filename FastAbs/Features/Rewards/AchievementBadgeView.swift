@@ -27,13 +27,26 @@ struct AchievementBadgeView: View {
     var isInteractive: Bool = true
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// A turn in progress. Kept as one value because the two axes have to
+    /// agree on whether the gesture was ever claimed at all.
+    struct Turn: Equatable {
+        var yaw: Double = 0
+        var pitch: Double = 0
+        /// True once the drag has proved itself horizontal. Until then the
+        /// badge stays still and the scroll view underneath keeps the touch.
+        var claimed = false
+
+        static let idle = Turn()
+    }
+
     @Environment(\.scenePhase) private var scenePhase
     @State private var settled: Double = 0
+    @State private var settledPitch: Double = 0
     /// The tab shell keeps every tab alive, so a badge on a tab you are not
     /// looking at would otherwise sway at sixty frames a second forever. This
     /// is the same trap the RealityKit version fell into.
     @State private var isOnScreen = false
-    @GestureState private var dragging: Double = 0
+    @GestureState private var turning: Turn = .idle
 
     var body: some View {
         GeometryReader { proxy in
@@ -43,9 +56,10 @@ struct AchievementBadgeView: View {
                 symbol: symbol,
                 tint: tint,
                 isUnlocked: isUnlocked,
-                idles: isAnimated && !reduceMotion && dragging == 0
+                idles: isAnimated && !reduceMotion && !turning.claimed
                     && isOnScreen && scenePhase == .active,
-                yaw: settled + dragging
+                yaw: settled + turning.yaw,
+                pitch: settledPitch + turning.pitch
             )
             .contentShape(Rectangle())
             // High priority and sideways only: the badge sits inside a scroll
@@ -66,20 +80,30 @@ struct AchievementBadgeView: View {
     }
 
     private func turn(across width: CGFloat) -> some Gesture {
-        DragGesture(minimumDistance: 6)
-            .updating($dragging) { value, state, _ in
-                guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                state = Double(value.translation.width / max(width, 1)) * 220
+        DragGesture(minimumDistance: 8)
+            .updating($turning) { value, state, _ in
+                // Claimed on the horizontal, then free in both axes. Deciding
+                // per-frame instead made a diagonal drag stutter between moving
+                // and not moving; deciding never would have taken the scroll.
+                if !state.claimed {
+                    guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                    state.claimed = true
+                }
+                state.yaw = Double(value.translation.width / max(width, 1)) * 200
+                // Tilting toward and away as well, clamped: a medal that can
+                // only spin about one axis feels like a page turning.
+                state.pitch = min(24, max(-24, Double(-value.translation.height / max(width, 1)) * 90))
             }
             .onEnded { value in
-                guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                guard turning.claimed else { return }
                 // Carries the throw, so a flick turns the medal the way a real
                 // one would rather than stopping where the finger left off.
-                let thrown = Double(value.predictedEndTranslation.width / max(width, 1)) * 220
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.74)) {
+                let thrown = Double(value.predictedEndTranslation.width / max(width, 1)) * 200
+                withAnimation(.spring(response: 0.62, dampingFraction: 0.78)) {
                     // Settles onto whichever face is nearer, so it never rests
-                    // edge-on with nothing to read.
+                    // edge-on with nothing to read, and the tilt returns home.
                     settled = ((settled + thrown) / 180).rounded() * 180
+                    settledPitch = 0
                 }
                 Haptics.selection()
             }
@@ -96,6 +120,7 @@ private struct BadgeScene: UIViewRepresentable {
     let isUnlocked: Bool
     let idles: Bool
     let yaw: Double
+    let pitch: Double
 
     func makeUIView(context: Context) -> SCNView {
         let view = SCNView()
@@ -108,7 +133,7 @@ private struct BadgeScene: UIViewRepresentable {
     }
 
     func updateUIView(_ view: SCNView, context: Context) {
-        context.coordinator.apply(yaw: yaw, idles: idles)
+        context.coordinator.apply(yaw: yaw, pitch: pitch, idles: idles)
         // Draws only while there is something to draw. A medal at rest with its
         // idle sway switched off should cost nothing at all.
         view.isPlaying = idles
@@ -135,6 +160,9 @@ private struct BadgeScene: UIViewRepresentable {
     @MainActor
     final class Coordinator {
         let scene = SCNScene()
+        /// Carries the idle sway and nothing else.
+        private let cradle = SCNNode()
+        /// Carries the athlete's rotation and nothing else.
         private let medal = SCNNode()
         private var isSwaying = false
 
@@ -168,7 +196,13 @@ private struct BadgeScene: UIViewRepresentable {
             shape.materials = [face, back, rim, rim, rim]
 
             medal.geometry = shape
-            scene.rootNode.addChildNode(medal)
+            // The sway lives on the parent and the drag on the child, so the
+            // two never write to the same value. Sharing one node meant the
+            // sway's accumulated rotation was still there when a touch landed —
+            // the badge jumped — and restarting it after a release cut the
+            // settling spring off mid-flight.
+            cradle.addChildNode(medal)
+            scene.rootNode.addChildNode(cradle)
 
             let camera = SCNNode()
             camera.camera = SCNCamera()
@@ -198,31 +232,34 @@ private struct BadgeScene: UIViewRepresentable {
             scene.rootNode.addChildNode(fill)
         }
 
-        func apply(yaw: Double, idles: Bool) {
-            if idles {
-                guard !isSwaying else { return }
-                isSwaying = true
-                // A slow tilt, so a medal sitting on screen looks lit rather
-                // than printed. Runs from the resting pose; a drag stops it.
-                medal.eulerAngles = SCNVector3(-0.05, Float(yaw * .pi / 180), 0)
-                let sway = SCNAction.sequence([
-                    SCNAction.rotateBy(x: 0.06, y: 0.3, z: 0, duration: 2.7),
-                    SCNAction.rotateBy(x: -0.06, y: -0.3, z: 0, duration: 2.7)
-                ])
-                medal.runAction(.repeatForever(sway), forKey: "sway")
-                return
-            }
-
-            if isSwaying {
-                isSwaying = false
-                medal.removeAction(forKey: "sway")
-            }
-            // SwiftUI is already animating the angle, so the node follows it
-            // directly rather than running a second animation against it.
+        func apply(yaw: Double, pitch: Double, idles: Bool) {
+            // SwiftUI owns the angle and is already animating it, so the node
+            // follows it exactly rather than running a second animation against
+            // it. No transition, no easing, no argument.
             SCNTransaction.begin()
             SCNTransaction.animationDuration = 0
-            medal.eulerAngles = SCNVector3(-0.05, Float(yaw * .pi / 180), 0)
+            medal.eulerAngles = SCNVector3(
+                Float(-pitch * .pi / 180 - 0.05),
+                Float(yaw * .pi / 180),
+                0
+            )
             SCNTransaction.commit()
+
+            guard idles != isSwaying else { return }
+            isSwaying = idles
+            if idles {
+                // A slow drift on the cradle, so a medal sitting on screen looks
+                // lit rather than printed.
+                let sway = SCNAction.sequence([
+                    SCNAction.rotateBy(x: 0.05, y: 0.26, z: 0, duration: 2.8),
+                    SCNAction.rotateBy(x: -0.05, y: -0.26, z: 0, duration: 2.8)
+                ])
+                cradle.runAction(.repeatForever(sway), forKey: "sway")
+            } else {
+                // Stops where it stands rather than snapping home, so letting
+                // go of the badge does not twitch.
+                cradle.removeAction(forKey: "sway")
+            }
         }
     }
 }
