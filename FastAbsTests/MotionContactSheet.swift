@@ -64,22 +64,29 @@ struct MotionContactSheet {
 
     @Test("Render every movement")
     func render() throws {
+        // Split in halves: the whole catalog in one image overflows what PNG
+        // encoding will take, and it failed by writing a truncated file rather
+        // than by refusing.
         let motions = MotionKind.allCases.filter { $0 != .rest }
-        let sheet = VStack(spacing: 0) {
-            ForEach(motions, id: \.self) { Row(motion: $0) }
-        }
-        .background(Color.fastNavy)
+        let half = (motions.count + 1) / 2
 
-        let renderer = ImageRenderer(content: sheet)
-        renderer.scale = 1
-        guard let data = renderer.uiImage?.pngData() else {
-            Issue.record("the sheet did not rasterise")
-            return
-        }
+        for (index, chunk) in [Array(motions.prefix(half)), Array(motions.dropFirst(half))].enumerated() {
+            let sheet = VStack(spacing: 0) {
+                ForEach(chunk, id: \.self) { Row(motion: $0) }
+            }
+            .background(Color.fastNavy)
 
-        let url = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("hara-motions.png")
-        try data.write(to: url)
-        print("CONTACT SHEET \(url.path)")
+            let renderer = ImageRenderer(content: sheet)
+            renderer.scale = 1
+            guard let data = renderer.uiImage?.pngData() else {
+                Issue.record("sheet \(index + 1) did not rasterise")
+                continue
+            }
+
+            let url = URL(fileURLWithPath: NSTemporaryDirectory())
+                .appendingPathComponent("hara-motions-\(index + 1).png")
+            try data.write(to: url)
+            print("CONTACT SHEET \(url.path)")
+        }
     }
 }

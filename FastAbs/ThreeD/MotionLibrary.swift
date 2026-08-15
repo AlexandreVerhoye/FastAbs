@@ -78,6 +78,22 @@ enum MotionLibrary {
             (title, description, cadence) = ("Extension en V", "Depuis le V compact, le buste et les jambes s’éloignent en même temps puis reviennent.", 0.24)
         case .longLeverCrunch:
             (title, description, cadence) = ("Crunch bras tendus", "Les bras restent tendus près des oreilles pendant que le haut du dos décolle.", 0.3)
+        case .sidePlankKnees:
+            (title, description, cadence) = ("Planche latérale genoux", "En appui sur le genou du dessous, le bassin reste haut et la taille longue.", 0.14)
+        case .sideCrunch:
+            (title, description, cadence) = ("Crunch latéral", "Couché sur le côté, le buste se raccourcit vers la hanche puis redescend.", 0.32)
+        case .hollowRock:
+            (title, description, cadence) = ("Bascule creuse", "Le corps garde sa forme creuse et bascule d’un bloc sur le bas du dos.", 0.42)
+        case .vUp:
+            (title, description, cadence) = ("Relevé complet", "Le buste et les jambes tendues se rejoignent au-dessus du bassin, puis s’éloignent.", 0.28)
+        case .singleLegBridge:
+            (title, description, cadence) = ("Pont sur une jambe", "Une jambe reste tendue pendant que le bassin monte sur l’appui de l’autre.", 0.28)
+        case .swimmer:
+            (title, description, cadence) = ("Nageur", "Sur le ventre, le bras et la jambe opposés se lèvent puis changent.", 0.3)
+        case .heelSlide:
+            (title, description, cadence) = ("Glissé de talon", "Une jambe s’allonge au ras du sol puis revient, le dos toujours plaqué.", 0.26)
+        case .reversePlank:
+            (title, description, cadence) = ("Planche inversée", "Bassin haut et corps en ligne, poitrine ouverte vers le plafond.", 0.14)
         case .rest:
             (title, description, cadence) = ("Récupération", "Le corps reste allongé et le thorax accompagne une respiration lente.", 0.12)
         }
@@ -99,6 +115,14 @@ enum MotionLibrary {
             .controlled
         case .legRaise, .vSit, .vSitExtension, .superman, .sidePlank, .plankReach, .deadBug, .birdDog, .seatedTuck:
             .deliberate
+        case .sidePlankKnees, .reversePlank:
+            .isometric
+        case .sideCrunch, .vUp, .singleLegBridge, .heelSlide:
+            .controlled
+        case .swimmer:
+            .deliberate
+        case .hollowRock:
+            .explosive
         case .bridgeMarch:
             .controlled
         case .flutter, .scissors, .bicycle, .twist, .heelTap, .mountainClimber:
@@ -165,6 +189,22 @@ enum MotionLibrary {
         case .bridge:
             MuscleLoad(upperAbs: 0.2, lowerAbs: 0.5, obliques: 0.3, deepCore: 0.7, lowerBack: 1,
                        restingTone: 0.15)
+        case .sidePlankKnees:
+            MuscleLoad(upperAbs: 0.3, lowerAbs: 0.4, obliques: 1, deepCore: 0.9, restingTone: 0.8)
+        case .sideCrunch:
+            MuscleLoad(upperAbs: 0.5, lowerAbs: 0.3, obliques: 1, deepCore: 0.5, restingTone: 0.2)
+        case .hollowRock:
+            MuscleLoad(upperAbs: 0.9, lowerAbs: 1, obliques: 0.5, deepCore: 1, restingTone: 0.6)
+        case .vUp:
+            MuscleLoad(upperAbs: 1, lowerAbs: 1, obliques: 0.4, deepCore: 0.85, restingTone: 0.2)
+        case .singleLegBridge:
+            MuscleLoad(upperAbs: 0.2, lowerAbs: 0.5, obliques: 0.5, deepCore: 0.85, lowerBack: 1, restingTone: 0.3)
+        case .swimmer:
+            MuscleLoad(upperAbs: 0.15, lowerAbs: 0.25, obliques: 0.4, deepCore: 0.7, lowerBack: 1, restingTone: 0.3, alternatesSides: true)
+        case .heelSlide:
+            MuscleLoad(upperAbs: 0.3, lowerAbs: 0.85, obliques: 0.35, deepCore: 1, restingTone: 0.4, alternatesSides: true)
+        case .reversePlank:
+            MuscleLoad(upperAbs: 0.2, lowerAbs: 0.3, obliques: 0.4, deepCore: 0.8, lowerBack: 1, restingTone: 0.85)
         case .rest:
             MuscleLoad(upperAbs: 0.1, lowerAbs: 0.1, obliques: 0.08, deepCore: 0.14, restingTone: 0.9)
         }
@@ -542,6 +582,190 @@ extension MotionLibrary {
             plantFeet(&pose)
             return PoseSketch(pose, anchor: \.chest)
 
+        case .sidePlankKnees:
+            var pose = sidePlank()
+            // Supported on the underneath knee rather than the foot, which is
+            // the regression that makes a side plank reachable for a beginner.
+            let settle = breath * 0.012
+            pose.leftKnee = SIMD3<Float>(0.52, 0.14, 0.06)
+            pose.rightKnee = SIMD3<Float>(0.52, 0.30, -0.06)
+            pose.leftAnkle = SIMD3<Float>(0.86, 0.42, 0.06)
+            pose.rightAnkle = SIMD3<Float>(0.86, 0.58, -0.06)
+            // Shorter lever, so the hips sit a little lower than the full plank.
+            moveHips(&pose, by: SIMD3<Float>(-0.06, -0.05 + settle, 0), carryingTorso: true)
+            return PoseSketch(pose)
+
+        case .sideCrunch:
+            var pose = sideLying()
+            // The trunk shortens toward the hip it is lying on. Bending about
+            // the axis the body faces is what makes it lateral rather than a
+            // plain curl.
+            sideBend(&pose, amount: -effort * 0.42)
+            pose.leftHand = pose.head + SIMD3<Float>(-0.16, -0.04, 0.06)
+            pose.rightHand = pose.head + SIMD3<Float>(-0.12, 0.02, -0.12)
+            pose.leftElbow = aimLimb(
+                from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(0.4, -1, 0)
+            )
+            pose.rightElbow = aimLimb(
+                from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(0.4, 1, 0)
+            )
+            // Turned toward the viewer: a side bend happens in the plane a
+            // profile compresses hardest, so side-on the whole movement is a
+            // flat line. Same reason the superman is turned.
+            yaw(&pose, by: 0.7)
+            return PoseSketch(pose)
+
+        case .hollowRock:
+            var pose = supineStraight()
+            // The shape never changes — that is the whole point. It is the
+            // shape that rocks, about a point under the low back.
+            curlTorso(&pose, amount: 0.34)
+            pose.leftHand = SIMD3<Float>(-1.22, 0.52, -0.3)
+            pose.rightHand = SIMD3<Float>(-1.22, 0.52, 0.3)
+            pose.leftElbow = aimLimb(
+                from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(0, 1, -0.4)
+            )
+            pose.rightElbow = aimLimb(
+                from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(0, 1, 0.4)
+            )
+            pose.leftAnkle = SIMD3<Float>(1.24, 0.5, -0.16)
+            pose.rightAnkle = SIMD3<Float>(1.24, 0.5, 0.16)
+            pose.leftKnee = aimLimb(from: pose.leftHip, to: pose.leftAnkle, bend: SIMD3<Float>(0, 1, 0))
+            pose.rightKnee = aimLimb(from: pose.rightHip, to: pose.rightAnkle, bend: SIMD3<Float>(0, 1, 0))
+
+            let rockAxis = safeAxis(pose.leftHip - pose.rightHip, fallback: SIMD3<Float>(0, 0, 1))
+            let rock = swing * 0.2
+            for joint in allJoints {
+                pose[keyPath: joint] = rotate(
+                    pose[keyPath: joint], around: pose.pelvis, axis: rockAxis, angle: rock
+                )
+            }
+            return PoseSketch(pose, anchor: \.pelvis)
+
+        case .vUp:
+            var pose = supineStraight()
+            // Legs and torso close on each other at the same time; a v-up that
+            // lifts only one end is a leg raise or a crunch.
+            let fold = effort * 0.9
+            curlTorso(&pose, amount: fold * 0.62)
+            pose.leftAnkle = mix(
+                SIMD3<Float>(1.16, 0.135, -0.16), SIMD3<Float>(0.26, 1.16, -0.16), t: fold
+            )
+            pose.rightAnkle = mix(
+                SIMD3<Float>(1.16, 0.135, 0.16), SIMD3<Float>(0.26, 1.16, 0.16), t: fold
+            )
+            pose.leftKnee = aimLimb(
+                from: pose.leftHip, to: pose.leftAnkle,
+                bend: sagittalBend(from: pose.leftHip, to: pose.leftAnkle)
+            )
+            pose.rightKnee = aimLimb(
+                from: pose.rightHip, to: pose.rightAnkle,
+                bend: sagittalBend(from: pose.rightHip, to: pose.rightAnkle)
+            )
+            // Hands reach for the ankles, so the two ends meet somewhere.
+            // Overhead at rest, not tucked at the shoulder: at 0.08 from the
+            // joint the arm has no direction to speak of, and the solver picks
+            // a different one every frame.
+            pose.leftHand = mix(
+                SIMD3<Float>(-1.2, 0.16, -0.3), SIMD3<Float>(0.16, 0.92, -0.24), t: fold
+            )
+            pose.rightHand = mix(
+                SIMD3<Float>(-1.2, 0.16, 0.3), SIMD3<Float>(0.16, 0.92, 0.24), t: fold
+            )
+            pose.leftElbow = aimLimb(
+                from: pose.leftShoulder, to: pose.leftHand,
+                bend: sagittalBend(from: pose.leftShoulder, to: pose.leftHand, sign: -1)
+            )
+            pose.rightElbow = aimLimb(
+                from: pose.rightShoulder, to: pose.rightHand,
+                bend: sagittalBend(from: pose.rightShoulder, to: pose.rightHand, sign: -1)
+            )
+            return PoseSketch(pose, anchor: \.pelvis)
+
+        case .singleLegBridge:
+            var pose = supineBentKnees()
+            // One foot planted, the other leg carried straight in line with the
+            // trunk so the working hip has nothing to share the load with.
+            pose.rightKnee = SIMD3<Float>(0.42, 0.46, 0.17)
+            pose.rightAnkle = SIMD3<Float>(0.92, 0.62, 0.17)
+            moveHips(&pose, by: SIMD3<Float>(0, effort * 0.4, 0), carryingTorso: false)
+            pose.leftKnee = aimLimb(
+                from: pose.leftHip, to: pose.leftAnkle, bend: SIMD3<Float>(0, 1, 0), offset: 0.2
+            )
+            pose.rightKnee = aimLimb(
+                from: pose.rightHip, to: pose.rightAnkle, bend: SIMD3<Float>(0, 1, 0), offset: 0.2
+            )
+            return PoseSketch(pose, anchor: \.chest)
+
+        case .swimmer:
+            var pose = prone()
+            // Opposite arm and leg, taking turns. Small amplitude, long line.
+            let reach = abs(swing) * 0.42
+            if swing >= 0 {
+                pose.leftHand.y += reach
+                pose.leftElbow.y += reach * 0.6
+                pose.rightAnkle.y += reach * 0.9
+                pose.rightKnee.y += reach * 0.4
+            } else {
+                pose.rightHand.y += reach
+                pose.rightElbow.y += reach * 0.6
+                pose.leftAnkle.y += reach * 0.9
+                pose.leftKnee.y += reach * 0.4
+            }
+            pose.chest.y += reach * 0.22
+            pose.neck.y += reach * 0.34
+            pose.head.y += reach * 0.4
+            yaw(&pose, by: 0.78)
+            return PoseSketch(pose, anchor: \.pelvis)
+
+        case .heelSlide:
+            var pose = supineTabletop()
+            // One leg straightens along the mat and comes back. The whole test
+            // is whether the lower back stays down while it does.
+            let slide = abs(swing)
+            let folded = SIMD3<Float>(0.09, 0.8, -0.17)
+            let long = SIMD3<Float>(0.58, 0.2, -0.17)
+            let foldedAnkle = SIMD3<Float>(0.67, 0.83, -0.17)
+            let longAnkle = SIMD3<Float>(1.12, 0.14, -0.17)
+            if swing >= 0 {
+                pose.leftKnee = mix(folded, long, t: slide)
+                pose.leftAnkle = mix(foldedAnkle, longAnkle, t: slide)
+            } else {
+                pose.rightKnee = mirrored(mix(folded, long, t: slide))
+                pose.rightAnkle = mirrored(mix(foldedAnkle, longAnkle, t: slide))
+            }
+            return PoseSketch(pose)
+
+        case .reversePlank:
+            var pose = seated()
+            // Face up, hips lifted into line between the hands and the heels.
+            let settle = breath * 0.012
+            pose.pelvis = SIMD3<Float>(0.2, 0.62 + settle, 0)
+            pose.leftHip = pose.pelvis + SIMD3<Float>(0, 0, -0.155)
+            pose.rightHip = pose.pelvis + SIMD3<Float>(0, 0, 0.155)
+            pose.chest = SIMD3<Float>(-0.36, 0.7 + settle, 0)
+            pose.neck = SIMD3<Float>(-0.62, 0.76 + settle, 0)
+            pose.head = SIMD3<Float>(-0.74, 0.79 + settle, 0)
+            pose.leftShoulder = pose.chest + SIMD3<Float>(0, 0, -0.25)
+            pose.rightShoulder = pose.chest + SIMD3<Float>(0, 0, 0.25)
+            pose.leftHand = SIMD3<Float>(-0.86, 0.13, -0.32)
+            pose.rightHand = SIMD3<Float>(-0.86, 0.13, 0.32)
+            pose.leftElbow = aimLimb(
+                from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(-0.4, 0, -1)
+            )
+            pose.rightElbow = aimLimb(
+                from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(-0.4, 0, 1)
+            )
+            pose.leftAnkle = SIMD3<Float>(1.18, 0.14, -0.16)
+            pose.rightAnkle = SIMD3<Float>(1.18, 0.14, 0.16)
+            pose.leftKnee = aimLimb(
+                from: pose.leftHip, to: pose.leftAnkle, bend: SIMD3<Float>(0, -1, 0), offset: 0.2
+            )
+            pose.rightKnee = aimLimb(
+                from: pose.rightHip, to: pose.rightAnkle, bend: SIMD3<Float>(0, -1, 0), offset: 0.2
+            )
+            return PoseSketch(pose)
+
         case .rest:
             var pose = supineBentKnees()
             pose.chest.y += (breath + 1) * 0.014
@@ -759,6 +983,29 @@ private extension MotionLibrary {
         )
     }
 
+    /// Flat on one side, the way a side crunch starts. The side plank is
+    /// propped up on an elbow, which is a different shape entirely.
+    static func sideLying() -> BodyPose {
+        BodyPose(
+            head: SIMD3<Float>(-1.0, 0.33, 0.02),
+            neck: SIMD3<Float>(-0.79, 0.31, 0.01),
+            chest: SIMD3<Float>(-0.47, 0.3, 0),
+            pelvis: SIMD3<Float>(0.11, 0.25, 0),
+            leftShoulder: SIMD3<Float>(-0.47, 0.13, 0.16),
+            rightShoulder: SIMD3<Float>(-0.47, 0.55, -0.16),
+            leftElbow: SIMD3<Float>(-0.8, 0.14, 0.14),
+            rightElbow: SIMD3<Float>(-0.62, 0.72, -0.2),
+            leftHand: SIMD3<Float>(-1.12, 0.14, 0.12),
+            rightHand: SIMD3<Float>(-0.88, 0.52, -0.16),
+            leftHip: SIMD3<Float>(0.11, 0.14, 0.09),
+            rightHip: SIMD3<Float>(0.11, 0.36, -0.09),
+            leftKnee: SIMD3<Float>(0.63, 0.13, 0.09),
+            rightKnee: SIMD3<Float>(0.63, 0.33, -0.09),
+            leftAnkle: SIMD3<Float>(1.13, 0.13, 0.09),
+            rightAnkle: SIMD3<Float>(1.13, 0.32, -0.09)
+        )
+    }
+
     static func sidePlank() -> BodyPose {
         BodyPose(
             head: SIMD3<Float>(-1.0, 0.68, 0.02),
@@ -933,6 +1180,16 @@ private extension MotionLibrary {
     ///
     /// Only the *direction* of `bend` matters: the solver decides how far the
     /// joint actually swings from the bone lengths.
+    /// A bend hint perpendicular to the limb by construction, in the plane the
+    /// body faces. A fixed hint is fine for a limb that barely moves; across a
+    /// sweep from horizontal to vertical it passes through parallel, and a hint
+    /// parallel to the limb is the ill-conditioned case that snaps the joint
+    /// from one side to the other between two frames.
+    static func sagittalBend(from root: SIMD3<Float>, to target: SIMD3<Float>, sign: Float = 1) -> SIMD3<Float> {
+        let axis = safeAxis(target - root, fallback: SIMD3<Float>(1, 0, 0))
+        return simd_cross(axis, SIMD3<Float>(0, 0, 1)) * sign
+    }
+
     static func aimLimb(
         from root: SIMD3<Float>,
         to target: SIMD3<Float>,

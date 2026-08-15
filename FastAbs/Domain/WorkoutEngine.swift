@@ -22,6 +22,9 @@ struct WorkoutEngine: Sendable {
         self.catalog = catalog
     }
 
+    /// The abdominal groups a complete session owes the athlete.
+    static let essentialZones: Set<MuscleZone> = [.upperAbs, .lowerAbs, .obliques, .deepCore]
+
     static let transitionDuration = 5
     /// A rest shorter than this is not a rest, it is a stumble.
     static let minimumRest = 6
@@ -177,6 +180,7 @@ struct WorkoutEngine: Sendable {
                 focusMatches: focusMatches,
                 explicitFocus: explicitFocus,
                 slotsRemaining: remaining,
+                slotCount: count,
                 random: &random
             )
 
@@ -214,6 +218,7 @@ struct WorkoutEngine: Sendable {
         focusMatches: Int,
         explicitFocus: Set<MuscleZone>,
         slotsRemaining: Int,
+        slotCount: Int,
         random: inout SplitMix64
     ) -> Exercise {
         // A movement may only come back when the pool genuinely runs out, and
@@ -241,7 +246,14 @@ struct WorkoutEngine: Sendable {
                 !coveredPatterns.contains(pattern) && pool.contains { $0.pattern == pattern }
             }
             let covering = pool.filter { missing.contains($0.pattern) }
-            if !covering.isEmpty, movementCount < CorePattern.allCases.count { pool = covering }
+            // How many jobs a session of this length can honestly promise. All
+            // five in a seven-minute session means five or six movements — two
+            // of which may be the halves of one held movement — every one of
+            // them spoken for, and no room left to touch the abdominal groups
+            // themselves. A coach covers the main jobs and rotates the rest
+            // across the week rather than cramming them into one short session.
+            let promised = min(CorePattern.allCases.count, max(3, slotCount / 2))
+            if !covering.isEmpty, movementCount < promised { pool = covering }
         } else if focusMatches < 2 {
             let focused = pool.filter { !$0.zones.intersection(explicitFocus).isEmpty }
             if !focused.isEmpty { pool = focused }
@@ -269,9 +281,17 @@ struct WorkoutEngine: Sendable {
 
             let patternGap = coveredPatterns.contains(exercise.pattern) ? 0.0 : 3.2
             // Patterns decide what a session covers; zones still decide what it
-            // feels like, so an untouched abdominal group is worth reaching for
-            // once the jobs are served.
-            let zoneGap = exercise.zones.subtracting(coveredZones).isEmpty ? 0.0 : 2.4
+            // feels like. Weighted per untouched essential group rather than as
+            // a flat bonus — with a wider catalog every pattern has several
+            // candidates, and a flat nudge stopped deciding between them.
+            let missingZones = Self.essentialZones
+                .subtracting(coveredZones)
+                .intersection(exercise.zones)
+            // Heavy enough to decide inside a pattern-restricted pool, which is
+            // where it has to work: the first picks of a short session are
+            // already narrowed to one pattern each, so a gentle nudge never got
+            // to choose between the candidates.
+            let zoneGap = Double(missingZones.count) * 5.0
             let share = Double(patternCounts[exercise.pattern] ?? 0) / Double(totalMovements)
             let patternGlut = -25.0 * max(0, share - 0.45)
             // A held movement needs both its halves; it cannot take the last slot.
@@ -316,6 +336,16 @@ struct WorkoutEngine: Sendable {
 
             if let swap, current.side == nil {
                 result.swapAt(index, swap)
+            } else if current.side != nil, previous.side == nil, index > 1 {
+                // The clash is against a held pair, which cannot be moved: the
+                // two halves have to stay together and in order. Move the
+                // single movement in front of it instead.
+                let alternative = result.indices.dropFirst(index + 2).first { candidate in
+                    result[candidate].side == nil
+                        && result[candidate].exercise.family != current.exercise.family
+                        && result[candidate].exercise.family != result[index - 2].exercise.family
+                }
+                if let alternative { result.swapAt(index - 1, alternative) }
             }
             index += 1
         }
