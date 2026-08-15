@@ -204,3 +204,14 @@ struct FilterChip: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
+
+extension Bundle {
+    /// The version as shipped, read from the bundle rather than typed into the
+    /// settings screen — a number written by hand is a number that goes stale
+    /// the first time it matters, which is when someone reports a bug against it.
+    var versionSummary: String {
+        let short = object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+        let build = object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
+        return "\(short) (\(build))"
+    }
+}

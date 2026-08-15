@@ -121,7 +121,7 @@ struct SettingsView: View {
                 }
 
                 Section("À propos") {
-                    LabeledContent("Version", value: "1.0")
+                    LabeledContent("Version", value: Bundle.main.versionSummary)
                     NavigationLink("Sécurité et mouvement") {
                         SafetyView()
                     }
