@@ -61,12 +61,13 @@ final class AppModel {
             String(preferences.extraRecovery),
             String(preferences.positionTransitions)
         ].joined(separator: "|")
-        let guidance = CoachAdvisor(calendar: calendar)
-            .guidance(records: records, preferences: preferences, now: date)
+        let recipe = CoachAdvisor(calendar: calendar)
+            .recipe(records: records, base: preferences, now: date)
+        todayRecipe = recipe
         let plan = WorkoutEngine().makePlan(
-            preferences: preferences,
+            preferences: recipe.preferences,
             seed: signature.fnv1a64,
-            guidance: guidance
+            guidance: recipe.guidance
         )
         activePlan = plan
         return plan
@@ -84,6 +85,10 @@ final class AppModel {
             String(components.day ?? 0)
         ].joined(separator: "|").fnv1a64
     }
+
+    /// What the coach settled on for today, so the home screen can show the
+    /// reasoning rather than quietly handing over a different session.
+    private(set) var todayRecipe: SessionRecipe?
 
     func restoreRecommendedPlan() {
         preferences = .recommended

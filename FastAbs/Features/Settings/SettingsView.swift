@@ -82,7 +82,42 @@ struct SettingsView: View {
                             set: { appModel.preferences.neckFriendly = $0 }
                         )
                     )
-                    Button("Restaurer le programme recommandé") { appModel.restoreRecommendedPlan() }
+                    Toggle(isOn: Binding(
+                    get: { appModel.preferences.adaptiveCoaching },
+                    set: { value in
+                        var updated = appModel.preferences
+                        updated.adaptiveCoaching = value
+                        appModel.preferences = updated
+                    }
+                )) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Label("Coach adaptatif", systemImage: "wand.and.stars")
+                        Text("La séance du jour s’ajuste à vos retours et à ce que vous avez déjà travaillé.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Toggle(isOn: Binding(
+                    get: { appModel.preferences.positionTransitions },
+                    set: { value in
+                        var updated = appModel.preferences
+                        updated.positionTransitions = value
+                        appModel.preferences = updated
+                    }
+                )) {
+                    Label("Temps de mise en place", systemImage: "figure.stand")
+                }
+                Toggle(isOn: Binding(
+                    get: { appModel.preferences.extraRecovery },
+                    set: { value in
+                        var updated = appModel.preferences
+                        updated.extraRecovery = value
+                        appModel.preferences = updated
+                    }
+                )) {
+                    Label("Récupération renforcée", systemImage: "heart.text.clipboard")
+                }
+                Button("Restaurer le programme recommandé") { appModel.restoreRecommendedPlan() }
                 }
 
                 Section("À propos") {

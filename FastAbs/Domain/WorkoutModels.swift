@@ -283,6 +283,9 @@ struct WorkoutPreferences: Codable, Hashable, Sendable {
     var extraRecovery: Bool
     /// Five seconds between movements to change position.
     var positionTransitions: Bool
+    /// Whether the day's session may adapt itself to what the history shows.
+    /// Off, the settings below are followed to the letter.
+    var adaptiveCoaching: Bool
 
     init(
         durationMinutes: Int,
@@ -291,7 +294,8 @@ struct WorkoutPreferences: Codable, Hashable, Sendable {
         apartmentFriendly: Bool,
         neckFriendly: Bool,
         extraRecovery: Bool,
-        positionTransitions: Bool = true
+        positionTransitions: Bool = true,
+        adaptiveCoaching: Bool = true
     ) {
         self.durationMinutes = durationMinutes
         self.difficulty = difficulty
@@ -300,6 +304,7 @@ struct WorkoutPreferences: Codable, Hashable, Sendable {
         self.neckFriendly = neckFriendly
         self.extraRecovery = extraRecovery
         self.positionTransitions = positionTransitions
+        self.adaptiveCoaching = adaptiveCoaching
     }
 
     /// Decoded by hand rather than by the compiler.
@@ -320,6 +325,7 @@ struct WorkoutPreferences: Codable, Hashable, Sendable {
         neckFriendly = try container.decodeIfPresent(Bool.self, forKey: .neckFriendly) ?? false
         extraRecovery = try container.decodeIfPresent(Bool.self, forKey: .extraRecovery) ?? false
         positionTransitions = try container.decodeIfPresent(Bool.self, forKey: .positionTransitions) ?? true
+        adaptiveCoaching = try container.decodeIfPresent(Bool.self, forKey: .adaptiveCoaching) ?? true
     }
 
     func encode(to encoder: any Encoder) throws {
@@ -331,11 +337,13 @@ struct WorkoutPreferences: Codable, Hashable, Sendable {
         try container.encode(neckFriendly, forKey: .neckFriendly)
         try container.encode(extraRecovery, forKey: .extraRecovery)
         try container.encode(positionTransitions, forKey: .positionTransitions)
+        try container.encode(adaptiveCoaching, forKey: .adaptiveCoaching)
     }
 
     private enum CodingKeys: String, CodingKey {
         case durationMinutes, difficulty, focusZones
         case apartmentFriendly, neckFriendly, extraRecovery, positionTransitions
+        case adaptiveCoaching
     }
 
     static let recommended = WorkoutPreferences(

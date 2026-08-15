@@ -14,7 +14,8 @@ enum TestSupport {
         apartmentFriendly: Bool = true,
         neckFriendly: Bool = false,
         extraRecovery: Bool = false,
-        positionTransitions: Bool = true
+        positionTransitions: Bool = true,
+        adaptiveCoaching: Bool = true
     ) -> WorkoutPreferences {
         WorkoutPreferences(
             durationMinutes: durationMinutes,
@@ -23,7 +24,8 @@ enum TestSupport {
             apartmentFriendly: apartmentFriendly,
             neckFriendly: neckFriendly,
             extraRecovery: extraRecovery,
-            positionTransitions: positionTransitions
+            positionTransitions: positionTransitions,
+            adaptiveCoaching: adaptiveCoaching
         )
     }
 

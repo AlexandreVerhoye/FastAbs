@@ -15,6 +15,9 @@ struct TodayView: View {
             ScrollView {
                 LazyVStack(spacing: 26) {
                     greeting
+                    if let recipe = appModel.todayRecipe, recipe.isAdapted {
+                        AdaptedSessionCard(recipe: recipe)
+                    }
                     if let note = guidance.note {
                         CoachNoteCard(note: note) { difficulty in
                             Haptics.begin()
@@ -428,5 +431,41 @@ struct CoachNoteCard: View {
         .padding(15)
         .glassCard()
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// Why today's session is not exactly what the settings say.
+///
+/// An adaptation the athlete cannot see is indistinguishable from a bug: they
+/// asked for twelve minutes at balanced and got nine at beginner, and without a
+/// reason attached that reads as the app being broken rather than as coaching.
+struct AdaptedSessionCard: View {
+    let recipe: SessionRecipe
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("ADAPTÉ POUR VOUS", systemImage: "wand.and.stars")
+                .font(.caption2.weight(.heavy))
+                .tracking(0.7)
+                .foregroundStyle(Color.fastCoral)
+
+            ForEach(recipe.rationale, id: \.self) { line in
+                HStack(alignment: .top, spacing: 8) {
+                    Circle()
+                        .fill(Color.fastCoral.opacity(0.55))
+                        .frame(width: 5, height: 5)
+                        .padding(.top, 6)
+                    Text(line)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(15)
+        .glassCard()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Séance adaptée. " + recipe.rationale.joined(separator: " "))
     }
 }

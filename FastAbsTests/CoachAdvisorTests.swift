@@ -164,6 +164,119 @@ struct CoachAdvisorTests {
         #expect(aware > blind, "the neglected job was not favoured: \(aware) against \(blind)")
     }
 
+    // MARK: - The prescription
+
+    @Test("Sessions that land easy raise the level on their own")
+    func easySessionsRaiseTheLevel() {
+        let records = (10...12).map { record(day: $0, effort: .easy) }
+        let recipe = CoachAdvisor(calendar: calendar)
+            .recipe(records: records, base: TestSupport.preferences(), now: date(13))
+
+        #expect(recipe.preferences.difficulty == .advanced)
+        #expect(recipe.isAdapted)
+        #expect(recipe.rationale.contains { $0.contains("faciles") })
+    }
+
+    @Test("Sessions that land hard lower it")
+    func hardSessionsLowerTheLevel() {
+        let records = [record(day: 11, effort: .hard), record(day: 12, effort: .hard)]
+        let recipe = CoachAdvisor(calendar: calendar)
+            .recipe(records: records, base: TestSupport.preferences(), now: date(13))
+
+        #expect(recipe.preferences.difficulty == .beginner)
+    }
+
+    @Test("The adaptation never runs away from what was chosen")
+    func adaptationStaysWithinOneStep() {
+        // Ten easy sessions must not walk the athlete from beginner to athlete.
+        let records = (3...12).map { record(day: $0, difficulty: .beginner, effort: .easy) }
+        let recipe = CoachAdvisor(calendar: calendar)
+            .recipe(
+                records: records,
+                base: TestSupport.preferences(difficulty: .beginner),
+                now: date(13)
+            )
+
+        #expect(recipe.preferences.difficulty == .balanced)
+    }
+
+    @Test("A session abandoned twice buys a shorter one")
+    func abandonedSessionsShortenTheDay() {
+        let records = (11...12).map { day -> WorkoutRecord in
+            let stored = record(day: day)
+            stored.wasCompleted = false
+            return stored
+        }
+        let recipe = CoachAdvisor(calendar: calendar)
+            .recipe(
+                records: records,
+                base: TestSupport.preferences(durationMinutes: 12),
+                now: date(13)
+            )
+
+        #expect(recipe.preferences.durationMinutes == 9)
+        #expect(recipe.rationale.contains { $0.contains("abandonnée") })
+    }
+
+    @Test("The group that has waited longest is put first")
+    func theNeglectedZoneIsPrioritised() {
+        // Nothing but planks for a week leaves the upper abs untouched.
+        let records = (6...12).map { record(day: $0, exercises: ["forearm-plank"]) }
+        let recipe = CoachAdvisor(calendar: calendar)
+            .recipe(records: records, base: TestSupport.preferences(), now: date(13))
+
+        #expect(recipe.preferences.focusZones != [.fullCore])
+        #expect(recipe.rationale.contains { $0.contains("priorité") })
+    }
+
+    @Test("A zone the athlete chose themselves is left alone")
+    func explicitFocusIsAnInstruction() {
+        // An explicit choice is an instruction, not a hint the coach may
+        // improve on.
+        let records = (6...12).map { record(day: $0, exercises: ["forearm-plank"]) }
+        let base = TestSupport.preferences(focusZones: [.lowerAbs])
+        let recipe = CoachAdvisor(calendar: calendar)
+            .recipe(records: records, base: base, now: date(13))
+
+        #expect(recipe.preferences.focusZones == [.lowerAbs])
+    }
+
+    @Test("Switching the coach off follows the settings to the letter")
+    func adaptationCanBeRefused() {
+        let records = (10...12).map { record(day: $0, effort: .easy) }
+        let base = TestSupport.preferences(adaptiveCoaching: false)
+        let recipe = CoachAdvisor(calendar: calendar)
+            .recipe(records: records, base: base, now: date(13))
+
+        #expect(recipe.preferences == base)
+        #expect(!recipe.isAdapted)
+    }
+
+    @Test("Nothing to go on means nothing is changed")
+    func aFreshStartIsNotAdapted() {
+        let recipe = CoachAdvisor(calendar: calendar)
+            .recipe(records: [], base: TestSupport.preferences(), now: date(13))
+
+        #expect(recipe.preferences == TestSupport.preferences())
+        #expect(!recipe.isAdapted)
+    }
+
+    @Test("Every adaptation says why")
+    func adaptationsAreAlwaysExplained() {
+        // An adaptation the athlete cannot see is indistinguishable from a bug.
+        for records in [
+            (10...12).map { record(day: $0, effort: .easy) },
+            [record(day: 11, effort: .hard), record(day: 12, effort: .hard)],
+            (6...12).map { record(day: $0, exercises: ["forearm-plank"]) }
+        ] {
+            let base = TestSupport.preferences()
+            let recipe = CoachAdvisor(calendar: calendar)
+                .recipe(records: records, base: base, now: date(13))
+            let changed = recipe.preferences != base
+            #expect(changed == recipe.isAdapted, "an adjustment went unexplained")
+        }
+    }
+
     @Test("Guidance never breaks the session's own promises")
     func guidedSessionsStayValid() {
         let guidance = CoachGuidance(
