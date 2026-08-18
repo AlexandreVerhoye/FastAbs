@@ -1,0 +1,265 @@
+import Testing
+@testable import Hara
+
+@Suite("Workout engine")
+struct WorkoutEngineTests {
+    @Test("A seed reproduces the same workout")
+    func seedIsDeterministic() {
+        let engine = WorkoutEngine()
+        let preferences = TestSupport.preferences(
+            durationMinutes: 12,
+            difficulty: .advanced,
+            focusZones: [.lowerAbs, .obliques],
+            apartmentFriendly: false,
+            neckFriendly: true,
+            extraRecovery: true
+        )
+
+        for seed in TestSupport.seeds {
+            let first = engine.makePlan(preferences: preferences, seed: seed)
+            let second = engine.makePlan(preferences: preferences, seed: seed)
+
+            #expect(TestSupport.signature(of: first) == TestSupport.signature(of: second),
+                    "Plan changed for seed \(seed)")
+            #expect(first.estimatedCalories == second.estimatedCalories)
+        }
+    }
+
+    @Test("Different seeds create meaningful daily variation")
+    func seedsCreateVariation() {
+        let engine = WorkoutEngine()
+        let preferences = TestSupport.preferences(durationMinutes: 10)
+        let signatures = Set((0..<20).map { seed in
+            TestSupport.signature(
+                of: engine.makePlan(preferences: preferences, seed: UInt64(seed))
+            ).joined(separator: "|")
+        })
+
+        #expect(signatures.count >= 10)
+    }
+
+    @Test("The requested duration is exact and clamped to supported limits")
+    func durationIsExactAndClamped() {
+        let engine = WorkoutEngine()
+        let durations = [1: 300, 5: 300, 7: 420, 12: 720, 30: 1_800, 45: 1_800]
+
+        for (minutes, expectedSeconds) in durations {
+            for seed in TestSupport.seeds {
+                let plan = engine.makePlan(
+                    preferences: TestSupport.preferences(durationMinutes: minutes),
+                    seed: seed
+                )
+                #expect(plan.duration == expectedSeconds,
+                        "Unexpected duration for \(minutes) min and seed \(seed)")
+            }
+        }
+    }
+
+    @Test("The generated plan preserves its preferences")
+    func planPreservesPreferences() {
+        let preferences = TestSupport.preferences(
+            durationMinutes: 15,
+            difficulty: .athlete,
+            focusZones: [.upperAbs, .obliques],
+            apartmentFriendly: false,
+            neckFriendly: true,
+            extraRecovery: true
+        )
+
+        let plan = WorkoutEngine().makePlan(preferences: preferences, seed: 42)
+
+        #expect(plan.preferences == preferences)
+    }
+
+    @Test("Difficulty, apartment and neck constraints are respected")
+    func builtInCatalogConstraintsAreRespected() {
+        let engine = WorkoutEngine()
+
+        for difficulty in WorkoutDifficulty.allCases {
+            let preferences = TestSupport.preferences(
+                durationMinutes: 12,
+                difficulty: difficulty,
+                apartmentFriendly: true,
+                neckFriendly: true
+            )
+
+            for seed in TestSupport.seeds {
+                let exercises = engine.makePlan(preferences: preferences, seed: seed)
+                    .steps.compactMap(\.exercise)
+
+                #expect(exercises.allSatisfy { $0.minimumDifficulty <= difficulty },
+                        "Difficulty violated for seed \(seed)")
+                #expect(exercises.allSatisfy { $0.impact == .quiet },
+                        "Apartment mode violated for seed \(seed)")
+                #expect(exercises.allSatisfy { $0.neckFriendly },
+                        "Neck-friendly mode violated for seed \(seed)")
+            }
+        }
+    }
+
+    @Test("Safety filters remain hard constraints with a small catalog")
+    func smallCatalogDoesNotDisableSafetyFilters() {
+        let catalog = [
+            TestSupport.exercise(id: "safe"),
+            TestSupport.exercise(id: "jump-1", impact: .dynamic),
+            TestSupport.exercise(id: "jump-2", impact: .dynamic),
+            TestSupport.exercise(id: "jump-3", impact: .dynamic),
+            TestSupport.exercise(id: "neck-1", neckFriendly: false),
+            TestSupport.exercise(id: "neck-2", neckFriendly: false)
+        ]
+        let preferences = TestSupport.preferences(
+            durationMinutes: 5,
+            apartmentFriendly: true,
+            neckFriendly: true
+        )
+
+        for seed in TestSupport.seeds {
+            let exercises = WorkoutEngine(catalog: catalog)
+                .makePlan(preferences: preferences, seed: seed)
+                .steps.compactMap(\.exercise)
+
+            #expect(exercises.allSatisfy { $0.impact == .quiet && $0.neckFriendly },
+                    "A safety constraint was relaxed for seed \(seed)")
+        }
+    }
+
+    @Test("An incompatible catalog never produces an unsafe fallback")
+    func incompatibleCatalogUsesSafeFallback() {
+        let incompatible = TestSupport.exercise(
+            id: "unsafe-only",
+            impact: .dynamic,
+            neckFriendly: false
+        )
+        let preferences = TestSupport.preferences(
+            durationMinutes: 5,
+            apartmentFriendly: true,
+            neckFriendly: true
+        )
+
+        let exercises = WorkoutEngine(catalog: [incompatible])
+            .makePlan(preferences: preferences, seed: 42)
+            .steps.compactMap(\.exercise)
+
+        #expect(!exercises.isEmpty)
+        #expect(exercises.allSatisfy { $0.impact == .quiet && $0.neckFriendly })
+    }
+
+    @Test("The session's seconds add up, whatever the mix")
+    func secondsAreFullyAccountedFor() {
+        // Rest is defined as the residual — target minus work minus transitions
+        // — so this is the identity the whole engine is built on. If it ever
+        // fails, no other duration promise means anything.
+        for difficulty in WorkoutDifficulty.allCases {
+            for transitions in [false, true] {
+                for minutes in [5, 9, 14, 20] {
+                    let preferences = TestSupport.preferences(
+                        durationMinutes: minutes,
+                        difficulty: difficulty,
+                        positionTransitions: transitions
+                    )
+                    let plan = WorkoutEngine().makePlan(preferences: preferences, seed: 3)
+
+                    let work = plan.steps.filter { $0.kind == .exercise }.reduce(0) { $0 + $1.duration }
+                    let rest = plan.steps.filter { $0.kind == .recovery }.reduce(0) { $0 + $1.duration }
+                    let moves = plan.steps.filter { $0.kind == .transition }
+
+                    #expect(work + rest + moves.reduce(0) { $0 + $1.duration } == minutes * 60)
+                    #expect(moves.allSatisfy { $0.duration == 5 })
+                    #expect(transitions || moves.isEmpty, "transitions appeared while switched off")
+                }
+            }
+        }
+    }
+
+    @Test("Rests are long enough to be worth taking and short enough to stay warm")
+    func restsAreWithinHumanBounds() {
+        for difficulty in WorkoutDifficulty.allCases {
+            for seed in TestSupport.seeds {
+                let plan = WorkoutEngine().makePlan(
+                    preferences: TestSupport.preferences(durationMinutes: 14, difficulty: difficulty),
+                    seed: seed
+                )
+                for rest in plan.steps where rest.kind == .recovery {
+                    #expect(rest.duration >= 6, "a rest was cut to \(rest.duration)s")
+                    #expect(rest.duration <= 90, "a rest ran to \(rest.duration)s")
+                }
+            }
+        }
+    }
+
+    @Test("Reinforced recovery buys more rest, not a different session length")
+    func extraRecoveryLengthensRest() {
+        for difficulty in WorkoutDifficulty.allCases {
+            let plain = WorkoutEngine().makePlan(
+                preferences: TestSupport.preferences(durationMinutes: 14, difficulty: difficulty),
+                seed: 3
+            )
+            let padded = WorkoutEngine().makePlan(
+                preferences: TestSupport.preferences(
+                    durationMinutes: 14, difficulty: difficulty, extraRecovery: true
+                ),
+                seed: 3
+            )
+
+            func rest(_ plan: WorkoutPlan) -> Int {
+                plan.steps.filter { $0.kind == .recovery }.reduce(0) { $0 + $1.duration }
+            }
+            #expect(rest(padded) > rest(plain), "\(difficulty) gained no rest from reinforcement")
+            #expect(padded.duration == plain.duration, "reinforcement changed the session length")
+        }
+    }
+
+    @Test("Difficulty sets the work-to-rest ratio")
+    func harderSessionsRestLess() {
+        func ratio(_ difficulty: WorkoutDifficulty) -> Double {
+            let plan = WorkoutEngine().makePlan(
+                preferences: TestSupport.preferences(durationMinutes: 16, difficulty: difficulty),
+                seed: 11
+            )
+            let work = plan.steps.filter { $0.kind == .exercise }.reduce(0) { $0 + $1.duration }
+            let rest = plan.steps.filter { $0.kind == .recovery }.reduce(0) { $0 + $1.duration }
+            return Double(rest) / Double(max(1, work))
+        }
+
+        let ratios = WorkoutDifficulty.allCases.map(ratio)
+        for (harder, easier) in zip(ratios.dropFirst(), ratios) {
+            #expect(harder < easier, "rest did not shrink with difficulty: \(ratios)")
+        }
+    }
+
+    @Test("Higher difficulties select harder movements, not only longer intervals")
+    func difficultyChangesExerciseSelection() {
+        let engine = WorkoutEngine()
+        var harderSelections = 0
+
+        for seed in TestSupport.seeds {
+            let beginner = engine.makePlan(
+                preferences: TestSupport.preferences(
+                    durationMinutes: 10,
+                    difficulty: .beginner,
+                    apartmentFriendly: false
+                ),
+                seed: seed
+            )
+            let athlete = engine.makePlan(
+                preferences: TestSupport.preferences(
+                    durationMinutes: 10,
+                    difficulty: .athlete,
+                    apartmentFriendly: false
+                ),
+                seed: seed
+            )
+
+            #expect(beginner.steps.compactMap(\.exercise).allSatisfy {
+                $0.minimumDifficulty == .beginner
+            })
+            if athlete.steps.compactMap(\.exercise).contains(where: {
+                $0.minimumDifficulty >= .advanced
+            }) {
+                harderSelections += 1
+            }
+        }
+
+        #expect(harderSelections == TestSupport.seeds.count)
+    }
+}

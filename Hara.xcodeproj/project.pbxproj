@@ -1,0 +1,766 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		03E3B29E4FF066451388CDF6 /* ExerciseCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FC75E9D82697D5381192E75 /* ExerciseCatalogTests.swift */; };
+		04982C14C50FBFE18FA403BC /* PoseSolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95A8035C40D980C6EF22A88F /* PoseSolverTests.swift */; };
+		06217090AA92B5D132614C0F /* CoachAdvisor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89C146F311F460783880803F /* CoachAdvisor.swift */; };
+		08F3ED11BE4CA60B484EE931 /* WorkoutExperienceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74CFCEFFDEE5E9519B22358E /* WorkoutExperienceTests.swift */; };
+		12463B451F352DA1983FDB60 /* WorkoutHistoryAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08FF588541E2AD95F43116D3 /* WorkoutHistoryAnalytics.swift */; };
+		1354A875A79CBAA625CBFB55 /* MotionLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7FB3EC70D3825057AC936B /* MotionLibrary.swift */; };
+		14B4DAD398D078C58CCF37F6 /* CoachAdvisorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B09AFB23A8276EAB61EEF00 /* CoachAdvisorTests.swift */; };
+		1653A88B66F0BC039829EAC2 /* SessionPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00005A08E27983DD30E8E964 /* SessionPreview.swift */; };
+		186959ACD9174E5A40D1437D /* SessionFeasibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1146CD15367312C441E48013 /* SessionFeasibility.swift */; };
+		1EE54AE92615260CA3DAAB76 /* WorkoutEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8EA950803D1C992FA4B08B3 /* WorkoutEngine.swift */; };
+		29EC461CFA41B0CAA342408C /* HistoryPipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4107C01874FFA1EA6A6F1A15 /* HistoryPipelineTests.swift */; };
+		3131C37254BD01B3D95CE509 /* WorkoutSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1958C6C330EE45CDF4A927DD /* WorkoutSession.swift */; };
+		33D4BE2C24CBB00F81DA8DE3 /* CompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BA98DFEC599A10FF5C3C623 /* CompletionView.swift */; };
+		342AC71A5D8F5C5E0BAEFEA1 /* ExerciseLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 734F635FFE890F55FD781456 /* ExerciseLibraryView.swift */; };
+		3A1867BB211A27B1C6679677 /* ProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3D24846B5442D9E3E7C0AD /* ProgressView.swift */; };
+		4147B69567E3295933015513 /* ExcludedMovementsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A33FFDDF4BA9F9542BF305AF /* ExcludedMovementsView.swift */; };
+		4B977C7C8BC745CC1A6179D6 /* WorkoutFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628BBEC34E047D45818DDA4C /* WorkoutFeedback.swift */; };
+		4DCDAA3A7400FC09768B73B6 /* AchievementBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BC636D0796F89BD68C496CB /* AchievementBadgeView.swift */; };
+		4DE0390233E166D9B958B396 /* StartupCostTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7531BD9185D73EF5DCD1880F /* StartupCostTests.swift */; };
+		5214A25DBFF274BD4D3070D4 /* RewardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE1AAC067EB5E9BC197022FC /* RewardsView.swift */; };
+		556A8A7B47A3B2C20E25F949 /* ProgressVisualTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7F89869F6F9FCE23D83209F /* ProgressVisualTests.swift */; };
+		5DB89F9F8C7CC1E377B13EE3 /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B705323F96EA347627E42673 /* TestSupport.swift */; };
+		5E30B4A2E970FE514B6D8E59 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB00C4865D4A245691C41E39 /* RootView.swift */; };
+		61AEBE916114B1D443F4AE80 /* BadgeVisualTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF8F08018A24D3A63685D9E /* BadgeVisualTests.swift */; };
+		61DB4C7D58C0B846B5948917 /* WorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32DC941C2695E11E2400CADC /* WorkoutView.swift */; };
+		6451B20F9CEB5CADF9782104 /* NotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CE47B77C34FD6674C5B1370 /* NotificationScheduler.swift */; };
+		65F860CF2FB6DC773BC6C683 /* MuscleActivation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FA808279609E2B1F1C0E3E7 /* MuscleActivation.swift */; };
+		67A83AF85854762C6C815F1A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD9DABC96434B0DC1E15472 /* SettingsView.swift */; };
+		6960CDF5E6569A2013608F32 /* CustomizationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35D8EE45F247148222421572 /* CustomizationView.swift */; };
+		6AC1CD4056FF1A33EF052CA8 /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ADF30AE9550672C3EDC4D2C /* Haptics.swift */; };
+		6F8C4E71FD4DF38E8FED2716 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAA88F0581F751CB0FD5178A /* AppModel.swift */; };
+		77BF91BE8E4C246B53A3A09C /* SessionFeasibilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96BFBE7AEFBE05397C712C7D /* SessionFeasibilityTests.swift */; };
+		79E775135C968ECB4CD79982 /* MuscleActivationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19F479F6C17F0A2A77A5424E /* MuscleActivationTests.swift */; };
+		7C2DDDF7BD3E68F9B161F167 /* Skeleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 403FEA1ACC1EAD5B8028582B /* Skeleton.swift */; };
+		80B0A4FEDC7C7F28A164465F /* MotionTempo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23217B6AAA881D5D47B4241C /* MotionTempo.swift */; };
+		833993EA68423C9919E87834 /* VisualTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25E83C5CA1A8549E46785494 /* VisualTestSupport.swift */; };
+		86F9CB001A762B2C55E3F5AF /* FigureStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23D0B6F7BA3800DB3EF81D66 /* FigureStyle.swift */; };
+		8E76EA148263DC28DF070F91 /* RewardsEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C3516741BCEBF2474137FEC /* RewardsEngine.swift */; };
+		9024005275F128849DCED8A3 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 861502BB72A6E8239EADAB7F /* PrivacyInfo.xcprivacy */; };
+		9090063449DED560710EC34E /* FigureProjection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D7EAA596E908248E015EC5A /* FigureProjection.swift */; };
+		9201E5A9021130772F2A20C0 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B29C0B8794FDDC30B79682EB /* Theme.swift */; };
+		9705695A65E6247159255BD0 /* WorkoutModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D238A9DBA4B3C1D9C106FA9C /* WorkoutModels.swift */; };
+		A3B655A0DD53FFD30FEE4C93 /* WorkoutEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DFCF0DEC44891EBD131B10E /* WorkoutEngineTests.swift */; };
+		AA527427835CCF664C36C79B /* FigureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 958FD40474EE85E2A9CB23D3 /* FigureTests.swift */; };
+		B0B2DBD93C52E11151FB8FD4 /* WorkoutPlaylist.swift in Sources */ = {isa = PBXBuildFile; fileRef = B311DF427EFB2118DDFF18CE /* WorkoutPlaylist.swift */; };
+		BB5A4B5CEB4FA4DA2750B12D /* ExerciseCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FB9E00B22A1940C208080D4 /* ExerciseCatalog.swift */; };
+		BDAE9D2B01746BFD32C71C1E /* WorkoutSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33C52F259A14719E8655DF2B /* WorkoutSessionTests.swift */; };
+		CCB67B6470F87FA9946780CF /* MotionContactSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F4F1C5AD9268BE8394C0FAD /* MotionContactSheet.swift */; };
+		D78B3F72C627459A17014D38 /* HaraApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2EE7FA9C13B9B3AA5B44D4E /* HaraApp.swift */; };
+		D84A19297CAE2C06AC60F313 /* MotionTempoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDD8AB36C158001CF9125B84 /* MotionTempoTests.swift */; };
+		DBDB7DDE0F39DC8484F864FE /* ExerciseMotionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C546F491C71BF00AFA9986A /* ExerciseMotionView.swift */; };
+		E975B49D71EDC8512BA5890E /* WorkoutInvariantTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE93681523AF715E6571A6D /* WorkoutInvariantTests.swift */; };
+		E9A10E5B024E47B3276B6E93 /* FrenchCopyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AEF828DA28111BED73617E7 /* FrenchCopyTests.swift */; };
+		EA063A37D1AF75C3AE8B5098 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 253B3F68894381EB05FB661A /* TodayView.swift */; };
+		F096F6AAE69ACF551FC41E3D /* HapticEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 498D62BF70434B7CB95B5728 /* HapticEngine.swift */; };
+		F6CA7C58A2BB8D58C07DDF51 /* RewardsEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11698FB8447C6BE4DE003136 /* RewardsEngineTests.swift */; };
+		F8A7CD5845FF7DB1F5481616 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E044604F227241B86B6B6E9 /* WelcomeView.swift */; };
+		F8E4FAEA3896B53B417B32F0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F9E44A39D233791CCD1F35EE /* Assets.xcassets */; };
+		FDD6EAD93CA4A881BC5D56C1 /* MotionSystemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33B799577D628BFA0C4ED90E /* MotionSystemTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		7BACE2B848AA32E515AE3CFF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E5A260412C1ECA9EBD9D31D7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 95FBDBD6F09DD08ED33C8AED;
+			remoteInfo = Hara;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		00005A08E27983DD30E8E964 /* SessionPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionPreview.swift; sourceTree = "<group>"; };
+		08FF588541E2AD95F43116D3 /* WorkoutHistoryAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutHistoryAnalytics.swift; sourceTree = "<group>"; };
+		1146CD15367312C441E48013 /* SessionFeasibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionFeasibility.swift; sourceTree = "<group>"; };
+		11698FB8447C6BE4DE003136 /* RewardsEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardsEngineTests.swift; sourceTree = "<group>"; };
+		1958C6C330EE45CDF4A927DD /* WorkoutSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSession.swift; sourceTree = "<group>"; };
+		19F479F6C17F0A2A77A5424E /* MuscleActivationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleActivationTests.swift; sourceTree = "<group>"; };
+		1B09AFB23A8276EAB61EEF00 /* CoachAdvisorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachAdvisorTests.swift; sourceTree = "<group>"; };
+		23217B6AAA881D5D47B4241C /* MotionTempo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionTempo.swift; sourceTree = "<group>"; };
+		236EDAD3E1DDF44BB5D1D37C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		23D0B6F7BA3800DB3EF81D66 /* FigureStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigureStyle.swift; sourceTree = "<group>"; };
+		253B3F68894381EB05FB661A /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
+		25E83C5CA1A8549E46785494 /* VisualTestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualTestSupport.swift; sourceTree = "<group>"; };
+		2BC636D0796F89BD68C496CB /* AchievementBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementBadgeView.swift; sourceTree = "<group>"; };
+		2FA808279609E2B1F1C0E3E7 /* MuscleActivation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleActivation.swift; sourceTree = "<group>"; };
+		32DC941C2695E11E2400CADC /* WorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutView.swift; sourceTree = "<group>"; };
+		33B799577D628BFA0C4ED90E /* MotionSystemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionSystemTests.swift; sourceTree = "<group>"; };
+		33C52F259A14719E8655DF2B /* WorkoutSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionTests.swift; sourceTree = "<group>"; };
+		35D8EE45F247148222421572 /* CustomizationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomizationView.swift; sourceTree = "<group>"; };
+		3AEF828DA28111BED73617E7 /* FrenchCopyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrenchCopyTests.swift; sourceTree = "<group>"; };
+		3BA50C05D084964BE32EA487 /* HaraTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HaraTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3CD9DABC96434B0DC1E15472 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		3E3D24846B5442D9E3E7C0AD /* ProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressView.swift; sourceTree = "<group>"; };
+		3FB9E00B22A1940C208080D4 /* ExerciseCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseCatalog.swift; sourceTree = "<group>"; };
+		3FC75E9D82697D5381192E75 /* ExerciseCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseCatalogTests.swift; sourceTree = "<group>"; };
+		403FEA1ACC1EAD5B8028582B /* Skeleton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Skeleton.swift; sourceTree = "<group>"; };
+		4107C01874FFA1EA6A6F1A15 /* HistoryPipelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryPipelineTests.swift; sourceTree = "<group>"; };
+		498D62BF70434B7CB95B5728 /* HapticEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticEngine.swift; sourceTree = "<group>"; };
+		5E044604F227241B86B6B6E9 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
+		628BBEC34E047D45818DDA4C /* WorkoutFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutFeedback.swift; sourceTree = "<group>"; };
+		6ADF30AE9550672C3EDC4D2C /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
+		6AF8F08018A24D3A63685D9E /* BadgeVisualTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadgeVisualTests.swift; sourceTree = "<group>"; };
+		6C3516741BCEBF2474137FEC /* RewardsEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardsEngine.swift; sourceTree = "<group>"; };
+		6F4F1C5AD9268BE8394C0FAD /* MotionContactSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionContactSheet.swift; sourceTree = "<group>"; };
+		734F635FFE890F55FD781456 /* ExerciseLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryView.swift; sourceTree = "<group>"; };
+		74CFCEFFDEE5E9519B22358E /* WorkoutExperienceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutExperienceTests.swift; sourceTree = "<group>"; };
+		7531BD9185D73EF5DCD1880F /* StartupCostTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupCostTests.swift; sourceTree = "<group>"; };
+		7CE47B77C34FD6674C5B1370 /* NotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScheduler.swift; sourceTree = "<group>"; };
+		7D7EAA596E908248E015EC5A /* FigureProjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigureProjection.swift; sourceTree = "<group>"; };
+		7DFCF0DEC44891EBD131B10E /* WorkoutEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutEngineTests.swift; sourceTree = "<group>"; };
+		861502BB72A6E8239EADAB7F /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		89C146F311F460783880803F /* CoachAdvisor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachAdvisor.swift; sourceTree = "<group>"; };
+		8C546F491C71BF00AFA9986A /* ExerciseMotionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseMotionView.swift; sourceTree = "<group>"; };
+		958FD40474EE85E2A9CB23D3 /* FigureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigureTests.swift; sourceTree = "<group>"; };
+		95A8035C40D980C6EF22A88F /* PoseSolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoseSolverTests.swift; sourceTree = "<group>"; };
+		96BFBE7AEFBE05397C712C7D /* SessionFeasibilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionFeasibilityTests.swift; sourceTree = "<group>"; };
+		9BA98DFEC599A10FF5C3C623 /* CompletionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionView.swift; sourceTree = "<group>"; };
+		A33FFDDF4BA9F9542BF305AF /* ExcludedMovementsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcludedMovementsView.swift; sourceTree = "<group>"; };
+		A7F89869F6F9FCE23D83209F /* ProgressVisualTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressVisualTests.swift; sourceTree = "<group>"; };
+		AB00C4865D4A245691C41E39 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		B29C0B8794FDDC30B79682EB /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		B311DF427EFB2118DDFF18CE /* WorkoutPlaylist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutPlaylist.swift; sourceTree = "<group>"; };
+		B705323F96EA347627E42673 /* TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSupport.swift; sourceTree = "<group>"; };
+		CDE93681523AF715E6571A6D /* WorkoutInvariantTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutInvariantTests.swift; sourceTree = "<group>"; };
+		D238A9DBA4B3C1D9C106FA9C /* WorkoutModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutModels.swift; sourceTree = "<group>"; };
+		D8EA950803D1C992FA4B08B3 /* WorkoutEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutEngine.swift; sourceTree = "<group>"; };
+		E718CEBA28287461C4A9C154 /* Hara.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Hara.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EAA88F0581F751CB0FD5178A /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		EDD8AB36C158001CF9125B84 /* MotionTempoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionTempoTests.swift; sourceTree = "<group>"; };
+		F2EE7FA9C13B9B3AA5B44D4E /* HaraApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HaraApp.swift; sourceTree = "<group>"; };
+		F9E44A39D233791CCD1F35EE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		FC7FB3EC70D3825057AC936B /* MotionLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionLibrary.swift; sourceTree = "<group>"; };
+		FE1AAC067EB5E9BC197022FC /* RewardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardsView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		1706A123E03F76F2C9CEFAF7 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				52D7E78AE052806F8BC736E3 /* Library */,
+				D4100FB0F9A51AF87A61CC4A /* Onboarding */,
+				BE0D2A3BB559CB8A5EEB2E72 /* Progress */,
+				448A554F383B5BE35592CF85 /* Rewards */,
+				6FBA50E08E793A72349440F2 /* Settings */,
+				6A6ABFFD5D7F1677452C9794 /* Today */,
+				1F0F07CF6257743252A7C223 /* Workout */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		181660704F5BF348BD93093C /* Platform */ = {
+			isa = PBXGroup;
+			children = (
+				498D62BF70434B7CB95B5728 /* HapticEngine.swift */,
+				6ADF30AE9550672C3EDC4D2C /* Haptics.swift */,
+				7CE47B77C34FD6674C5B1370 /* NotificationScheduler.swift */,
+				628BBEC34E047D45818DDA4C /* WorkoutFeedback.swift */,
+			);
+			path = Platform;
+			sourceTree = "<group>";
+		};
+		1F0F07CF6257743252A7C223 /* Workout */ = {
+			isa = PBXGroup;
+			children = (
+				9BA98DFEC599A10FF5C3C623 /* CompletionView.swift */,
+				00005A08E27983DD30E8E964 /* SessionPreview.swift */,
+				1958C6C330EE45CDF4A927DD /* WorkoutSession.swift */,
+				32DC941C2695E11E2400CADC /* WorkoutView.swift */,
+			);
+			path = Workout;
+			sourceTree = "<group>";
+		};
+		2834E2B0DA22161A3AD88FD7 /* Figure */ = {
+			isa = PBXGroup;
+			children = (
+				8C546F491C71BF00AFA9986A /* ExerciseMotionView.swift */,
+				7D7EAA596E908248E015EC5A /* FigureProjection.swift */,
+				23D0B6F7BA3800DB3EF81D66 /* FigureStyle.swift */,
+			);
+			path = Figure;
+			sourceTree = "<group>";
+		};
+		3081DA53F38E403D480DCF33 /* Design */ = {
+			isa = PBXGroup;
+			children = (
+				B29C0B8794FDDC30B79682EB /* Theme.swift */,
+			);
+			path = Design;
+			sourceTree = "<group>";
+		};
+		30D83DFD43E8A9D9E435634A /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				F9E44A39D233791CCD1F35EE /* Assets.xcassets */,
+				236EDAD3E1DDF44BB5D1D37C /* Info.plist */,
+				861502BB72A6E8239EADAB7F /* PrivacyInfo.xcprivacy */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		448A554F383B5BE35592CF85 /* Rewards */ = {
+			isa = PBXGroup;
+			children = (
+				2BC636D0796F89BD68C496CB /* AchievementBadgeView.swift */,
+				6C3516741BCEBF2474137FEC /* RewardsEngine.swift */,
+				FE1AAC067EB5E9BC197022FC /* RewardsView.swift */,
+			);
+			path = Rewards;
+			sourceTree = "<group>";
+		};
+		4E3BB285A240802A429F9F90 /* ThreeD */ = {
+			isa = PBXGroup;
+			children = (
+				FC7FB3EC70D3825057AC936B /* MotionLibrary.swift */,
+				23217B6AAA881D5D47B4241C /* MotionTempo.swift */,
+				2FA808279609E2B1F1C0E3E7 /* MuscleActivation.swift */,
+				403FEA1ACC1EAD5B8028582B /* Skeleton.swift */,
+			);
+			path = ThreeD;
+			sourceTree = "<group>";
+		};
+		52D7E78AE052806F8BC736E3 /* Library */ = {
+			isa = PBXGroup;
+			children = (
+				734F635FFE890F55FD781456 /* ExerciseLibraryView.swift */,
+			);
+			path = Library;
+			sourceTree = "<group>";
+		};
+		562D75DD72C1C814688B534F = {
+			isa = PBXGroup;
+			children = (
+				73DC4BEFDB699A9692614063 /* Hara */,
+				85E63E7736C9559DE4714DF4 /* HaraTests */,
+				8ED9B511AB58941F16D00568 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		6A6ABFFD5D7F1677452C9794 /* Today */ = {
+			isa = PBXGroup;
+			children = (
+				35D8EE45F247148222421572 /* CustomizationView.swift */,
+				A33FFDDF4BA9F9542BF305AF /* ExcludedMovementsView.swift */,
+				1146CD15367312C441E48013 /* SessionFeasibility.swift */,
+				253B3F68894381EB05FB661A /* TodayView.swift */,
+			);
+			path = Today;
+			sourceTree = "<group>";
+		};
+		6FBA50E08E793A72349440F2 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				3CD9DABC96434B0DC1E15472 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		73DC4BEFDB699A9692614063 /* Hara */ = {
+			isa = PBXGroup;
+			children = (
+				90351B1F37641F74EDDD68E5 /* App */,
+				3081DA53F38E403D480DCF33 /* Design */,
+				B20197E686A7FE91452112C8 /* Domain */,
+				1706A123E03F76F2C9CEFAF7 /* Features */,
+				2834E2B0DA22161A3AD88FD7 /* Figure */,
+				181660704F5BF348BD93093C /* Platform */,
+				30D83DFD43E8A9D9E435634A /* Resources */,
+				4E3BB285A240802A429F9F90 /* ThreeD */,
+			);
+			path = Hara;
+			sourceTree = "<group>";
+		};
+		85E63E7736C9559DE4714DF4 /* HaraTests */ = {
+			isa = PBXGroup;
+			children = (
+				6AF8F08018A24D3A63685D9E /* BadgeVisualTests.swift */,
+				1B09AFB23A8276EAB61EEF00 /* CoachAdvisorTests.swift */,
+				3FC75E9D82697D5381192E75 /* ExerciseCatalogTests.swift */,
+				958FD40474EE85E2A9CB23D3 /* FigureTests.swift */,
+				3AEF828DA28111BED73617E7 /* FrenchCopyTests.swift */,
+				4107C01874FFA1EA6A6F1A15 /* HistoryPipelineTests.swift */,
+				6F4F1C5AD9268BE8394C0FAD /* MotionContactSheet.swift */,
+				33B799577D628BFA0C4ED90E /* MotionSystemTests.swift */,
+				EDD8AB36C158001CF9125B84 /* MotionTempoTests.swift */,
+				19F479F6C17F0A2A77A5424E /* MuscleActivationTests.swift */,
+				95A8035C40D980C6EF22A88F /* PoseSolverTests.swift */,
+				A7F89869F6F9FCE23D83209F /* ProgressVisualTests.swift */,
+				11698FB8447C6BE4DE003136 /* RewardsEngineTests.swift */,
+				96BFBE7AEFBE05397C712C7D /* SessionFeasibilityTests.swift */,
+				7531BD9185D73EF5DCD1880F /* StartupCostTests.swift */,
+				B705323F96EA347627E42673 /* TestSupport.swift */,
+				25E83C5CA1A8549E46785494 /* VisualTestSupport.swift */,
+				7DFCF0DEC44891EBD131B10E /* WorkoutEngineTests.swift */,
+				74CFCEFFDEE5E9519B22358E /* WorkoutExperienceTests.swift */,
+				CDE93681523AF715E6571A6D /* WorkoutInvariantTests.swift */,
+				33C52F259A14719E8655DF2B /* WorkoutSessionTests.swift */,
+			);
+			path = HaraTests;
+			sourceTree = "<group>";
+		};
+		8ED9B511AB58941F16D00568 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E718CEBA28287461C4A9C154 /* Hara.app */,
+				3BA50C05D084964BE32EA487 /* HaraTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		90351B1F37641F74EDDD68E5 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				EAA88F0581F751CB0FD5178A /* AppModel.swift */,
+				F2EE7FA9C13B9B3AA5B44D4E /* HaraApp.swift */,
+				AB00C4865D4A245691C41E39 /* RootView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		B20197E686A7FE91452112C8 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				89C146F311F460783880803F /* CoachAdvisor.swift */,
+				3FB9E00B22A1940C208080D4 /* ExerciseCatalog.swift */,
+				D8EA950803D1C992FA4B08B3 /* WorkoutEngine.swift */,
+				D238A9DBA4B3C1D9C106FA9C /* WorkoutModels.swift */,
+				B311DF427EFB2118DDFF18CE /* WorkoutPlaylist.swift */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		BE0D2A3BB559CB8A5EEB2E72 /* Progress */ = {
+			isa = PBXGroup;
+			children = (
+				3E3D24846B5442D9E3E7C0AD /* ProgressView.swift */,
+				08FF588541E2AD95F43116D3 /* WorkoutHistoryAnalytics.swift */,
+			);
+			path = Progress;
+			sourceTree = "<group>";
+		};
+		D4100FB0F9A51AF87A61CC4A /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				5E044604F227241B86B6B6E9 /* WelcomeView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		95FBDBD6F09DD08ED33C8AED /* Hara */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F6EC9B88E5304CF1B245F9D6 /* Build configuration list for PBXNativeTarget "Hara" */;
+			buildPhases = (
+				C22BFB1C1758A7FAB2925F6F /* Sources */,
+				3404CCAAE642FE6815996192 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Hara;
+			packageProductDependencies = (
+			);
+			productName = Hara;
+			productReference = E718CEBA28287461C4A9C154 /* Hara.app */;
+			productType = "com.apple.product-type.application";
+		};
+		F3BEC6BB0B5EBD4D85069D27 /* HaraTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 92FD05D23FB8032B49519D77 /* Build configuration list for PBXNativeTarget "HaraTests" */;
+			buildPhases = (
+				8AAE3F7E34BCE9DB35DAAF88 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				66A4F2221A1B8F2D71F22127 /* PBXTargetDependency */,
+			);
+			name = HaraTests;
+			packageProductDependencies = (
+			);
+			productName = HaraTests;
+			productReference = 3BA50C05D084964BE32EA487 /* HaraTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E5A260412C1ECA9EBD9D31D7 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					95FBDBD6F09DD08ED33C8AED = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					F3BEC6BB0B5EBD4D85069D27 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 9346AFDBA9090FA81F6ADCB2 /* Build configuration list for PBXProject "Hara" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 562D75DD72C1C814688B534F;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 8ED9B511AB58941F16D00568 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				95FBDBD6F09DD08ED33C8AED /* Hara */,
+				F3BEC6BB0B5EBD4D85069D27 /* HaraTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		3404CCAAE642FE6815996192 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F8E4FAEA3896B53B417B32F0 /* Assets.xcassets in Resources */,
+				9024005275F128849DCED8A3 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8AAE3F7E34BCE9DB35DAAF88 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				61AEBE916114B1D443F4AE80 /* BadgeVisualTests.swift in Sources */,
+				14B4DAD398D078C58CCF37F6 /* CoachAdvisorTests.swift in Sources */,
+				03E3B29E4FF066451388CDF6 /* ExerciseCatalogTests.swift in Sources */,
+				AA527427835CCF664C36C79B /* FigureTests.swift in Sources */,
+				E9A10E5B024E47B3276B6E93 /* FrenchCopyTests.swift in Sources */,
+				29EC461CFA41B0CAA342408C /* HistoryPipelineTests.swift in Sources */,
+				CCB67B6470F87FA9946780CF /* MotionContactSheet.swift in Sources */,
+				FDD6EAD93CA4A881BC5D56C1 /* MotionSystemTests.swift in Sources */,
+				D84A19297CAE2C06AC60F313 /* MotionTempoTests.swift in Sources */,
+				79E775135C968ECB4CD79982 /* MuscleActivationTests.swift in Sources */,
+				04982C14C50FBFE18FA403BC /* PoseSolverTests.swift in Sources */,
+				556A8A7B47A3B2C20E25F949 /* ProgressVisualTests.swift in Sources */,
+				F6CA7C58A2BB8D58C07DDF51 /* RewardsEngineTests.swift in Sources */,
+				77BF91BE8E4C246B53A3A09C /* SessionFeasibilityTests.swift in Sources */,
+				4DE0390233E166D9B958B396 /* StartupCostTests.swift in Sources */,
+				5DB89F9F8C7CC1E377B13EE3 /* TestSupport.swift in Sources */,
+				833993EA68423C9919E87834 /* VisualTestSupport.swift in Sources */,
+				A3B655A0DD53FFD30FEE4C93 /* WorkoutEngineTests.swift in Sources */,
+				08F3ED11BE4CA60B484EE931 /* WorkoutExperienceTests.swift in Sources */,
+				E975B49D71EDC8512BA5890E /* WorkoutInvariantTests.swift in Sources */,
+				BDAE9D2B01746BFD32C71C1E /* WorkoutSessionTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C22BFB1C1758A7FAB2925F6F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4DCDAA3A7400FC09768B73B6 /* AchievementBadgeView.swift in Sources */,
+				6F8C4E71FD4DF38E8FED2716 /* AppModel.swift in Sources */,
+				06217090AA92B5D132614C0F /* CoachAdvisor.swift in Sources */,
+				33D4BE2C24CBB00F81DA8DE3 /* CompletionView.swift in Sources */,
+				6960CDF5E6569A2013608F32 /* CustomizationView.swift in Sources */,
+				4147B69567E3295933015513 /* ExcludedMovementsView.swift in Sources */,
+				BB5A4B5CEB4FA4DA2750B12D /* ExerciseCatalog.swift in Sources */,
+				342AC71A5D8F5C5E0BAEFEA1 /* ExerciseLibraryView.swift in Sources */,
+				DBDB7DDE0F39DC8484F864FE /* ExerciseMotionView.swift in Sources */,
+				9090063449DED560710EC34E /* FigureProjection.swift in Sources */,
+				86F9CB001A762B2C55E3F5AF /* FigureStyle.swift in Sources */,
+				F096F6AAE69ACF551FC41E3D /* HapticEngine.swift in Sources */,
+				6AC1CD4056FF1A33EF052CA8 /* Haptics.swift in Sources */,
+				D78B3F72C627459A17014D38 /* HaraApp.swift in Sources */,
+				1354A875A79CBAA625CBFB55 /* MotionLibrary.swift in Sources */,
+				80B0A4FEDC7C7F28A164465F /* MotionTempo.swift in Sources */,
+				65F860CF2FB6DC773BC6C683 /* MuscleActivation.swift in Sources */,
+				6451B20F9CEB5CADF9782104 /* NotificationScheduler.swift in Sources */,
+				3A1867BB211A27B1C6679677 /* ProgressView.swift in Sources */,
+				8E76EA148263DC28DF070F91 /* RewardsEngine.swift in Sources */,
+				5214A25DBFF274BD4D3070D4 /* RewardsView.swift in Sources */,
+				5E30B4A2E970FE514B6D8E59 /* RootView.swift in Sources */,
+				186959ACD9174E5A40D1437D /* SessionFeasibility.swift in Sources */,
+				1653A88B66F0BC039829EAC2 /* SessionPreview.swift in Sources */,
+				67A83AF85854762C6C815F1A /* SettingsView.swift in Sources */,
+				7C2DDDF7BD3E68F9B161F167 /* Skeleton.swift in Sources */,
+				9201E5A9021130772F2A20C0 /* Theme.swift in Sources */,
+				EA063A37D1AF75C3AE8B5098 /* TodayView.swift in Sources */,
+				F8A7CD5845FF7DB1F5481616 /* WelcomeView.swift in Sources */,
+				1EE54AE92615260CA3DAAB76 /* WorkoutEngine.swift in Sources */,
+				4B977C7C8BC745CC1A6179D6 /* WorkoutFeedback.swift in Sources */,
+				12463B451F352DA1983FDB60 /* WorkoutHistoryAnalytics.swift in Sources */,
+				9705695A65E6247159255BD0 /* WorkoutModels.swift in Sources */,
+				B0B2DBD93C52E11151FB8FD4 /* WorkoutPlaylist.swift in Sources */,
+				3131C37254BD01B3D95CE509 /* WorkoutSession.swift in Sources */,
+				61DB4C7D58C0B846B5948917 /* WorkoutView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		66A4F2221A1B8F2D71F22127 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 95FBDBD6F09DD08ED33C8AED /* Hara */;
+			targetProxy = 7BACE2B848AA32E515AE3CFF /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		03C203242552ADC10DB0573E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.alexandreverhoye.HaraTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Hara.app/Hara";
+			};
+			name = Debug;
+		};
+		5878375DCB9E4BF955FC315A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.alexandreverhoye.HaraTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Hara.app/Hara";
+			};
+			name = Release;
+		};
+		64270E9D6A053C75B5EC1DBE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Hara/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.alexandreverhoye.Hara;
+				PRODUCT_NAME = Hara;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		E0E9B0C0837B5F45598A0444 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Hara/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.alexandreverhoye.Hara;
+				PRODUCT_NAME = Hara;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		EE891353E526591DD95D537C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		FAF507D71C2EC42D780986E8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		92FD05D23FB8032B49519D77 /* Build configuration list for PBXNativeTarget "HaraTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				03C203242552ADC10DB0573E /* Debug */,
+				5878375DCB9E4BF955FC315A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9346AFDBA9090FA81F6ADCB2 /* Build configuration list for PBXProject "Hara" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FAF507D71C2EC42D780986E8 /* Debug */,
+				EE891353E526591DD95D537C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F6EC9B88E5304CF1B245F9D6 /* Build configuration list for PBXNativeTarget "Hara" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E0E9B0C0837B5F45598A0444 /* Debug */,
+				64270E9D6A053C75B5EC1DBE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = E5A260412C1ECA9EBD9D31D7 /* Project object */;
+}

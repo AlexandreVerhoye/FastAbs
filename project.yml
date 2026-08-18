@@ -1,4 +1,4 @@
-name: FastAbs
+name: Hara
 options:
   bundleIdPrefix: com.alexandreverhoye
   deploymentTarget:
@@ -15,31 +15,31 @@ settings:
     ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
     ENABLE_USER_SCRIPT_SANDBOXING: true
 targets:
-  FastAbs:
+  Hara:
     type: application
     platform: iOS
     sources:
-      - FastAbs
+      - Hara
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.alexandreverhoye.FastAbs
-        PRODUCT_NAME: FastAbs
-        INFOPLIST_FILE: FastAbs/Resources/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.alexandreverhoye.Hara
+        PRODUCT_NAME: Hara
+        INFOPLIST_FILE: Hara/Resources/Info.plist
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1"
         SUPPORTS_MACCATALYST: false
     scheme:
       testTargets:
-        - FastAbsTests
-  FastAbsTests:
+        - HaraTests
+  HaraTests:
     type: bundle.unit-test
     platform: iOS
     sources:
-      - FastAbsTests
+      - HaraTests
     dependencies:
-      - target: FastAbs
+      - target: Hara
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.alexandreverhoye.FastAbsTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.alexandreverhoye.HaraTests
         GENERATE_INFOPLIST_FILE: true
 
