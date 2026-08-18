@@ -39,16 +39,26 @@ final class AppModel {
     }
 
     var appearance: AppAppearance {
-        didSet { UserDefaults.standard.set(appearance.rawValue, forKey: Keys.appearance) }
+        didSet { defaults.set(appearance.rawValue, forKey: Keys.appearance) }
     }
 
     var hasSeenWelcome: Bool {
-        didSet { UserDefaults.standard.set(hasSeenWelcome, forKey: Keys.hasSeenWelcome) }
+        didSet { defaults.set(hasSeenWelcome, forKey: Keys.hasSeenWelcome) }
     }
 
     var activePlan: WorkoutPlan?
 
+    /// Where the settings are read from *and* written to.
+    ///
+    /// Held rather than only read at launch: it was read from the injected store
+    /// and written straight back to `.standard`, so a test that set a preference
+    /// on its own throwaway store still overwrote the athlete's — and did, which
+    /// is how a simulator ended up booting the app with three body areas
+    /// switched on that nobody had asked for.
+    private let defaults: UserDefaults
+
     init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         if let data = defaults.data(forKey: Keys.preferences),
            let saved = try? JSONDecoder().decode(WorkoutPreferences.self, from: data) {
             preferences = saved
@@ -151,7 +161,7 @@ final class AppModel {
 
     private func save<T: Encodable>(_ value: T, key: String) {
         guard let data = try? JSONEncoder().encode(value) else { return }
-        UserDefaults.standard.set(data, forKey: key)
+        defaults.set(data, forKey: key)
     }
 }
 

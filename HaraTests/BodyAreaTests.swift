@@ -106,10 +106,24 @@ struct BodyAreaTests {
         #expect(preferences.trainedAreas == BodyArea.fallback)
     }
 
+    /// A store of its own per test, cleaned before use.
+    ///
+    /// These tests run inside the app's own process, so anything they write to
+    /// the shared defaults is the athlete's settings — and before `AppModel`
+    /// wrote back to the store it was given, that is exactly what happened: the
+    /// simulator booted the app with three body areas switched on because a test
+    /// had asked for them.
+    @MainActor
+    private static func isolatedModel(_ name: String) -> AppModel {
+        let defaults = UserDefaults(suiteName: "hara-tests-\(name)") ?? .standard
+        defaults.removePersistentDomain(forName: "hara-tests-\(name)")
+        return AppModel(defaults: defaults)
+    }
+
     @MainActor
     @Test("The last area standing cannot be switched off")
     func theLastAreaIsRefused() {
-        let model = AppModel(defaults: UserDefaults(suiteName: "area-tests-last") ?? .standard)
+        let model = Self.isolatedModel("last-area")
         model.preferences = TestSupport.preferences(trainedAreas: [.core])
 
         #expect(model.setArea(.core, enabled: false) == false)
@@ -124,7 +138,7 @@ struct BodyAreaTests {
     @MainActor
     @Test("Restoring the recommended programme leaves the athlete's body alone")
     func restoringKeepsTheAreas() {
-        let model = AppModel(defaults: UserDefaults(suiteName: "area-tests-restore") ?? .standard)
+        let model = Self.isolatedModel("restore")
         model.preferences = TestSupport.preferences(
             durationMinutes: 20,
             trainedAreas: [.core, .upperBody, .lowerBody]
