@@ -228,17 +228,20 @@ enum VisualFixture {
         tier: DailyBadgeTier,
         offset: Int = 0,
         activeSeconds: Int = 600,
-        pattern: CorePattern = .antiExtension,
+        section: CatalogSection = .pattern(.antiExtension),
         patterns: Set<CorePattern>? = nil,
+        sections: [CatalogSection]? = nil,
         exerciseIDs: [String] = ["forearm-plank"]
     ) -> DailyBadge {
-        DailyBadge(
+        let pattern: CorePattern? = if case let .pattern(value) = section { value } else { nil }
+        return DailyBadge(
             day: day(offset: offset),
             activeSeconds: activeSeconds,
             sessionCount: 1,
             tier: tier,
-            pattern: pattern,
-            patterns: patterns ?? [pattern],
+            section: section,
+            patterns: patterns ?? Set([pattern].compactMap { $0 }),
+            sections: sections ?? [section],
             exerciseIDs: exerciseIDs
         )
     }

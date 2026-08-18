@@ -74,7 +74,7 @@ struct CustomizationView: View {
             }
             .onAppear {
                 Haptics.warmUp()
-                draft = appModel.preferences
+                draft = appModel.preferences.reconciled()
                 seed = UInt64(Date().timeIntervalSince1970)
                 refreshPreview()
             }
@@ -216,37 +216,77 @@ struct CustomizationView: View {
 
     // MARK: - Focus
 
+    /// The priorities on offer, and only those.
+    ///
+    /// Grouped by area and drawn from the areas that are switched on: offering
+    /// "Pectoraux" to someone who trains only their core is offering a session
+    /// the engine is not allowed to build. Each area contributes the groups a
+    /// complete session there owes — which is also why the calves and the
+    /// lombaires are absent: they are trained, they are not something you make a
+    /// session about.
+    private var focusChoices: [(area: BodyArea, zones: [MuscleZone])] {
+        BodyArea.ordered(draft.trainedAreas).compactMap { area in
+            let zones = MuscleZone.allCases.filter {
+                $0.area == area && area.essentialZones.contains($0) && MuscleZone.available.contains($0)
+            }
+            return zones.isEmpty ? nil : (area, zones)
+        }
+    }
+
     private var focusCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             SectionHeader(title: "Zones prioritaires", subtitle: "Trois au maximum, le reste reste sollicité")
 
-            LazyVGrid(columns: [.init(.flexible()), .init(.flexible())], spacing: 11) {
-                ForEach(MuscleZone.available.filter { $0 != .lowerBack }) { zone in
-                    let isSelected = draft.focusZones.contains(zone)
-                    Button {
-                        Haptics.selection()
-                        withAnimation(reduceMotion ? nil : .snappy) { toggle(zone) }
-                    } label: {
-                        HStack(spacing: 9) {
-                            Image(systemName: zone.symbol)
-                            Text(zone.shortTitle).font(.subheadline.weight(.semibold))
-                            Spacer(minLength: 0)
-                        }
-                        .padding(.horizontal, 12)
-                        .frame(height: 48)
-                        .foregroundStyle(isSelected ? .white : .primary)
-                        .background(
-                            isSelected ? AnyShapeStyle(zone.color) : AnyShapeStyle(Color.secondary.opacity(0.1)),
-                            in: RoundedRectangle(cornerRadius: Metric.Radius.small, style: .continuous)
-                        )
+            ForEach(focusChoices, id: \.area) { group in
+                VStack(alignment: .leading, spacing: 9) {
+                    // Only worth a label when there is more than one area to
+                    // tell apart.
+                    if focusChoices.count > 1 {
+                        Text(group.area.title)
+                            .font(.haraEyebrow)
+                            .textCase(.uppercase)
+                            .foregroundStyle(group.area.color)
                     }
-                    .buttonStyle(.card)
-                    .accessibilityAddTraits(isSelected ? .isSelected : [])
+
+                    LazyVGrid(columns: [.init(.flexible()), .init(.flexible())], spacing: 11) {
+                        ForEach(group.zones) { zone in
+                            zoneChip(zone)
+                        }
+                    }
                 }
+            }
+
+            if draft.explicitFocus.isEmpty {
+                Text("Aucune priorité : la séance se répartit sur \(BodyArea.describe(draft.trainedAreas).lowercased()).")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .padding(20)
         .glassCard()
+    }
+
+    private func zoneChip(_ zone: MuscleZone) -> some View {
+        let isSelected = draft.focusZones.contains(zone)
+        return Button {
+            Haptics.selection()
+            withAnimation(reduceMotion ? nil : .snappy) { toggle(zone) }
+        } label: {
+            HStack(spacing: 9) {
+                Image(systemName: zone.symbol)
+                Text(zone.shortTitle).font(.subheadline.weight(.semibold))
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 48)
+            .foregroundStyle(isSelected ? .white : .primary)
+            .background(
+                isSelected ? AnyShapeStyle(zone.color) : AnyShapeStyle(Color.secondary.opacity(0.1)),
+                in: RoundedRectangle(cornerRadius: Metric.Radius.small, style: .continuous)
+            )
+        }
+        .buttonStyle(.card)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     // MARK: - Excluded movements
@@ -491,6 +531,7 @@ struct CustomizationView: View {
             }
             if draft.focusZones.isEmpty { draft.focusZones = [.fullCore] }
         }
+        draft.reconcile()
     }
 }
 

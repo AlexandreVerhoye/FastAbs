@@ -28,7 +28,8 @@ struct MotionContactSheet {
                 let layout = FigureProjection.layout(
                     pose: MotionLibrary.pose(for: motion, phase: phase),
                     within: FigureProjection.bounds(for: motion),
-                    in: CGRect(origin: .zero, size: size)
+                    in: CGRect(origin: .zero, size: size),
+                    from: FigureProjection.viewpoint(for: motion)
                 )
                 FigureRenderer(
                     layout: layout,
@@ -64,13 +65,17 @@ struct MotionContactSheet {
 
     @Test("Render every movement")
     func render() throws {
-        // Split in halves: the whole catalog in one image overflows what PNG
-        // encoding will take, and it failed by writing a truncated file rather
-        // than by refusing.
+        // Split into fixed-size chunks: the whole catalog in one image overflows
+        // what PNG encoding will take, and it failed by writing a truncated file
+        // rather than by refusing. Sized rather than halved so that adding
+        // movements adds a sheet instead of quietly making each one too tall.
         let motions = MotionKind.allCases.filter { $0 != .rest }
-        let half = (motions.count + 1) / 2
+        let perSheet = 18
+        let chunks = stride(from: 0, to: motions.count, by: perSheet).map {
+            Array(motions[$0..<min($0 + perSheet, motions.count)])
+        }
 
-        for (index, chunk) in [Array(motions.prefix(half)), Array(motions.dropFirst(half))].enumerated() {
+        for (index, chunk) in chunks.enumerated() {
             let sheet = VStack(spacing: 0) {
                 ForEach(chunk, id: \.self) { Row(motion: $0) }
             }

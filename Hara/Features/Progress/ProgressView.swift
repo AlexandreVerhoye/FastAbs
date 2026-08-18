@@ -18,6 +18,7 @@ struct ProgressSnapshot {
     var activityDays: [WorkoutHistoryDay] = []
     var focus: [WorkoutFocusBreakdown] = []
     var patterns: [PatternLoad] = []
+    var areas: [AreaLoad] = []
     var bests = PersonalRecords(
         longestStreak: 0, bestWeekMinutes: 0, longestSessionSeconds: 0,
         busiestDaySessions: 0, totalSessions: 0
@@ -50,6 +51,7 @@ struct ProgressSnapshot {
             activityDays: analytics.days(records: records, endingAt: now, count: 35),
             focus: analytics.focusBreakdown(records: records),
             patterns: analytics.patternLoad(records: records),
+            areas: analytics.areaLoad(records: records),
             bests: analytics.personalRecords(records: records),
             recent: qualifying.prefix(5).map(RecentWorkout.init),
             historySpanDays: historySpan,
@@ -80,7 +82,7 @@ struct RecentWorkout: Identifiable, Hashable {
     let calories: Int
     let movementCount: Int
     let difficulty: WorkoutDifficulty
-    let pattern: CorePattern
+    let section: CatalogSection
     let wasCompleted: Bool
 
     init(record: WorkoutRecord) {
@@ -90,15 +92,17 @@ struct RecentWorkout: Identifiable, Hashable {
         calories = max(0, record.estimatedCalories)
         movementCount = record.exerciseIDs.count
         difficulty = record.difficulty
-        // The job the session did most of, so the list has the same colour
-        // vocabulary as the balance card rather than five identical tiles.
-        let patterns = record.exerciseIDs.compactMap { ExerciseCatalog.byID[$0]?.pattern }
-        let counts = patterns.reduce(into: [CorePattern: Int]()) { $0[$1, default: 0] += 1 }
-        pattern = counts.max { left, right in
+        // The work the session did most of, so the list has the same colour
+        // vocabulary as the balance card rather than a row of identical tiles.
+        let sections = record.exerciseIDs
+            .compactMap { ExerciseCatalog.byID[$0] }
+            .map(CatalogSection.of)
+        let counts = sections.reduce(into: [CatalogSection: Int]()) { $0[$1, default: 0] += 1 }
+        section = counts.max { left, right in
             left.value == right.value
-                ? left.key.rawValue > right.key.rawValue
+                ? left.key.id > right.key.id
                 : left.value < right.value
-        }?.key ?? .antiExtension
+        }?.key ?? .pattern(.antiExtension)
         wasCompleted = record.wasCompleted
     }
 }
@@ -176,6 +180,14 @@ struct ProgressDashboardView: View {
             calendar: localCalendar,
             allRecords: records
         )
+
+        // The coarse split first, and only once there is more than one part of
+        // the body in the history: to an athlete training their core alone this
+        // card would be a single full-width bar saying "abdomen, 100%".
+        if snapshot.areas.count > 1 {
+            AreaBalanceCard(items: snapshot.areas, trained: appModel.preferences.trainedAreas)
+                .appears(reduceMotion)
+        }
 
         // A single-colour bar and a one-line legend say nothing about balance,
         // so the card waits until there are two jobs to compare.
@@ -759,6 +771,72 @@ struct ActivityGridCard: View {
 
 // MARK: - Balance
 
+/// How the work has been split across the body.
+///
+/// Reads the athlete's own switches as well as the history, so an area they
+/// train and have not touched is named rather than being absent — an empty
+/// space looks the same as a bar of zero width, and only one of those is a
+/// thing you can act on.
+struct AreaBalanceCard: View {
+    let items: [AreaLoad]
+    let trained: Set<BodyArea>
+
+    private var total: Int { max(1, items.reduce(0) { $0 + $1.activeSeconds }) }
+
+    private var untouched: [BodyArea] {
+        let worked = Set(items.map(\.area))
+        return BodyArea.ordered(trained.subtracting(worked))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Metric.cardPadding) {
+            SectionHeader(title: "Répartition du corps", subtitle: "Temps actif par zone")
+
+            GeometryReader { proxy in
+                HStack(spacing: 3) {
+                    ForEach(items) { item in
+                        Capsule()
+                            .fill(item.area.color)
+                            .frame(width: max(6, proxy.size.width * CGFloat(item.activeSeconds) / CGFloat(total)))
+                    }
+                }
+            }
+            .frame(height: 14)
+
+            VStack(spacing: Metric.row) {
+                ForEach(items) { item in
+                    HStack(spacing: 9) {
+                        Image(systemName: item.area.symbol)
+                            .font(.caption)
+                            .foregroundStyle(item.area.color)
+                            .frame(width: 18)
+                        Text(item.area.title).font(.subheadline).lineLimit(1)
+                        Spacer(minLength: 4)
+                        Text("\(item.sessions) séance\(item.sessions == 1 ? "" : "s")")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.tertiary)
+                        Text("\(item.activeMinutes) min")
+                            .font(.subheadline.weight(.semibold).monospacedDigit())
+                            .contentTransition(.numericText())
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            if !untouched.isEmpty {
+                Divider()
+                Text("Activé mais jamais travaillé : \(untouched.map(\.title).joined(separator: ", ")).")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(Metric.cardPadding)
+        .glassCard()
+        .accessibilityElement(children: .contain)
+    }
+}
+
 /// How the work has been split across the jobs of the trunk, so a month of
 /// nothing but crunches is visible rather than something you have to remember.
 struct PatternBalanceCard: View {
@@ -956,12 +1034,12 @@ private struct RecentWorkoutRow: View {
 
     var body: some View {
         HStack(spacing: Metric.row) {
-            Image(systemName: workout.pattern.symbol)
+            Image(systemName: workout.section.symbol)
                 .font(.headline)
-                .foregroundStyle(workout.pattern.color)
+                .foregroundStyle(workout.section.color)
                 .frame(width: 42, height: 42)
                 .background(
-                    workout.pattern.color.opacity(0.14),
+                    workout.section.color.opacity(0.14),
                     in: RoundedRectangle(cornerRadius: Metric.Radius.small, style: .continuous)
                 )
 
@@ -1077,12 +1155,12 @@ struct DayDetailView: View {
                                 ForEach(Array(movements.enumerated()), id: \.offset) { _, movement in
                                     HStack(spacing: 10) {
                                         Circle()
-                                            .fill(movement.pattern.color.opacity(0.16))
+                                            .fill(movement.accent.opacity(0.16))
                                             .frame(width: 26, height: 26)
                                             .overlay {
-                                                Image(systemName: movement.pattern.symbol)
+                                                Image(systemName: CatalogSection.of(movement).symbol)
                                                     .font(.caption2)
-                                                    .foregroundStyle(movement.pattern.color)
+                                                    .foregroundStyle(movement.accent)
                                             }
                                         Text(movement.name).font(.subheadline)
                                         Spacer(minLength: 0)

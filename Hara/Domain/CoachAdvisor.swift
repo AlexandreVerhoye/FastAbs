@@ -13,6 +13,8 @@ struct CoachGuidance: Sendable {
     var recentMovementIDs: Set<String> = []
     /// Jobs the trunk has not been asked to do this week.
     var underworkedPatterns: Set<CorePattern> = []
+    /// Parts of the body the athlete trains but has not trained this week.
+    var underworkedAreas: Set<BodyArea> = []
     var note: CoachNote?
 
     static let none = CoachGuidance()
@@ -98,7 +100,8 @@ struct CoachAdvisor: Sendable {
 
         return CoachGuidance(
             recentMovementIDs: Set(valid.prefix(2).flatMap(\.exerciseIDs)),
-            underworkedPatterns: underworked(in: valid, now: now),
+            underworkedPatterns: underworked(in: valid, preferences: preferences, now: now),
+            underworkedAreas: underworkedAreas(in: valid, preferences: preferences, now: now),
             note: note(from: valid, preferences: preferences, now: now)
         )
     }
@@ -226,7 +229,8 @@ struct CoachAdvisor: Sendable {
         // 5. Zones follow whichever part of the wall has waited longest — but
         //    only when the athlete has not named one themselves. An explicit
         //    choice is an instruction, not a hint.
-        if base.focusZones == [.fullCore], let debt = neglectedZone(in: valid, now: now) {
+        if base.explicitFocus.isEmpty,
+           let debt = neglectedZone(in: valid, areas: base.trainedAreas, now: now) {
             adapted.focusZones = [debt.zone]
             rationale.append(
                 debt.days.map { "\(debt.zone.title) en priorité : \($0) jours sans y toucher." }
@@ -237,7 +241,9 @@ struct CoachAdvisor: Sendable {
         // 6. What the selection itself will do differently. The engine already
         //    leans on both of these; without a sentence they are invisible, and
         //    an invisible adaptation reads as a shuffled list.
-        if let gap = stalest(of: guidance.underworkedPatterns, in: valid) {
+        if let area = BodyArea.ordered(guidance.underworkedAreas).first {
+            rationale.append("\(area.title) au programme : rien de ce côté cette semaine.")
+        } else if let gap = stalest(of: guidance.underworkedPatterns, in: valid) {
             rationale.append("\(gap.title) au programme : ce travail manque à votre semaine.")
         } else if !guidance.recentMovementIDs.isEmpty {
             rationale.append("Les mouvements de vos deux dernières séances passent leur tour.")
@@ -328,10 +334,16 @@ struct CoachAdvisor: Sendable {
     /// true and useless.
     func neglectedZone(
         in records: [WorkoutRecord],
+        areas: Set<BodyArea> = BodyArea.fallback,
         now: Date
     ) -> (zone: MuscleZone, days: Int?)? {
         guard !records.isEmpty else { return nil }
-        let essential: [MuscleZone] = [.upperAbs, .lowerAbs, .obliques, .deepCore]
+        // Only groups the athlete actually trains can be neglected. Naming the
+        // obliques to someone who has switched the core off is the coach talking
+        // about a different person's training.
+        let essential = MuscleZone.allCases.filter {
+            areas.contains($0.area) && $0.area.essentialZones.contains($0)
+        }
         var oldest: (zone: MuscleZone, days: Int?, rank: Int)?
 
         for zone in essential {
@@ -349,12 +361,39 @@ struct CoachAdvisor: Sendable {
     /// Jobs untouched so far this week. What a week owes you is broader than
     /// what a session can carry, which is exactly why it is tracked here rather
     /// than forced into every session.
-    private func underworked(in records: [WorkoutRecord], now: Date) -> Set<CorePattern> {
-        guard let week = calendar.dateInterval(of: .weekOfYear, for: now) else { return [] }
+    private func underworked(
+        in records: [WorkoutRecord],
+        preferences: WorkoutPreferences,
+        now: Date
+    ) -> Set<CorePattern> {
+        // Trunk jobs are a core question. Asked of someone who trains only their
+        // legs, every one of the five is permanently missing and the answer says
+        // nothing.
+        guard preferences.trainedAreas.contains(.core),
+              let week = calendar.dateInterval(of: .weekOfYear, for: now) else { return [] }
         let trained = records
             .filter { week.contains($0.completedAt) }
             .reduce(into: Set<CorePattern>()) { $0.formUnion($1.trainedPatterns) }
         return Set(CorePattern.allCases).subtracting(trained)
+    }
+
+    /// Parts of the body switched on and untouched so far this week.
+    ///
+    /// The coarse version of the same idea, and the one that matters most once
+    /// there is more than one area: a week of nothing but abdominal work is a
+    /// balanced week by every pattern measure and still leaves half the athlete
+    /// untrained.
+    private func underworkedAreas(
+        in records: [WorkoutRecord],
+        preferences: WorkoutPreferences,
+        now: Date
+    ) -> Set<BodyArea> {
+        guard preferences.trainedAreas.count > 1,
+              let week = calendar.dateInterval(of: .weekOfYear, for: now) else { return [] }
+        let trained = records
+            .filter { week.contains($0.completedAt) }
+            .reduce(into: Set<BodyArea>()) { $0.formUnion($1.trainedAreas) }
+        return preferences.trainedAreas.subtracting(trained)
     }
 
     private func note(
@@ -414,7 +453,17 @@ struct CoachAdvisor: Sendable {
             }
         }
 
-        let missing = underworked(in: records, now: now)
+        let missingAreas = underworkedAreas(in: records, preferences: preferences, now: now)
+        if !records.isEmpty, let area = BodyArea.ordered(missingAreas).first {
+            return CoachNote(
+                kind: .balance,
+                title: "Rien pour le \(area.shortTitle.lowercased()) cette semaine",
+                detail: area.detail,
+                symbol: area.symbol
+            )
+        }
+
+        let missing = underworked(in: records, preferences: preferences, now: now)
         if !records.isEmpty, let neglected = stalest(of: missing, in: records) {
             return CoachNote(
                 kind: .balance,

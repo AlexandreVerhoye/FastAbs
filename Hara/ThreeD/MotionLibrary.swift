@@ -94,6 +94,42 @@ enum MotionLibrary {
             (title, description, cadence) = ("Glissé de talon", "Une jambe s’allonge au ras du sol puis revient, le dos toujours plaqué.", 0.26)
         case .reversePlank:
             (title, description, cadence) = ("Planche inversée", "Bassin haut et corps en ligne, poitrine ouverte vers le plafond.", 0.14)
+        case .squat:
+            (title, description, cadence) = ("Squat", "Le bassin recule et descend jusqu’à ce que les cuisses approchent l’horizontale, puis remonte.", 0.3)
+        case .squatHold:
+            (title, description, cadence) = ("Squat tenu", "Le bassin descend jusqu’à la position basse du squat et la position se tient.", 0.14)
+        case .lunge:
+            (title, description, cadence) = ("Fente arrière", "Un pas en arrière, le genou arrière descend vers le sol, puis retour debout — une jambe puis l’autre.", 0.24)
+        case .lateralLunge:
+            (title, description, cadence) = ("Fente latérale", "Un grand pas de côté, le bassin s’assoit sur la jambe qui plie, l’autre reste tendue.", 0.24)
+        case .wallSit:
+            (title, description, cadence) = ("Chaise", "Dos droit et cuisses à l’horizontale, la position se tient sans bouger.", 0.14)
+        case .calfRaise:
+            (title, description, cadence) = ("Mollets debout", "Les talons montent puis redescendent lentement sous contrôle.", 0.5)
+        case .goodMorning:
+            (title, description, cadence) = ("Good morning", "Mains derrière la tête, le buste bascule vers l’avant depuis les hanches, dos plat.", 0.28)
+        case .donkeyKick:
+            (title, description, cadence) = ("Donkey kick", "À quatre pattes, un talon pousse vers le plafond puis revient — une jambe puis l’autre.", 0.32)
+        case .pushUp:
+            (title, description, cadence) = ("Pompes", "Le corps descend d’un bloc jusqu’à ce que la poitrine frôle le sol, puis repousse.", 0.32)
+        case .kneePushUp:
+            (title, description, cadence) = ("Pompes genoux", "Mêmes pompes, appui sur les genoux : le levier est plus court, le mouvement identique.", 0.34)
+        case .wallPushUp:
+            (title, description, cadence) = ("Pompes au mur", "Debout face au mur, le corps bascule d’un bloc vers les mains puis repousse.", 0.36)
+        case .pikePushUp:
+            (title, description, cadence) = ("Pompes piquées", "Bassin haut, la tête descend entre les mains puis remonte.", 0.3)
+        case .floorDip:
+            (title, description, cadence) = ("Dips au sol", "Mains derrière le bassin, les coudes plient pour descendre le bassin puis le repoussent.", 0.34)
+        case .proneRow:
+            (title, description, cadence) = ("Tirage au sol", "Allongé sur le ventre, les bras tirent vers l’arrière en rapprochant les omoplates.", 0.32)
+        case .plankUpDown:
+            (title, description, cadence) = ("Planche montée-descente", "Un avant-bras se déroule en bras tendu puis revient, sans que le bassin bouge.", 0.28)
+        case .squatThrust:
+            (title, description, cadence) = ("Squat thrust", "Mains au sol, les pieds partent en planche puis reviennent sous le buste, sans saut.", 0.2)
+        case .burpee:
+            (title, description, cadence) = ("Burpee", "Debout, mains au sol, planche, pompe, retour des pieds et redressement.", 0.16)
+        case .jumpingJack:
+            (title, description, cadence) = ("Jumping jack", "Les jambes s’écartent pendant que les bras montent sur les côtés, en rythme.", 0.62)
         case .rest:
             (title, description, cadence) = ("Récupération", "Le corps reste allongé et le thorax accompagne une respiration lente.", 0.12)
         }
@@ -127,6 +163,16 @@ enum MotionLibrary {
             .controlled
         case .flutter, .scissors, .bicycle, .twist, .heelTap, .mountainClimber:
             .explosive
+        case .squat, .lunge, .lateralLunge, .goodMorning, .pushUp, .kneePushUp,
+             .wallPushUp, .pikePushUp, .floorDip, .proneRow, .plankUpDown,
+             .squatThrust, .burpee:
+            .controlled
+        case .donkeyKick:
+            .deliberate
+        case .calfRaise, .jumpingJack:
+            .explosive
+        case .wallSit, .squatHold:
+            .isometric
         case .plank, .hollowHold, .bearHold, .rest:
             .isometric
         }
@@ -205,6 +251,112 @@ enum MotionLibrary {
             MuscleLoad(upperAbs: 0.3, lowerAbs: 0.85, obliques: 0.35, deepCore: 1, restingTone: 0.4, alternatesSides: true)
         case .reversePlank:
             MuscleLoad(upperAbs: 0.2, lowerAbs: 0.3, obliques: 0.4, deepCore: 0.8, lowerBack: 1, restingTone: 0.85)
+        case .squat:
+            MuscleLoad(
+                deepCore: 0.5, lowerBack: 0.4,
+                glutes: 1, quadriceps: 1, hamstrings: 0.6, calves: 0.45,
+                restingTone: 0.12
+            )
+        case .lunge:
+            MuscleLoad(
+                deepCore: 0.55, lowerBack: 0.35,
+                glutes: 1, quadriceps: 1, hamstrings: 0.7, calves: 0.5,
+                restingTone: 0.14, alternatesSides: true
+            )
+        case .lateralLunge:
+            MuscleLoad(
+                obliques: 0.4, deepCore: 0.5, lowerBack: 0.35,
+                glutes: 1, quadriceps: 0.9, hamstrings: 0.6, calves: 0.3,
+                restingTone: 0.14, alternatesSides: true
+            )
+        case .wallSit:
+            MuscleLoad(
+                deepCore: 0.5, glutes: 0.75, quadriceps: 1, calves: 0.4,
+                restingTone: 0.85
+            )
+        case .squatHold:
+            MuscleLoad(
+                deepCore: 0.55, lowerBack: 0.45,
+                glutes: 0.9, quadriceps: 1, hamstrings: 0.5, calves: 0.5,
+                restingTone: 0.86
+            )
+        case .calfRaise:
+            MuscleLoad(deepCore: 0.25, quadriceps: 0.3, calves: 1, restingTone: 0.2)
+        case .goodMorning:
+            MuscleLoad(
+                deepCore: 0.5, lowerBack: 0.9,
+                glutes: 0.9, hamstrings: 1,
+                restingTone: 0.22
+            )
+        case .donkeyKick:
+            MuscleLoad(
+                deepCore: 0.55, lowerBack: 0.5,
+                glutes: 1, hamstrings: 0.7,
+                restingTone: 0.2, alternatesSides: true
+            )
+        case .pushUp:
+            MuscleLoad(
+                upperAbs: 0.35, deepCore: 0.8,
+                chest: 1, shoulders: 0.8, arms: 0.85, upperBack: 0.4,
+                restingTone: 0.2
+            )
+        case .kneePushUp:
+            MuscleLoad(
+                upperAbs: 0.3, deepCore: 0.6,
+                chest: 1, shoulders: 0.7, arms: 0.8, upperBack: 0.35,
+                restingTone: 0.2
+            )
+        case .wallPushUp:
+            MuscleLoad(
+                deepCore: 0.35,
+                chest: 0.85, shoulders: 0.6, arms: 0.7, upperBack: 0.3,
+                restingTone: 0.16
+            )
+        case .pikePushUp:
+            MuscleLoad(
+                deepCore: 0.6,
+                chest: 0.5, shoulders: 1, arms: 0.85, upperBack: 0.6,
+                restingTone: 0.2
+            )
+        case .floorDip:
+            MuscleLoad(
+                deepCore: 0.4,
+                chest: 0.5, shoulders: 0.75, arms: 1, upperBack: 0.35,
+                restingTone: 0.2
+            )
+        case .proneRow:
+            MuscleLoad(
+                deepCore: 0.35, lowerBack: 0.6,
+                shoulders: 0.8, arms: 0.5, upperBack: 1,
+                restingTone: 0.24
+            )
+        case .plankUpDown:
+            MuscleLoad(
+                upperAbs: 0.4, lowerAbs: 0.45, obliques: 0.55, deepCore: 1,
+                chest: 0.7, shoulders: 0.8, arms: 0.7,
+                restingTone: 0.4, alternatesSides: true
+            )
+        case .squatThrust:
+            MuscleLoad(
+                upperAbs: 0.3, lowerAbs: 0.6, deepCore: 0.85,
+                glutes: 0.8, quadriceps: 0.9, calves: 0.5,
+                chest: 0.4, shoulders: 0.6, arms: 0.4,
+                restingTone: 0.18
+            )
+        case .burpee:
+            MuscleLoad(
+                upperAbs: 0.35, lowerAbs: 0.6, deepCore: 0.85,
+                glutes: 0.9, quadriceps: 1, hamstrings: 0.5, calves: 0.7,
+                chest: 0.8, shoulders: 0.8, arms: 0.7,
+                restingTone: 0.18
+            )
+        case .jumpingJack:
+            MuscleLoad(
+                deepCore: 0.3,
+                glutes: 0.4, quadriceps: 0.5, calves: 0.9,
+                shoulders: 0.85, arms: 0.3, upperBack: 0.5,
+                restingTone: 0.2
+            )
         case .rest:
             MuscleLoad(upperAbs: 0.1, lowerAbs: 0.1, obliques: 0.08, deepCore: 0.14, restingTone: 0.9)
         }
@@ -250,6 +402,26 @@ private extension MotionLibrary {
             Framing(target: SIMD3<Float>(0.05, 0.5, 0), position: SIMD3<Float>(0.85, 1.5, 5.8))
         case .bridge, .bridgeMarch:
             Framing(target: SIMD3<Float>(0.05, 0.5, 0), position: SIMD3<Float>(1.0, 1.6, 5.5))
+        case .squat, .squatHold, .lunge, .wallSit, .calfRaise, .goodMorning, .wallPushUp:
+            // Standing work is tall rather than long, so the camera comes in and
+            // rises to meet it.
+            Framing(target: SIMD3<Float>(0, 1.05, 0), position: SIMD3<Float>(0.6, 1.5, 4.6))
+        case .lateralLunge, .jumpingJack:
+            // These two happen across the body rather than along it: a side view
+            // shows a jumping jack as someone standing still with their arms
+            // moving. Filmed from the front, the step and the spread are the
+            // movement.
+            Framing(target: SIMD3<Float>(0, 1.05, 0), position: SIMD3<Float>(5.0, 1.5, 0.7))
+        case .squatThrust, .burpee:
+            // These visit both extremes inside one repetition — upright and flat
+            // on the mat — so the frame has to hold the union of the two.
+            Framing(target: SIMD3<Float>(0.02, 0.9, 0), position: SIMD3<Float>(0.7, 1.7, 6.3))
+        case .pushUp, .kneePushUp, .pikePushUp, .plankUpDown:
+            Framing(target: SIMD3<Float>(0.1, 0.5, 0), position: SIMD3<Float>(0.9, 1.5, 5.6))
+        case .donkeyKick:
+            Framing(target: SIMD3<Float>(0.08, 0.55, 0), position: SIMD3<Float>(0.85, 1.5, 5.8))
+        case .floorDip:
+            Framing(target: SIMD3<Float>(0.05, 0.55, 0), position: SIMD3<Float>(0.95, 1.4, 5.2))
         default:
             Framing(target: SIMD3<Float>(0.05, 0.45, 0), position: SIMD3<Float>(1.0, 1.6, 5.5))
         }
@@ -766,6 +938,320 @@ extension MotionLibrary {
             )
             return PoseSketch(pose)
 
+        case .squat:
+            return PoseSketch(squatPose(drop: effort * 0.44))
+
+        case .squatHold:
+            // Held at the bottom, breathing. The only thing that moves is the
+            // ribcage — which is the difference between a hold that reads as a
+            // hold and one that reads as a frozen frame.
+            return PoseSketch(squatPose(drop: 0.42 + breath * 0.012))
+
+        case .lunge:
+            var pose = standing()
+            // Alternating, and the swap is invisible because both feet come back
+            // under the hips at the top of every cycle: at swing zero this is
+            // simply standing, whichever leg is about to move.
+            let reach = abs(swing)
+            let drop = reach * 0.40
+            let stepsBackWithLeft = swing >= 0
+            let front = SIMD3<Float>(0.30 * reach, 0.11, 0)
+            let back = SIMD3<Float>(-0.40 * reach, 0.11 + drop * 0.20, 0)
+            if stepsBackWithLeft {
+                pose.leftAnkle = SIMD3<Float>(back.x, back.y, -0.17)
+                pose.rightAnkle = SIMD3<Float>(front.x, front.y, 0.17)
+            } else {
+                pose.rightAnkle = SIMD3<Float>(back.x, back.y, 0.17)
+                pose.leftAnkle = SIMD3<Float>(front.x, front.y, -0.17)
+            }
+            moveHips(&pose, by: SIMD3<Float>(-0.03 * reach, -drop, 0))
+            plantKneesForward(&pose)
+            curlTorso(&pose, amount: reach * 0.10)
+            return PoseSketch(pose)
+
+        case .lateralLunge:
+            var pose = standing()
+            let reach = abs(swing)
+            let step = 0.55 * reach
+            let sink = 0.28 * reach
+            let toLeft = swing >= 0
+            if toLeft {
+                pose.leftAnkle = SIMD3<Float>(0.02 * reach, 0.11, -0.16 - step)
+                pose.rightAnkle = SIMD3<Float>(0, 0.11, 0.16)
+            } else {
+                pose.rightAnkle = SIMD3<Float>(0.02 * reach, 0.11, 0.16 + step)
+                pose.leftAnkle = SIMD3<Float>(0, 0.11, -0.16)
+            }
+            // The seat travels toward the leg that bends, which is what makes
+            // this a lunge rather than a wide squat.
+            moveHips(&pose, by: SIMD3<Float>(-0.05 * reach, -sink, (toLeft ? -1 : 1) * step * 0.5))
+            plantKneesForward(&pose)
+            curlTorso(&pose, amount: reach * 0.24)
+            return PoseSketch(pose)
+
+        case .wallSit:
+            var pose = standing()
+            // Back vertical against the wall, thighs horizontal, shins vertical.
+            // Leaving the chest where standing put it made the spine solve into
+            // a long slab tipped backwards.
+            let settle = breath * 0.02
+            pose.pelvis = SIMD3<Float>(-0.2, 0.6 + settle, 0)
+            pose.chest = SIMD3<Float>(-0.22, 1.18 + settle, 0)
+            pose.neck = SIMD3<Float>(-0.22, 1.44 + settle, 0)
+            pose.head = SIMD3<Float>(-0.2, 1.57 + settle, 0)
+            pose.leftShoulder = SIMD3<Float>(-0.22, 1.18 + settle, -0.25)
+            pose.rightShoulder = SIMD3<Float>(-0.22, 1.18 + settle, 0.25)
+            pose.leftHip = SIMD3<Float>(-0.2, 0.6 + settle, -0.155)
+            pose.rightHip = SIMD3<Float>(-0.2, 0.6 + settle, 0.155)
+            pose.leftKnee = SIMD3<Float>(0.3, 0.61 + settle, -0.17)
+            pose.rightKnee = SIMD3<Float>(0.3, 0.61 + settle, 0.17)
+            pose.leftAnkle = SIMD3<Float>(0.32, 0.11, -0.17)
+            pose.rightAnkle = SIMD3<Float>(0.32, 0.11, 0.17)
+            // Arms reach forward, which is both what people do and what keeps
+            // them off the trunk in profile.
+            pose.leftHand = SIMD3<Float>(0.46, 1.1 + settle, -0.26)
+            pose.rightHand = SIMD3<Float>(0.46, 1.1 + settle, 0.26)
+            pose.leftElbow = aimLimb(from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(0, -1, -0.3))
+            pose.rightElbow = aimLimb(from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(0, -1, 0.3))
+            return PoseSketch(pose)
+
+        case .calfRaise:
+            var pose = standing()
+            // Heels rise; the toes stay down, and the foot clamp keeps them there.
+            let rise = effort * 0.13
+            pose.leftAnkle.y += rise
+            pose.rightAnkle.y += rise
+            moveHips(&pose, by: SIMD3<Float>(0, rise, 0))
+            return PoseSketch(pose)
+
+        case .goodMorning:
+            var pose = standing()
+            // Hands behind the head, then the trunk folds over the hips while
+            // the shins stay vertical. The hips travelling back is what keeps
+            // this a hinge instead of a bow.
+            // Arms crossed on the chest rather than behind the head: behind the
+            // head they sit inside the body's own outline, and in profile the
+            // athlete simply had no arms.
+            armsCrossedOnChest(&pose)
+            moveHips(&pose, by: SIMD3<Float>(-0.18 * effort, -0.06 * effort, 0))
+            curlTorso(&pose, amount: effort * 1.12)
+            plantKneesForward(&pose, offset: 0.12)
+            return PoseSketch(pose)
+
+        case .donkeyKick:
+            var pose = quadruped()
+            // One heel drives up and back while the pelvis stays exactly where
+            // it was; the moment the hips rotate, the glute stops working.
+            let lift = abs(swing)
+            let target = SIMD3<Float>(0.92, 0.60, 0)
+            if swing >= 0 {
+                pose.leftAnkle = mix(pose.leftAnkle, target + SIMD3<Float>(0, 0, 0.17), t: lift)
+                pose.leftKnee = aimLimb(
+                    from: pose.leftHip, to: pose.leftAnkle, bend: SIMD3<Float>(0, -1, 0), offset: 0.16
+                )
+            } else {
+                pose.rightAnkle = mix(pose.rightAnkle, target + SIMD3<Float>(0, 0, -0.17), t: lift)
+                pose.rightKnee = aimLimb(
+                    from: pose.rightHip, to: pose.rightAnkle, bend: SIMD3<Float>(0, -1, 0), offset: 0.16
+                )
+            }
+            return PoseSketch(pose, anchor: \.leftHand)
+
+        case .pushUp:
+            return PoseSketch(pushUpPose(dip: effort * 0.30))
+
+        case .kneePushUp:
+            return PoseSketch(kneePushUpPose(dip: effort * 0.26))
+
+        case .wallPushUp:
+            var pose = standing()
+            // The hands are planted where the wall is and the body tips toward
+            // them in one piece, so the arms take the whole movement.
+            pose.leftHand = SIMD3<Float>(0.66, 1.62, -0.32)
+            pose.rightHand = SIMD3<Float>(0.66, 1.62, 0.32)
+            pose = pivoted(
+                pose,
+                about: (pose.leftAnkle + pose.rightAnkle) * 0.5,
+                by: 0.03 + effort * 0.17,
+                holding: [\.leftHand, \.rightHand, \.leftAnkle, \.rightAnkle]
+            )
+            pose.leftElbow = aimLimb(
+                from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(0, -1, -0.5)
+            )
+            pose.rightElbow = aimLimb(
+                from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(0, -1, 0.5)
+            )
+            return PoseSketch(pose)
+
+        case .pikePushUp:
+            var pose = highPlank()
+            // Hands and feet walk toward each other, then the hips ride up into
+            // an inverted V and the torso pitches down between the hands. Pitch
+            // is a rotation about the pelvis rather than a new chest position,
+            // so the spine keeps its length instead of stretching into a slab.
+            pose.leftHand = SIMD3<Float>(-0.58, 0.13, 0.3)
+            pose.rightHand = SIMD3<Float>(-0.58, 0.13, -0.3)
+            pose.leftAnkle = SIMD3<Float>(0.94, 0.13, 0.2)
+            pose.rightAnkle = SIMD3<Float>(0.94, 0.13, -0.2)
+            // Hip height is bounded by the legs: raised any further and the
+            // pelvis sits more than a leg's length from the planted feet, which
+            // leaves the solver to invent the difference.
+            moveHips(&pose, by: SIMD3<Float>(0.31, 0.29, 0))
+
+            let pikeAxis = safeAxis(pose.leftHip - pose.rightHip, fallback: SIMD3<Float>(0, 0, 1))
+            let pitch = 1.02 + effort * 0.2
+            for joint in upperBodyJoints where joint != \.leftHand && joint != \.rightHand {
+                pose[keyPath: joint] = rotate(
+                    pose[keyPath: joint], around: pose.pelvis, axis: pikeAxis, angle: pitch
+                )
+            }
+            pose.leftKnee = aimLimb(from: pose.leftHip, to: pose.leftAnkle, bend: SIMD3<Float>(0, -1, 0))
+            pose.rightKnee = aimLimb(from: pose.rightHip, to: pose.rightAnkle, bend: SIMD3<Float>(0, -1, 0))
+            pose.leftElbow = aimLimb(from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(0, 0, 1))
+            pose.rightElbow = aimLimb(from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(0, 0, -1))
+            return PoseSketch(pose)
+
+        case .floorDip:
+            var pose = seated()
+            // Hands planted just behind the shoulders, feet flat, seat off the
+            // mat. The hands are under the shoulders rather than further back
+            // because the arm is 0.70 long: any further and the shoulder could
+            // never reach the height a locked-out dip needs.
+            let seat = mix(0.32, 0.20, t: effort)
+            pose.leftAnkle = SIMD3<Float>(0.86, 0.13, -0.17)
+            pose.rightAnkle = SIMD3<Float>(0.86, 0.13, 0.17)
+            pose.leftHand = SIMD3<Float>(-0.20, 0.13, -0.32)
+            pose.rightHand = SIMD3<Float>(-0.20, 0.13, 0.32)
+            pose.pelvis = SIMD3<Float>(mix(0.18, 0.14, t: effort), seat, 0)
+            pose.leftHip = pose.pelvis + SIMD3<Float>(0, 0, -0.155)
+            pose.rightHip = pose.pelvis + SIMD3<Float>(0, 0, 0.155)
+            pose.chest = SIMD3<Float>(mix(-0.14, -0.18, t: effort), seat + 0.48, 0)
+            pose.leftShoulder = pose.chest + SIMD3<Float>(0, 0, -0.25)
+            pose.rightShoulder = pose.chest + SIMD3<Float>(0, 0, 0.25)
+            pose.neck = pose.chest + SIMD3<Float>(-0.02, 0.26, 0)
+            pose.head = pose.neck + SIMD3<Float>(0.02, 0.13, 0)
+            pose.leftKnee = aimLimb(
+                from: pose.leftHip, to: pose.leftAnkle, bend: SIMD3<Float>(0, 1, 0), offset: 0.2
+            )
+            pose.rightKnee = aimLimb(
+                from: pose.rightHip, to: pose.rightAnkle, bend: SIMD3<Float>(0, 1, 0), offset: 0.2
+            )
+            pose.leftElbow = aimLimb(
+                from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(-1, 0, -0.2)
+            )
+            pose.rightElbow = aimLimb(
+                from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(-1, 0, 0.2)
+            )
+            return PoseSketch(pose)
+
+        case .proneRow:
+            var pose = prone()
+            let pull = effort
+            // The chest lifts a little and the elbows drive back past the ribs.
+            // A row is a folded arm, not a reach: the hand finishes near the
+            // shoulder, which is why the targets sit so close in.
+            let lift = pull * 0.11
+            pose.chest.y += lift
+            pose.leftShoulder.y += lift
+            pose.rightShoulder.y += lift
+            pose.neck.y += lift * 1.2
+            pose.head.y += lift * 1.4
+            pose.leftHand = mix(pose.leftHand, SIMD3<Float>(-0.62, 0.26, 0.50), t: pull)
+            pose.rightHand = mix(pose.rightHand, SIMD3<Float>(-0.62, 0.26, -0.50), t: pull)
+            pose.leftElbow = aimLimb(
+                from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(-0.3, 1, 0.7)
+            )
+            pose.rightElbow = aimLimb(
+                from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(-0.3, 1, -0.7)
+            )
+            return PoseSketch(pose, anchor: \.pelvis)
+
+        case .plankUpDown:
+            var pose = forearmPlank()
+            let extend = abs(swing)
+            let high = highPlank()
+            // The girdle rolls rather than the whole trunk rising: an elbow on
+            // the mat sits 0.38 below its own shoulder and not a millimetre
+            // more, so a trunk lifted to high-plank height would have to tear
+            // the planted forearm off the ground.
+            let axis = safeAxis(pose.chest - pose.pelvis, fallback: SIMD3<Float>(-1, 0, 0))
+            for joint in shoulderGirdleJoints {
+                pose[keyPath: joint] = rotate(
+                    pose[keyPath: joint],
+                    around: pose.chest,
+                    axis: axis,
+                    angle: extend * 0.3 * (swing >= 0 ? 1 : -1)
+                )
+            }
+            if swing >= 0 {
+                pose.leftHand = mix(pose.leftHand, high.leftHand, t: extend)
+            } else {
+                pose.rightHand = mix(pose.rightHand, high.rightHand, t: extend)
+            }
+            // Both arms, every frame: the arm that stays down is the one whose
+            // shoulder is being rolled over it, and leaving its elbow where the
+            // stance put it is what let the solver flip it mid-roll.
+            stabiliseLimbs(&pose)
+            moveHips(&pose, by: SIMD3<Float>(0, extend * 0.015, 0), carryingTorso: false)
+            return PoseSketch(pose)
+
+        case .squatThrust:
+            // Four shapes rather than one deformed shape. A repetition genuinely
+            // visits standing, a crouch and a plank, and authoring that as
+            // offsets from a single stance is how a figure ends up melting.
+            return PoseSketch(
+                sequence(
+                    [uprightForMat(), crouch(), highPlank(), crouch()],
+                    phase: phase
+                )
+            )
+
+        case .burpee:
+            return PoseSketch(
+                sequence(
+                    [
+                        uprightForMat(),
+                        crouch(),
+                        highPlank(),
+                        pushUpPose(dip: 0.30),
+                        highPlank(),
+                        crouch(),
+                        reachOverhead()
+                    ],
+                    phase: phase
+                )
+            )
+
+        case .jumpingJack:
+            var pose = standing()
+            let open = (swing + 1) / 2
+            let spread = 0.30 * open
+            pose.leftAnkle = SIMD3<Float>(0, 0.11, -0.16 - spread)
+            pose.rightAnkle = SIMD3<Float>(0, 0.11, 0.16 + spread)
+            moveHips(&pose, by: SIMD3<Float>(0, -0.05 * open, 0))
+            pose.leftKnee = aimLimb(
+                from: pose.leftHip, to: pose.leftAnkle, bend: SIMD3<Float>(1, 0, 0), offset: 0.12
+            )
+            pose.rightKnee = aimLimb(
+                from: pose.rightHip, to: pose.rightAnkle, bend: SIMD3<Float>(1, 0, 0), offset: 0.12
+            )
+            // The arms sweep in the frontal plane, so the hand rides a circle
+            // around its own shoulder rather than being placed by hand at each
+            // end and interpolated through the torso.
+            let angle = mix(-1.25, 0.95, t: open)
+            let radius: Float = 0.62
+            pose.leftHand = pose.leftShoulder
+                + SIMD3<Float>(0.04, sin(angle) * radius, -cos(angle) * radius)
+            pose.rightHand = pose.rightShoulder
+                + SIMD3<Float>(0.04, sin(angle) * radius, cos(angle) * radius)
+            pose.leftElbow = aimLimb(
+                from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(1, 0, 0), offset: 0.1
+            )
+            pose.rightElbow = aimLimb(
+                from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(1, 0, 0), offset: 0.1
+            )
+            return PoseSketch(pose)
+
         case .rest:
             var pose = supineBentKnees()
             pose.chest.y += (breath + 1) * 0.014
@@ -1004,6 +1490,139 @@ private extension MotionLibrary {
             leftAnkle: SIMD3<Float>(1.13, 0.13, 0.09),
             rightAnkle: SIMD3<Float>(1.13, 0.32, -0.09)
         )
+    }
+
+    /// A squat at a given depth.
+    ///
+    /// The hips travel back as well as down: a squat that only sinks reads as a
+    /// knee bend and puts the load in the wrong place.
+    static func squatPose(drop: Float) -> BodyPose {
+        var pose = standing()
+        moveHips(&pose, by: SIMD3<Float>(-drop * 0.42, -drop, 0))
+        plantKneesForward(&pose)
+        curlTorso(&pose, amount: drop * 1.14)
+        return pose
+    }
+
+    /// Standing, turned to face the way the mat stances lie.
+    ///
+    /// `standing()` faces +X and every stance on the mat puts its head at −X.
+    /// Blended directly, the athlete bends over *backwards* to place their hands
+    /// — and the feet pass through a vertical shin on the way, which is the one
+    /// configuration the foot direction cannot be read from. Turning the stance
+    /// around first makes the burpee a fold forwards, which is both what it is
+    /// and what removed the flip.
+    static func uprightForMat() -> BodyPose {
+        turnedAround(standing())
+    }
+
+    /// Hands on the mat, heels down, knees deeply folded — the shape a burpee
+    /// passes through twice per repetition.
+    static func crouch() -> BodyPose {
+        var pose = BodyPose(
+            head: SIMD3<Float>(-0.34, 0.94, 0),
+            neck: SIMD3<Float>(-0.26, 0.86, 0),
+            chest: SIMD3<Float>(-0.10, 0.66, 0),
+            pelvis: SIMD3<Float>(0.46, 0.52, 0),
+            leftShoulder: SIMD3<Float>(-0.10, 0.66, 0.25),
+            rightShoulder: SIMD3<Float>(-0.10, 0.66, -0.25),
+            leftElbow: SIMD3<Float>(-0.28, 0.40, 0.30),
+            rightElbow: SIMD3<Float>(-0.28, 0.40, -0.30),
+            leftHand: SIMD3<Float>(-0.42, 0.13, 0.28),
+            rightHand: SIMD3<Float>(-0.42, 0.13, -0.28),
+            leftHip: SIMD3<Float>(0.46, 0.52, 0.155),
+            rightHip: SIMD3<Float>(0.46, 0.52, -0.155),
+            leftKnee: SIMD3<Float>(0.62, 0.44, 0.17),
+            rightKnee: SIMD3<Float>(0.62, 0.44, -0.17),
+            leftAnkle: SIMD3<Float>(0.80, 0.11, 0.17),
+            rightAnkle: SIMD3<Float>(0.80, 0.11, -0.17)
+        )
+        // Knees in front of the ankles, which is where they are in a deep crouch
+        // — and which is what points the toes forwards rather than back under
+        // the athlete. `plantKneesForward` bows them the other way: it is written
+        // for a stance facing +X, and this one has been turned around.
+        pose.leftKnee = aimLimb(
+            from: pose.leftHip, to: pose.leftAnkle, bend: SIMD3<Float>(-1, 0, 0), offset: 0.2
+        )
+        pose.rightKnee = aimLimb(
+            from: pose.rightHip, to: pose.rightAnkle, bend: SIMD3<Float>(-1, 0, 0), offset: 0.2
+        )
+        return pose
+    }
+
+    /// The end of a burpee: standing tall with the arms swung up and forward.
+    ///
+    /// Not straight overhead. The shoulder sits 1.70 up and an arm is 0.70, so
+    /// a vertical reach puts the hands at 2.40 — past the top of the frame.
+    static func reachOverhead() -> BodyPose {
+        var pose = uprightForMat()
+        pose.leftHand = SIMD3<Float>(-0.42, 2.06, 0.36)
+        pose.rightHand = SIMD3<Float>(-0.42, 2.06, -0.36)
+        pose.leftElbow = aimLimb(
+            from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(-0.4, -1, 0)
+        )
+        pose.rightElbow = aimLimb(
+            from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(-0.4, -1, 0)
+        )
+        return PoseSolver.translate(pose, by: SIMD3<Float>(0, 0.05, 0))
+    }
+
+    /// A push-up at a given depth.
+    ///
+    /// The body turns as one about the toes; the hands are planted, so the arms
+    /// bend to take it. Lowering the hips instead folds the athlete in half.
+    static func pushUpPose(dip: Float) -> BodyPose {
+        var pose = highPlank()
+        // Hands a little ahead of and wider than the shoulders, so the two arms
+        // separate in profile and the bend actually shows.
+        pose.leftHand = SIMD3<Float>(-0.62, 0.13, 0.32)
+        pose.rightHand = SIMD3<Float>(-0.62, 0.13, -0.32)
+        pose = pivoted(pose, about: (pose.leftAnkle + pose.rightAnkle) * 0.5, by: dip)
+        // Re-aimed after the rotation, not before: the hands are planted, so it
+        // is the descent itself that has to bend the arms.
+        pose.leftElbow = aimLimb(
+            from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(0, 0, 1)
+        )
+        pose.rightElbow = aimLimb(
+            from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(0, 0, -1)
+        )
+        return pose
+    }
+
+    /// The same movement pivoted about the knees instead of the toes, which is
+    /// the whole difference between the two exercises.
+    static func kneePushUpPose(dip: Float) -> BodyPose {
+        var pose = BodyPose(
+            head: SIMD3<Float>(-0.70, 0.83, 0),
+            neck: SIMD3<Float>(-0.58, 0.80, 0),
+            chest: SIMD3<Float>(-0.33, 0.74, 0),
+            pelvis: SIMD3<Float>(0.22, 0.55, 0),
+            leftShoulder: SIMD3<Float>(-0.33, 0.74, 0.25),
+            rightShoulder: SIMD3<Float>(-0.33, 0.74, -0.25),
+            leftElbow: SIMD3<Float>(-0.34, 0.42, 0.31),
+            rightElbow: SIMD3<Float>(-0.34, 0.42, -0.31),
+            leftHand: SIMD3<Float>(-0.36, 0.13, 0.30),
+            rightHand: SIMD3<Float>(-0.36, 0.13, -0.30),
+            leftHip: SIMD3<Float>(0.22, 0.55, 0.155),
+            rightHip: SIMD3<Float>(0.22, 0.55, -0.155),
+            leftKnee: SIMD3<Float>(0.50, 0.13, 0.16),
+            rightKnee: SIMD3<Float>(0.50, 0.13, -0.16),
+            leftAnkle: SIMD3<Float>(0.90, 0.45, 0.16),
+            rightAnkle: SIMD3<Float>(0.90, 0.45, -0.16)
+        )
+        pose = pivoted(
+            pose,
+            about: (pose.leftKnee + pose.rightKnee) * 0.5,
+            by: dip,
+            holding: [\.leftHand, \.rightHand, \.leftKnee, \.rightKnee, \.leftAnkle, \.rightAnkle]
+        )
+        pose.leftElbow = aimLimb(
+            from: pose.leftShoulder, to: pose.leftHand, bend: SIMD3<Float>(0, 0, 1)
+        )
+        pose.rightElbow = aimLimb(
+            from: pose.rightShoulder, to: pose.rightHand, bend: SIMD3<Float>(0, 0, -1)
+        )
+        return pose
     }
 
     static func sidePlank() -> BodyPose {
@@ -1337,6 +1956,156 @@ private extension MotionLibrary {
     static func safeAxis(_ vector: SIMD3<Float>, fallback: SIMD3<Float>) -> SIMD3<Float> {
         let length = simd_length(vector)
         return length > 0.0001 ? vector / length : simd_normalize(fallback)
+    }
+
+    /// Re-aims both knees so they lead forward over the planted feet.
+    ///
+    /// Any standing movement that sinks needs this: the thigh is a fixed bone,
+    /// so a pelvis that drops without the knees being re-aimed simply stretches
+    /// it, and the solver buys the length back by dragging a foot off the mat.
+    static func plantKneesForward(_ pose: inout BodyPose, offset: Float = 0.2) {
+        pose.leftKnee = aimLimb(
+            from: pose.leftHip, to: pose.leftAnkle, bend: SIMD3<Float>(1, 0, 0), offset: offset
+        )
+        pose.rightKnee = aimLimb(
+            from: pose.rightHip, to: pose.rightAnkle, bend: SIMD3<Float>(1, 0, 0), offset: offset
+        )
+    }
+
+    /// Turns the whole body about one point, leaving the listed joints planted.
+    ///
+    /// A push-up, a knee push-up and a wall push-up are the same movement about
+    /// three different pivots, and writing that once means the sign of the
+    /// rotation is decided in one place rather than three.
+    static func pivoted(
+        _ pose: BodyPose,
+        about pivot: SIMD3<Float>,
+        by angle: Float,
+        holding planted: [any WritableKeyPath<BodyPose, SIMD3<Float>> & Sendable] = [\.leftHand, \.rightHand]
+    ) -> BodyPose {
+        var result = pose
+        let axis = safeAxis(pose.leftHip - pose.rightHip, fallback: SIMD3<Float>(0, 0, 1))
+        for joint in allJoints where !planted.contains(where: { $0 == joint }) {
+            result[keyPath: joint] = rotate(pose[keyPath: joint], around: pivot, axis: axis, angle: angle)
+        }
+        return result
+    }
+
+    /// Turns the athlete to face the other way.
+    ///
+    /// Half a turn about the vertical, not a mirror. A mirrored body is a
+    /// left-handed body: the two sides swap over, and the difference shows the
+    /// moment an arm crosses the chest or a foot is asked which way its toes
+    /// point.
+    static func turnedAround(_ pose: BodyPose) -> BodyPose {
+        var result = pose
+        for joint in allJoints {
+            let point = pose[keyPath: joint]
+            result[keyPath: joint] = SIMD3<Float>(-point.x, point.y, -point.z)
+        }
+        return result
+    }
+
+    static func blend(_ from: BodyPose, _ to: BodyPose, t: Float) -> BodyPose {
+        var result = from
+        for joint in allJoints {
+            result[keyPath: joint] = mix(from[keyPath: joint], to[keyPath: joint], t: t)
+        }
+        return result
+    }
+
+    /// A movement authored as key poses rather than as one stance being
+    /// deformed.
+    ///
+    /// Some repetitions are not a single shape: a burpee visits standing, the
+    /// mat, a plank and a jump inside one of them. Keyframing those and letting
+    /// the solver rebuild the bones in between is how animation has always
+    /// handled it.
+    ///
+    /// Two details do the work. The keys are spaced by **how far the body
+    /// actually travels** between them rather than by hand-written phases: a
+    /// hand-written schedule gives every segment the same slice of the cycle
+    /// whatever it contains, so the long move from standing to the mat runs
+    /// three times faster than the short one out of the plank, and the fast one
+    /// reads as a jump. And the limbs are re-aimed after every blend, because
+    /// interpolating an elbow between two stances walks it through the position
+    /// where it is in line with its own arm — the one case two-bone IK cannot
+    /// resolve, which it answers by flipping the joint to the other side between
+    /// one frame and the next.
+    ///
+    /// The list wraps: the last pose leads back into the first, so the loop
+    /// closes by construction.
+    static func sequence(_ poses: [BodyPose], phase: Float) -> BodyPose {
+        guard let first = poses.first else { return standing() }
+        guard poses.count > 1 else { return first }
+
+        let loop = poses + [first]
+        var spans: [Float] = []
+        for index in 0..<(loop.count - 1) {
+            spans.append(travel(from: loop[index], to: loop[index + 1]))
+        }
+        let total = spans.reduce(0, +)
+        guard total > 0.0001 else { return first }
+        // A floor per segment, so two nearly identical keys still take a moment
+        // rather than being stepped through inside a single frame.
+        let floor = total * 0.04
+        spans = spans.map { max($0, floor) }
+        let scale = spans.reduce(0, +)
+
+        var cursor: Float = 0
+        let phase = MotionTempo.wrap(phase) * scale
+        for index in spans.indices {
+            let span = spans[index]
+            if phase < cursor + span || index == spans.count - 1 {
+                let progress = span > 0.0001 ? (phase - cursor) / span : 0
+                var pose = blend(loop[index], loop[index + 1], t: MotionTempo.smoothstep(min(max(progress, 0), 1)))
+                stabiliseLimbs(&pose)
+                return pose
+            }
+            cursor += span
+        }
+        return first
+    }
+
+    /// The furthest any single joint moves between two poses — the honest
+    /// measure of how much animation a segment contains.
+    private static func travel(from: BodyPose, to: BodyPose) -> Float {
+        allJoints.reduce(0) { longest, joint in
+            max(longest, simd_distance(from[keyPath: joint], to[keyPath: joint]))
+        }
+    }
+
+    /// Re-aims the four limbs away from their own axis.
+    ///
+    /// The bend hint only has to be *somewhere off the line* for the solver to
+    /// resolve a limb the same way two frames running. `sagittalBend` puts it in
+    /// the plane the body moves in, which is where a real elbow and a real knee
+    /// both bend.
+    static func stabiliseLimbs(_ pose: inout BodyPose) {
+        pose.leftElbow = aimLimb(
+            from: pose.leftShoulder,
+            to: pose.leftHand,
+            bend: sagittalBend(from: pose.leftShoulder, to: pose.leftHand),
+            offset: 0.1
+        )
+        pose.rightElbow = aimLimb(
+            from: pose.rightShoulder,
+            to: pose.rightHand,
+            bend: sagittalBend(from: pose.rightShoulder, to: pose.rightHand),
+            offset: 0.1
+        )
+        pose.leftKnee = aimLimb(
+            from: pose.leftHip,
+            to: pose.leftAnkle,
+            bend: sagittalBend(from: pose.leftHip, to: pose.leftAnkle, sign: -1),
+            offset: 0.16
+        )
+        pose.rightKnee = aimLimb(
+            from: pose.rightHip,
+            to: pose.rightAnkle,
+            bend: sagittalBend(from: pose.rightHip, to: pose.rightAnkle, sign: -1),
+            offset: 0.16
+        )
     }
 
     static func mirrored(_ point: SIMD3<Float>) -> SIMD3<Float> {

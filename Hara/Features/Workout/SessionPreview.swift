@@ -145,7 +145,7 @@ struct SessionPreview: View {
                             ? AnyShapeStyle(
                                 LinearGradient(
                                     colors: [
-                                        item.exercise.pattern.color.opacity(0.34),
+                                        item.exercise.accent.opacity(0.34),
                                         .white.opacity(0.05)
                                     ],
                                     startPoint: .topLeading,

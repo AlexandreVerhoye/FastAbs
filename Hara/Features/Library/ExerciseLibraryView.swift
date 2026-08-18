@@ -7,7 +7,7 @@ import SwiftUI
 /// to schedule them.
 struct ExerciseLibraryView: View {
     @State private var search = ""
-    @State private var pattern: CorePattern?
+    @State private var section: CatalogSection?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var query: String {
@@ -17,38 +17,28 @@ struct ExerciseLibraryView: View {
     private var results: [Exercise] {
         let query = query
         return ExerciseCatalog.all.filter { exercise in
-            let matchesPattern = pattern.map { exercise.pattern == $0 } ?? true
+            let matchesSection = section.map { $0.contains(exercise) } ?? true
             let matchesSearch = query.isEmpty
                 || exercise.name.lowercased().contains(query)
                 || exercise.zones.contains { $0.title.lowercased().contains(query) }
-                || exercise.pattern.title.lowercased().contains(query)
-            return matchesPattern && matchesSearch
+                || CatalogSection.of(exercise).title.lowercased().contains(query)
+            return matchesSection && matchesSearch
         }
     }
 
-    /// Grouped by what the trunk is asked to do rather than by muscle: it is
-    /// the axis a session is balanced on, and browsing it that way makes the
-    /// shape of the catalog legible.
-    ///
-    /// Built from one pass over the filter rather than re-running it per
-    /// pattern, which is what it did on every keystroke.
-    private var groups: [(pattern: CorePattern, exercises: [Exercise])] {
-        let matches = results
-        return CorePattern.allCases.compactMap { pattern in
-            let matching = matches
-                .filter { $0.pattern == pattern }
-                .sorted { $0.name.localizedCompare($1.name) == .orderedAscending }
-            return matching.isEmpty ? nil : (pattern, matching)
-        }
+    /// Grouped the way `CatalogSection` decides: trunk work by the job it
+    /// asks of the trunk, the rest of the body by the part it trains.
+    private var groups: [(section: CatalogSection, exercises: [Exercise])] {
+        CatalogSection.grouping(results)
     }
 
-    private var isFiltering: Bool { pattern != nil || !query.isEmpty }
+    private var isFiltering: Bool { section != nil || !query.isEmpty }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: Metric.section, pinnedViews: .sectionHeaders) {
-                    patternPicker
+                    sectionPicker
 
                     if isFiltering {
                         Text("\(results.count) mouvement\(results.count == 1 ? "" : "s") sur \(ExerciseCatalog.all.count)")
@@ -57,7 +47,7 @@ struct ExerciseLibraryView: View {
                             .contentTransition(.numericText())
                     }
 
-                    ForEach(groups, id: \.pattern) { group in
+                    ForEach(groups, id: \.section) { group in
                         Section {
                             VStack(spacing: Metric.row) {
                                 ForEach(group.exercises) { exercise in
@@ -74,7 +64,7 @@ struct ExerciseLibraryView: View {
                                 }
                             }
                         } header: {
-                            PatternHeader(pattern: group.pattern, count: group.exercises.count)
+                            GroupHeader(section: group.section, count: group.exercises.count)
                         }
                     }
 
@@ -88,7 +78,7 @@ struct ExerciseLibraryView: View {
                 // Animated on the filter and the query rather than on the
                 // groups themselves: keying it to the results would restage
                 // every row each time a character is typed.
-                .animation(Motion.honouring(reduceMotion, Motion.rearrange), value: pattern)
+                .animation(Motion.honouring(reduceMotion, Motion.rearrange), value: section)
                 .animation(Motion.honouring(reduceMotion, Motion.rearrange), value: search)
             }
             .background(Color(.systemGroupedBackground))
@@ -98,17 +88,17 @@ struct ExerciseLibraryView: View {
         }
     }
 
-    private var patternPicker: some View {
+    private var sectionPicker: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 9) {
-                FilterChip(title: "Tout", isSelected: pattern == nil) { pattern = nil }
-                ForEach(CorePattern.allCases) { candidate in
+                FilterChip(title: "Tout", isSelected: section == nil) { section = nil }
+                ForEach(CatalogSection.all) { candidate in
                     FilterChip(
                         title: candidate.shortTitle,
                         tint: candidate.color,
-                        isSelected: pattern == candidate
+                        isSelected: section == candidate
                     ) {
-                        pattern = pattern == candidate ? nil : candidate
+                        section = section == candidate ? nil : candidate
                     }
                 }
             }
@@ -143,7 +133,7 @@ struct ExerciseLibraryView: View {
             Button("Afficher tout le catalogue") {
                 Haptics.tap()
                 search = ""
-                pattern = nil
+                section = nil
             }
             .buttonStyle(.haraSecondary)
             .padding(.top, Metric.row)
@@ -154,13 +144,13 @@ struct ExerciseLibraryView: View {
 
     private var noResultsReason: String {
         let term = search.trimmingCharacters(in: .whitespaces)
-        switch (term.isEmpty, pattern) {
-        case let (false, .some(pattern)):
-            return "Rien pour « \(term) » parmi les mouvements de \(pattern.shortTitle.lowercased())."
+        switch (term.isEmpty, section) {
+        case let (false, .some(section)):
+            return "Rien pour « \(term) » parmi les mouvements de \(section.shortTitle.lowercased())."
         case (false, nil):
             return "Rien pour « \(term) » dans le catalogue."
-        case let (true, .some(pattern)):
-            return "Aucun mouvement de \(pattern.shortTitle.lowercased()) au catalogue."
+        case let (true, .some(section)):
+            return "Aucun mouvement de \(section.shortTitle.lowercased()) au catalogue."
         case (true, nil):
             return "Le catalogue est vide."
         }
@@ -168,23 +158,23 @@ struct ExerciseLibraryView: View {
 }
 
 /// The pinned title of one group.
-private struct PatternHeader: View {
-    let pattern: CorePattern
+private struct GroupHeader: View {
+    let section: CatalogSection
     let count: Int
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 9) {
             VStack(alignment: .leading, spacing: 1) {
-                Text(pattern.title)
+                Text(section.title)
                     .font(.headline)
-                Text(pattern.detail)
+                Text(section.detail)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Spacer(minLength: 4)
             Text("\(count)")
                 .font(.subheadline.weight(.semibold).monospacedDigit())
-                .foregroundStyle(pattern.color)
+                .foregroundStyle(section.color)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 6)
@@ -244,7 +234,7 @@ struct ExerciseDetailView: View {
 
     private var siblings: [Exercise] {
         ExerciseCatalog.all
-            .filter { $0.pattern == exercise.pattern && $0.id != exercise.id }
+            .filter { CatalogSection.of($0) == CatalogSection.of(exercise) && $0.id != exercise.id }
             .sorted { $0.name.localizedCompare($1.name) == .orderedAscending }
             .prefix(4)
             .map { $0 }
@@ -276,7 +266,7 @@ struct ExerciseDetailView: View {
                     LinearGradient.haraNight
                         .overlay(alignment: .topTrailing) {
                             Circle()
-                                .fill(exercise.pattern.color.opacity(0.28))
+                                .fill(exercise.accent.opacity(0.28))
                                 .frame(width: 190, height: 190)
                                 .blur(radius: 45)
                                 .offset(x: 60, y: -70)
@@ -310,10 +300,13 @@ struct ExerciseDetailView: View {
     /// text; this line only qualifies it.
     private var identity: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Label(exercise.pattern.title, systemImage: exercise.pattern.symbol)
-                .font(.haraEyebrow)
-                .textCase(.uppercase)
-                .foregroundStyle(exercise.pattern.color)
+            Label(
+                CatalogSection.of(exercise).title,
+                systemImage: CatalogSection.of(exercise).symbol
+            )
+            .font(.haraEyebrow)
+            .textCase(.uppercase)
+            .foregroundStyle(exercise.accent)
 
             Text(metadata)
                 .font(.subheadline)
@@ -425,12 +418,12 @@ struct ExerciseDetailView: View {
                         } label: {
                             HStack(spacing: Metric.row) {
                                 Circle()
-                                    .fill(sibling.pattern.color.opacity(0.16))
+                                    .fill(sibling.accent.opacity(0.16))
                                     .frame(width: 30, height: 30)
                                     .overlay {
-                                        Image(systemName: sibling.pattern.symbol)
+                                        Image(systemName: CatalogSection.of(sibling).symbol)
                                             .font(.caption)
-                                            .foregroundStyle(sibling.pattern.color)
+                                            .foregroundStyle(sibling.accent)
                                     }
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(sibling.name)

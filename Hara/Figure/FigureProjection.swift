@@ -59,22 +59,70 @@ enum FigureProjection {
     static let lateralShift: CGFloat = 0.3
     static let lateralRise: CGFloat = 0.05
 
+    /// Which way the athlete is seen from.
+    ///
+    /// Nearly everything happens along the body's length, and a near-side view
+    /// is the one that shows it. A jumping jack and a lateral lunge happen
+    /// *across* it: seen from the side, a jack is someone standing still waving
+    /// their arms, and a side lunge is a slightly wonky squat. Those are turned a
+    /// quarter turn so that the movement is the thing you see.
+    enum Viewpoint: Sendable {
+        case side, front
+
+        /// How the two horizontal world axes are mixed into the screen's.
+        var weights: (alongBody: CGFloat, acrossBody: CGFloat) {
+            switch self {
+            case .side: (1, lateralShift)
+            case .front: (0.22, 1)
+            }
+        }
+
+        var rise: CGFloat {
+            switch self {
+            case .side: lateralRise
+            case .front: 0
+            }
+        }
+    }
+
+    static func viewpoint(for motion: MotionKind) -> Viewpoint {
+        switch motion {
+        case .jumpingJack, .lateralLunge: .front
+        default: .side
+        }
+    }
+
     /// Flattens a direction rather than a point. The projection is linear, so a
     /// direction maps through the same weights without the origin.
-    static func flattenDirection(_ direction: SIMD3<Float>) -> CGVector {
-        let dx = CGFloat(direction.x) + CGFloat(direction.z) * lateralShift
-        let dy = CGFloat(direction.y) + CGFloat(direction.z) * lateralRise
+    static func flattenDirection(
+        _ direction: SIMD3<Float>,
+        from viewpoint: Viewpoint = .side
+    ) -> CGVector {
+        let weights = viewpoint.weights
+        let dx = CGFloat(direction.x) * weights.alongBody + CGFloat(direction.z) * weights.acrossBody
+        let dy = CGFloat(direction.y) + CGFloat(direction.z) * viewpoint.rise
         let vector = CGVector(dx: dx, dy: -dy)
         let length = (vector.dx * vector.dx + vector.dy * vector.dy).squareRoot()
         guard length > 0.0001 else { return CGVector(dx: 1, dy: 0) }
         return CGVector(dx: vector.dx / length, dy: vector.dy / length)
     }
 
-    static func flatten(_ position: SIMD3<Float>) -> CGPoint {
-        let x = CGFloat(position.x) + CGFloat(position.z) * lateralShift
-        let y = CGFloat(position.y) + CGFloat(position.z) * lateralRise
+    static func flatten(_ position: SIMD3<Float>, from viewpoint: Viewpoint = .side) -> CGPoint {
+        let weights = viewpoint.weights
+        let x = CGFloat(position.x) * weights.alongBody + CGFloat(position.z) * weights.acrossBody
+        let y = CGFloat(position.y) + CGFloat(position.z) * viewpoint.rise
         // Screen coordinates grow downward, so the world's up becomes negative.
         return CGPoint(x: x, y: -y)
+    }
+
+    /// How near the viewer a joint is, which decides what is drawn over what.
+    /// Sideways from the side; along the body from the front, where the athlete
+    /// faces the camera.
+    static func depth(of position: SIMD3<Float>, from viewpoint: Viewpoint = .side) -> CGFloat {
+        switch viewpoint {
+        case .side: CGFloat(position.z)
+        case .front: CGFloat(position.x)
+        }
     }
 
     /// Framing per movement, worked out once.
@@ -103,11 +151,12 @@ enum FigureProjection {
     static func measureBounds(for motion: MotionKind, samples: Int = 48) -> CGRect {
         var minimum = CGPoint(x: CGFloat.greatestFiniteMagnitude, y: CGFloat.greatestFiniteMagnitude)
         var maximum = CGPoint(x: -CGFloat.greatestFiniteMagnitude, y: -CGFloat.greatestFiniteMagnitude)
+        let view = viewpoint(for: motion)
 
         for step in 0..<max(samples, 1) {
             let pose = MotionLibrary.pose(for: motion, phase: Float(step) / Float(max(samples, 1)))
             for position in pose.joints + [pose.leftToe, pose.rightToe] {
-                let point = flatten(position)
+                let point = flatten(position, from: view)
                 minimum.x = min(minimum.x, point.x)
                 minimum.y = min(minimum.y, point.y)
                 maximum.x = max(maximum.x, point.x)
@@ -129,7 +178,8 @@ enum FigureProjection {
     static func layout(
         pose: BodyPose,
         within bounds: CGRect,
-        in rect: CGRect
+        in rect: CGRect,
+        from viewpoint: Viewpoint = .side
     ) -> FigureLayout {
         let scale: CGFloat
         if bounds.width > 0, bounds.height > 0, rect.width > 0, rect.height > 0 {
@@ -145,13 +195,13 @@ enum FigureProjection {
         )
 
         func place(_ position: SIMD3<Float>) -> FigureJoint {
-            let flat = flatten(position)
+            let flat = flatten(position, from: viewpoint)
             return FigureJoint(
                 point: CGPoint(
                     x: origin.x + (flat.x - bounds.minX) * scale,
                     y: origin.y + (flat.y - bounds.minY) * scale
                 ),
-                depth: CGFloat(position.z)
+                depth: depth(of: position, from: viewpoint)
             )
         }
 
@@ -175,7 +225,7 @@ enum FigureProjection {
             leftToe: place(pose.leftToe),
             rightToe: place(pose.rightToe),
             scale: scale,
-            front: flattenDirection(pose.front)
+            front: flattenDirection(pose.front, from: viewpoint)
         )
     }
 }

@@ -170,14 +170,22 @@ struct RewardsEngineTests {
     }
 
     @Test("A badge remembers what the day was spent on")
-    func badgesCarryTheirPattern() {
+    func badgesCarryTheirWork() {
         let engine = RewardsEngine(calendar: calendar)
 
         let lateral = engine.dailyBadges(records: [
             record(at: date(2026, 8, 14), exercises: ["side-plank", "side-plank-dip"])
         ])
-        #expect(lateral.first?.pattern == .antiLateralFlexion)
+        #expect(lateral.first?.section == .pattern(.antiLateralFlexion))
         #expect(lateral.first?.isComplete == false)
+
+        // A day spent entirely off the mat has no trunk job to be named after,
+        // and still has to be remembered as something.
+        let legs = engine.dailyBadges(records: [
+            record(at: date(2026, 8, 14), exercises: ["squat", "reverse-lunge", "calf-raise"])
+        ])
+        #expect(legs.first?.section == .area(.lowerBody))
+        #expect(legs.first?.sections == [.area(.lowerBody)])
 
         // A day that covers every job earns the whole-session mark, even though
         // no single movement could.

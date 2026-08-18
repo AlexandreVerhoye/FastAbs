@@ -35,6 +35,7 @@ enum TestSupport {
         apartmentFriendly: Bool = true,
         neckFriendly: Bool = false,
         extraRecovery: Bool = false,
+        trainedAreas: Set<BodyArea> = BodyArea.fallback,
         positionTransitions: Bool = true,
         adaptiveCoaching: Bool = true
     ) -> WorkoutPreferences {
@@ -45,9 +46,38 @@ enum TestSupport {
             apartmentFriendly: apartmentFriendly,
             neckFriendly: neckFriendly,
             extraRecovery: extraRecovery,
+            trainedAreas: trainedAreas,
             positionTransitions: positionTransitions,
             adaptiveCoaching: adaptiveCoaching
         )
+    }
+
+    /// A stored session, described by the movements it contained.
+    ///
+    /// Written straight rather than derived from a plan: the tests that use this
+    /// care about which movements the record names, and building a real plan to
+    /// then overwrite its movement list is a slow way of ignoring it.
+    static func record(
+        exercises: [String],
+        at completedAt: Date = .now,
+        activeSeconds: Int = 420,
+        difficulty: WorkoutDifficulty = .balanced,
+        effort: PerceivedEffort = .unrated,
+        wasCompleted: Bool = true
+    ) -> WorkoutRecord {
+        let plan = WorkoutEngine().makePlan(preferences: preferences(difficulty: difficulty), seed: 5)
+        let stored = WorkoutRecord(
+            plan: plan,
+            completedAt: completedAt,
+            activeDuration: activeSeconds,
+            wasCompleted: wasCompleted
+        )
+        stored.plannedDuration = activeSeconds
+        stored.plannedActiveDuration = activeSeconds
+        stored.difficultyRaw = difficulty.rawValue
+        stored.perceivedEffortRaw = effort.rawValue
+        stored.exerciseIDs = exercises
+        return stored
     }
 
     /// Includes the side: without it, a plan that put the right half first and
@@ -68,7 +98,7 @@ enum TestSupport {
         id: String,
         zones: Set<MuscleZone> = [.deepCore],
         family: MovementFamily = .antiExtension,
-        pattern: CorePattern = .antiExtension,
+        pattern: CorePattern? = .antiExtension,
         minimumDifficulty: WorkoutDifficulty = .beginner,
         impact: ExerciseImpact = .quiet,
         sideMode: SideMode = .bilateral,

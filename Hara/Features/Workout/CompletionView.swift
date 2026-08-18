@@ -14,12 +14,16 @@ struct CompletionView: View {
     let onDone: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppModel.self) private var appModel
     @Query(sort: \WorkoutRecord.completedAt, order: .reverse) private var records: [WorkoutRecord]
     @State private var effort: PerceivedEffort = .unrated
     @State private var stage = 0
 
     private var summary: RewardsSummary {
-        RewardsEngine().summary(records: records)
+        RewardsEngine().summary(
+            records: records,
+            trainedAreas: appModel.preferences.trainedAreas
+        )
     }
 
     /// The thing this session actually unlocked, if it unlocked anything.

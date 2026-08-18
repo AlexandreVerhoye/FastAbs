@@ -23,24 +23,28 @@ struct ExcludedMovementsView: View {
         search.trimmingCharacters(in: .whitespaces).lowercased()
     }
 
+    /// Only the movements this athlete's session can contain.
+    ///
+    /// Banishing a movement that is already unreachable — a push-up when the
+    /// upper body is switched off — is a decision with no effect, and a list full
+    /// of them makes the ones that matter harder to find.
+    private var programmable: [Exercise] {
+        ExerciseCatalog.all.filter { $0.areas.isSubset(of: draft.trainedAreas) }
+    }
+
     private var results: [Exercise] {
-        guard !query.isEmpty else { return ExerciseCatalog.all }
-        return ExerciseCatalog.all.filter { exercise in
+        guard !query.isEmpty else { return programmable }
+        return programmable.filter { exercise in
             exercise.name.lowercased().contains(query)
-                || exercise.pattern.title.lowercased().contains(query)
+                || CatalogSection.of(exercise).title.lowercased().contains(query)
                 || exercise.zones.contains { $0.title.lowercased().contains(query) }
         }
     }
 
-    /// Grouped by what the trunk is asked to do, like the movement library, so
-    /// the two screens read the same way round.
-    private var groups: [(pattern: CorePattern, exercises: [Exercise])] {
-        CorePattern.allCases.compactMap { pattern in
-            let matching = results
-                .filter { $0.pattern == pattern }
-                .sorted { $0.name.localizedCompare($1.name) == .orderedAscending }
-            return matching.isEmpty ? nil : (pattern, matching)
-        }
+    /// Grouped exactly like the movement library, so the two screens read the
+    /// same way round.
+    private var groups: [(section: CatalogSection, exercises: [Exercise])] {
+        CatalogSection.grouping(results)
     }
 
     private var excludedExercises: [Exercise] {
@@ -59,7 +63,7 @@ struct ExcludedMovementsView: View {
                 if !excludedExercises.isEmpty { excludedSummary }
                 if feasibility.title != nil { warning }
 
-                ForEach(groups, id: \.pattern) { group in
+                ForEach(groups, id: \.section) { group in
                     Section {
                         VStack(spacing: 0) {
                             ForEach(Array(group.exercises.enumerated()), id: \.element.id) { index, exercise in
@@ -74,9 +78,9 @@ struct ExcludedMovementsView: View {
                         .glassCard()
                     } header: {
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(group.pattern.title)
+                            Text(group.section.title)
                                 .font(.headline)
-                            Text(group.pattern.detail)
+                            Text(group.section.detail)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

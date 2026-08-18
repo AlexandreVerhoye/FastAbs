@@ -375,10 +375,10 @@ struct SessionShapeTests {
     func noPatternDominates() {
         for seed in TestSupport.seeds {
             let movements = plan(minutes: 16, seed: seed).movements
-            let counts = Dictionary(grouping: movements, by: \.pattern).mapValues(\.count)
-            for (pattern, count) in counts {
+            let counts = Dictionary(grouping: movements, by: CatalogSection.of).mapValues(\.count)
+            for (section, count) in counts {
                 let share = Double(count) / Double(movements.count)
-                #expect(share <= 0.55, "\(pattern.rawValue) took \(Int(share * 100))% of the session")
+                #expect(share <= 0.55, "\(section.id) took \(Int(share * 100))% of the session")
             }
         }
     }

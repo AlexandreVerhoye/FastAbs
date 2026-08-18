@@ -8,7 +8,7 @@ struct ExerciseCatalogTests {
         let exercises = ExerciseCatalog.all
         let identifiers = exercises.map(\.id)
 
-        #expect(exercises.count == 46)
+        #expect(exercises.count == 64)
         #expect(Set(identifiers).count == identifiers.count)
         #expect(identifiers.allSatisfy { id in
             !id.isEmpty && id.allSatisfy { $0.isLowercase || $0.isNumber || $0 == "-" }
@@ -50,7 +50,15 @@ struct ExerciseCatalogTests {
             .lowerAbs: 8,
             .obliques: 6,
             .deepCore: 12,
-            .lowerBack: 4
+            .lowerBack: 4,
+            .glutes: 5,
+            .quadriceps: 5,
+            .hamstrings: 3,
+            .calves: 2,
+            .chest: 5,
+            .shoulders: 5,
+            .arms: 4,
+            .upperBack: 1
         ]
 
         for (zone, minimum) in minimumByZone {
@@ -63,10 +71,40 @@ struct ExerciseCatalogTests {
     func movementFamiliesAreCovered() {
         let expected: Set<MovementFamily> = [
             .flexion, .antiExtension, .rotation, .lateral,
-            .hipFlexion, .posterior, .locomotion
+            .hipFlexion, .posterior, .locomotion,
+            .squat, .hinge, .press, .pull
         ]
 
         #expect(Set(ExerciseCatalog.all.map(\.family)) == expected)
+    }
+
+    @Test("Each part of the body can fill a session on its own")
+    func everyAreaCanStandAlone() {
+        // Someone who switches one area on and the others off has to get a real
+        // session out of it, not a warning. The floor is what a twelve-minute
+        // session asks for before it starts having to repeat itself.
+        for area in BodyArea.allCases {
+            let alone = ExerciseCatalog.all.filter { $0.areas.isSubset(of: [area]) }
+            #expect(alone.count >= 6, "\(area.rawValue) alone offers \(alone.count) movements")
+
+            let beginner = alone.filter { $0.minimumDifficulty == .beginner && $0.impact == .quiet }
+            #expect(
+                beginner.count >= 3,
+                "\(area.rawValue) offers \(beginner.count) beginner movements"
+            )
+        }
+    }
+
+    @Test("Whole-body movements exist and are honest about it")
+    func wholeBodyMovementsExist() {
+        let compound = ExerciseCatalog.all.filter(\.isFullBody)
+        #expect(compound.count >= 2, "no whole-body movement in the catalog")
+        for exercise in compound {
+            #expect(exercise.areas == Set(BodyArea.allCases))
+            // These are the hardest things in the catalog; none of them belongs
+            // at the level someone starts on.
+            #expect(exercise.minimumDifficulty >= .balanced, "\(exercise.id) is offered to beginners")
+        }
     }
 
     @Test("Every difficulty has a viable quiet and neck-friendly selection")

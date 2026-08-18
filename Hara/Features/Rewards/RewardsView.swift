@@ -3,6 +3,7 @@ import SwiftUI
 
 struct RewardsView: View {
     @Query(sort: \WorkoutRecord.completedAt, order: .reverse) private var records: [WorkoutRecord]
+    @Environment(AppModel.self) private var appModel
     @Environment(\.calendar) private var environmentCalendar
     @Environment(\.scenePhase) private var scenePhase
 
@@ -59,7 +60,8 @@ struct RewardsView: View {
     }
 
     private func refresh() {
-        let next = RewardsEngine(calendar: localCalendar).summary(records: records)
+        let next = RewardsEngine(calendar: localCalendar)
+            .summary(records: records, trainedAreas: appModel.preferences.trainedAreas)
         enqueueCelebrations(for: next)
         summary = next
         presentNext()
@@ -1009,26 +1011,26 @@ struct BadgeDetailView: View {
                         Divider().frame(height: 44)
                         MetricPill(
                             icon: "square.grid.2x2.fill",
-                            value: "\(badge.patterns.count)",
+                            value: "\(badge.sections.count)",
                             label: "types"
                         )
                     }
                     .padding(.vertical, 14)
                     .glassCard()
 
-                    if !badge.patterns.isEmpty {
+                    if !badge.sections.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
                             SectionHeader(title: "Travail de la journée")
-                            ForEach(CorePattern.allCases.filter(badge.patterns.contains)) { pattern in
+                            ForEach(badge.sections) { section in
                                 HStack(spacing: 12) {
-                                    Image(systemName: pattern.symbol)
+                                    Image(systemName: section.symbol)
                                         .font(.subheadline)
-                                        .foregroundStyle(pattern.color)
+                                        .foregroundStyle(section.color)
                                         .frame(width: 34, height: 34)
-                                        .background(pattern.color.opacity(0.14), in: Circle())
+                                        .background(section.color.opacity(0.14), in: Circle())
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text(pattern.title).font(.subheadline.weight(.semibold))
-                                        Text(pattern.detail).font(.caption).foregroundStyle(.secondary)
+                                        Text(section.title).font(.subheadline.weight(.semibold))
+                                        Text(section.detail).font(.caption).foregroundStyle(.secondary)
                                     }
                                     Spacer(minLength: 0)
                                 }
@@ -1045,12 +1047,12 @@ struct BadgeDetailView: View {
                             ForEach(Array(movements.enumerated()), id: \.offset) { _, movement in
                                 HStack(spacing: 12) {
                                     Circle()
-                                        .fill(movement.pattern.color.opacity(0.16))
+                                        .fill(movement.accent.opacity(0.16))
                                         .frame(width: 30, height: 30)
                                         .overlay {
-                                            Image(systemName: movement.pattern.symbol)
+                                            Image(systemName: CatalogSection.of(movement).symbol)
                                                 .font(.caption)
-                                                .foregroundStyle(movement.pattern.color)
+                                                .foregroundStyle(movement.accent)
                                         }
                                     Text(movement.name).font(.subheadline)
                                     Spacer(minLength: 0)

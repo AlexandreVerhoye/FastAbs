@@ -70,28 +70,29 @@ struct BadgeVisualTests {
     }
 
     @Test("A badge shows what the day was spent training")
-    func badgeSymbolFollowsThePattern() {
+    func badgeSymbolFollowsTheWork() {
         // The gallery is a record of the work, so two different kinds of day
-        // must not be remembered by the same mark.
-        let symbols = CorePattern.allCases.map {
-            VisualFixture.badge(tier: .gold, pattern: $0).symbol
+        // must not be remembered by the same mark — and that now includes a leg
+        // day, which has no trunk job to be named after.
+        let symbols = CatalogSection.all.map {
+            VisualFixture.badge(tier: .gold, section: $0).symbol
         }
-        #expect(Set(symbols).count == symbols.count, "patterns share a badge symbol: \(symbols)")
+        #expect(Set(symbols).count == symbols.count, "sections share a badge symbol: \(symbols)")
 
         // A day that covered every job earns a mark none of them can produce.
         let complete = VisualFixture.badge(
-            tier: .gold, pattern: .antiExtension, patterns: Set(CorePattern.allCases)
+            tier: .gold, section: .pattern(.antiExtension), patterns: Set(CorePattern.allCases)
         )
         #expect(complete.isComplete)
         #expect(!symbols.contains(complete.symbol))
 
         guard
             let gainage = VisualProbe.require(
-                MiniBadgeView(badge: VisualFixture.badge(tier: .gold, pattern: .antiExtension)),
+                MiniBadgeView(badge: VisualFixture.badge(tier: .gold, section: .pattern(.antiExtension))),
                 width: 120, height: 120, "anti-extension badge"
             ),
             let lateral = VisualProbe.require(
-                MiniBadgeView(badge: VisualFixture.badge(tier: .gold, pattern: .antiLateralFlexion)),
+                MiniBadgeView(badge: VisualFixture.badge(tier: .gold, section: .pattern(.antiLateralFlexion))),
                 width: 120, height: 120, "anti-lateral badge"
             )
         else { return }

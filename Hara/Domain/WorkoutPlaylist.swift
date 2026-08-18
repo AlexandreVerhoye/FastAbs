@@ -17,6 +17,17 @@ struct WorkoutPlaylist: Identifiable, Hashable, Sendable {
 
     var durationText: String { "\(preferences.durationMinutes) min" }
 
+    /// The playlists worth offering to someone who trains these areas.
+    ///
+    /// A playlist that needs the legs is not shown to an athlete who has the
+    /// legs switched off. Tapping it would quietly overrule a decision they made
+    /// in Settings; showing it greyed out would be a shop window for a switch
+    /// two screens away. So it simply is not there, and appears the moment the
+    /// switch goes on.
+    static func available(for areas: Set<BodyArea>) -> [WorkoutPlaylist] {
+        all.filter { $0.preferences.trainedAreas.isSubset(of: areas) }
+    }
+
     static let all: [WorkoutPlaylist] = [
         WorkoutPlaylist(
             id: "wake-up",
@@ -136,6 +147,74 @@ struct WorkoutPlaylist: Identifiable, Hashable, Sendable {
                 apartmentFriendly: true,
                 neckFriendly: false,
                 extraRecovery: false
+            )
+        ),
+        // Below here the playlists reach outside the abdominal wall, so they
+        // only appear once the athlete has switched those areas on.
+        WorkoutPlaylist(
+            id: "lower-body",
+            title: "Bas du corps",
+            detail: "Squats, fentes et fessiers. Rien d’autre qu’un tapis.",
+            symbol: "figure.walk",
+            tint: .haraMint,
+            preferences: WorkoutPreferences(
+                durationMinutes: 10,
+                difficulty: .balanced,
+                focusZones: [.fullCore],
+                apartmentFriendly: true,
+                neckFriendly: false,
+                extraRecovery: false,
+                trainedAreas: [.lowerBody]
+            )
+        ),
+        WorkoutPlaylist(
+            id: "upper-body",
+            title: "Haut du corps",
+            detail: "Pompes, dips et tirage : pousser et tirer au poids du corps.",
+            symbol: "figure.arms.open",
+            tint: .haraBlue,
+            preferences: WorkoutPreferences(
+                durationMinutes: 10,
+                difficulty: .balanced,
+                focusZones: [.fullCore],
+                apartmentFriendly: true,
+                neckFriendly: false,
+                extraRecovery: false,
+                trainedAreas: [.upperBody]
+            )
+        ),
+        WorkoutPlaylist(
+            id: "full-body",
+            title: "Corps entier",
+            detail: "Douze minutes qui passent partout, du gainage aux jambes.",
+            symbol: "figure.mixed.cardio",
+            tint: .haraCoral,
+            preferences: WorkoutPreferences(
+                durationMinutes: 12,
+                difficulty: .balanced,
+                focusZones: [.fullCore],
+                apartmentFriendly: true,
+                neckFriendly: false,
+                extraRecovery: false,
+                trainedAreas: [.core, .upperBody, .lowerBody]
+            )
+        ),
+        WorkoutPlaylist(
+            id: "conditioning",
+            title: "Cardio complet",
+            detail: "Burpees et jumping jacks : ça monte vite, et ça saute.",
+            symbol: "flame.fill",
+            tint: .haraOrange,
+            preferences: WorkoutPreferences(
+                durationMinutes: 8,
+                difficulty: .advanced,
+                focusZones: [.fullCore],
+                // The one playlist that allows impact: it is what it is for, and
+                // it says so on the card.
+                apartmentFriendly: false,
+                neckFriendly: false,
+                extraRecovery: false,
+                trainedAreas: [.core, .upperBody, .lowerBody]
             )
         )
     ]

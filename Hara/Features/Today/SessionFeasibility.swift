@@ -53,6 +53,7 @@ extension WorkoutPreferences {
     /// engine up so a picker can ask it a question.
     var eligibleExercises: [Exercise] {
         ExerciseCatalog.all.filter { exercise in
+            exercise.areas.isSubset(of: trainedAreas) &&
             exercise.minimumDifficulty <= difficulty &&
             (!apartmentFriendly || exercise.impact == .quiet) &&
             (!neckFriendly || exercise.neckFriendly) &&

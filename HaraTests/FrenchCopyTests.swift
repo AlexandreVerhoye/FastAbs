@@ -29,6 +29,16 @@ struct FrenchCopyTests {
             copy.append(("MuscleZone.\(zone.rawValue).title", zone.title))
             copy.append(("MuscleZone.\(zone.rawValue).shortTitle", zone.shortTitle))
         }
+        for area in BodyArea.allCases {
+            copy.append(("BodyArea.\(area.rawValue).title", area.title))
+            copy.append(("BodyArea.\(area.rawValue).shortTitle", area.shortTitle))
+            copy.append(("BodyArea.\(area.rawValue).detail", area.detail))
+        }
+        for section in CatalogSection.all {
+            copy.append(("CatalogSection.\(section.id).title", section.title))
+            copy.append(("CatalogSection.\(section.id).shortTitle", section.shortTitle))
+            copy.append(("CatalogSection.\(section.id).detail", section.detail))
+        }
         for pattern in CorePattern.allCases {
             copy.append(("CorePattern.\(pattern.rawValue).title", pattern.title))
             copy.append(("CorePattern.\(pattern.rawValue).shortTitle", pattern.shortTitle))
@@ -95,6 +105,9 @@ struct FrenchCopyTests {
 
     @Test("Muscle zone names use real anatomical vocabulary")
     func zoneNamesAreAnatomical() {
+        #expect(MuscleZone.glutes.title == "Fessiers")
+        #expect(MuscleZone.hamstrings.title == "Ischio-jambiers")
+        #expect(MuscleZone.chest.title == "Pectoraux")
         #expect(MuscleZone.fullCore.title == "Sangle abdominale")
         #expect(MuscleZone.upperAbs.title == "Abdos supérieurs")
         #expect(MuscleZone.lowerAbs.title == "Abdos inférieurs")

@@ -639,7 +639,7 @@ struct NextExerciseBriefing: View {
             .frame(width: 96, height: 96)
             .background(
                 LinearGradient(
-                    colors: [exercise.pattern.color.opacity(0.22), .white.opacity(0.04)],
+                    colors: [exercise.accent.opacity(0.22), .white.opacity(0.04)],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 ),

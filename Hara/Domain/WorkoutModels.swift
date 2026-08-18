@@ -2,8 +2,98 @@ import Foundation
 import SwiftData
 import SwiftUI
 
+/// A part of the body the athlete has decided to train, or not to.
+///
+/// The coarse axis, and deliberately coarse: three switches someone can hold in
+/// their head, not fourteen. `MuscleZone` stays the fine one — it says which
+/// tissue a movement loads, which is the right grain for a statistic and much
+/// too fine for a decision. Every zone belongs to exactly one area, so the two
+/// can never disagree about what a movement trains.
+enum BodyArea: String, CaseIterable, Codable, Identifiable, Sendable {
+    case core, upperBody, lowerBody
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .core: "Abdos et gainage"
+        case .upperBody: "Haut du corps"
+        case .lowerBody: "Bas du corps"
+        }
+    }
+
+    var shortTitle: String {
+        switch self {
+        case .core: "Abdos"
+        case .upperBody: "Haut"
+        case .lowerBody: "Bas"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .core: "Sangle abdominale, obliques, lombaires."
+        case .upperBody: "Pectoraux, épaules, bras, haut du dos."
+        case .lowerBody: "Fessiers, cuisses, ischios, mollets."
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .core: "figure.core.training"
+        case .upperBody: "figure.arms.open"
+        case .lowerBody: "figure.walk"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .core: .haraCoral
+        case .upperBody: .haraBlue
+        case .lowerBody: .haraMint
+        }
+    }
+
+    /// The fine-grained groups that live in this area.
+    var zones: Set<MuscleZone> {
+        Set(MuscleZone.allCases.filter { $0.area == self })
+    }
+
+    /// The groups a complete session in this area owes the athlete. Narrower
+    /// than `zones`: `fullCore` is a summary of the others rather than a group
+    /// of its own, and no session is expected to hunt down the calves.
+    var essentialZones: Set<MuscleZone> {
+        switch self {
+        case .core: [.upperAbs, .lowerAbs, .obliques, .deepCore]
+        case .upperBody: [.chest, .shoulders, .upperBack]
+        case .lowerBody: [.glutes, .quadriceps, .hamstrings]
+        }
+    }
+
+    /// What the athlete may never end up with none of. Training nothing is not
+    /// a training preference, it is a broken screen.
+    static let fallback: Set<BodyArea> = [.core]
+
+    /// Areas kept in a stable, human order wherever a set has to be shown.
+    static func ordered(_ areas: Set<BodyArea>) -> [BodyArea] {
+        allCases.filter(areas.contains)
+    }
+
+    static func describe(_ areas: Set<BodyArea>) -> String {
+        let ordered = ordered(areas)
+        if ordered.count == allCases.count { return "Corps entier" }
+        return ordered.map(\.shortTitle).joined(separator: " · ")
+    }
+}
+
 enum MuscleZone: String, CaseIterable, Codable, Identifiable, Sendable {
+    // Core first, then the rest of the body. The order is read directly by
+    // `Exercise.primaryZone`, so a movement that spans two areas takes its
+    // identity from the more specific end of this list rather than from set
+    // iteration order, which changes between launches.
     case fullCore, upperAbs, lowerAbs, obliques, deepCore, lowerBack
+    case glutes, quadriceps, hamstrings, calves
+    case chest, shoulders, arms, upperBack
 
     var id: String { rawValue }
 
@@ -24,6 +114,24 @@ enum MuscleZone: String, CaseIterable, Codable, Identifiable, Sendable {
         case .obliques: "Obliques"
         case .deepCore: "Transverse"
         case .lowerBack: "Lombaires"
+        case .glutes: "Fessiers"
+        case .quadriceps: "Quadriceps"
+        case .hamstrings: "Ischio-jambiers"
+        case .calves: "Mollets"
+        case .chest: "Pectoraux"
+        case .shoulders: "Épaules"
+        case .arms: "Bras"
+        case .upperBack: "Haut du dos"
+        }
+    }
+
+    /// The area this group belongs to. One area per group, always: the athlete's
+    /// switches and the movement's own anatomy have to be the same fact.
+    var area: BodyArea {
+        switch self {
+        case .fullCore, .upperAbs, .lowerAbs, .obliques, .deepCore, .lowerBack: .core
+        case .glutes, .quadriceps, .hamstrings, .calves: .lowerBody
+        case .chest, .shoulders, .arms, .upperBack: .upperBody
         }
     }
 
@@ -35,6 +143,14 @@ enum MuscleZone: String, CaseIterable, Codable, Identifiable, Sendable {
         case .obliques: "Obliques"
         case .deepCore: "Profond"
         case .lowerBack: "Lombaires"
+        case .glutes: "Fessiers"
+        case .quadriceps: "Cuisses"
+        case .hamstrings: "Ischios"
+        case .calves: "Mollets"
+        case .chest: "Pectoraux"
+        case .shoulders: "Épaules"
+        case .arms: "Bras"
+        case .upperBack: "Dos"
         }
     }
 
@@ -46,6 +162,14 @@ enum MuscleZone: String, CaseIterable, Codable, Identifiable, Sendable {
         case .obliques: "arrow.left.and.right"
         case .deepCore: "circle.hexagongrid.fill"
         case .lowerBack: "figure.strengthtraining.traditional"
+        case .glutes: "figure.stair.stepper"
+        case .quadriceps: "figure.walk"
+        case .hamstrings: "figure.run"
+        case .calves: "shoeprints.fill"
+        case .chest: "figure.arms.open"
+        case .shoulders: "figure.boxing"
+        case .arms: "dumbbell.fill"
+        case .upperBack: "figure.strengthtraining.functional"
         }
     }
 
@@ -57,11 +181,25 @@ enum MuscleZone: String, CaseIterable, Codable, Identifiable, Sendable {
         case .obliques: .purple
         case .deepCore: .haraMint
         case .lowerBack: .cyan
+        case .glutes: .pink
+        case .quadriceps: .green
+        case .hamstrings: .teal
+        case .calves: .brown
+        case .chest: .haraBlue
+        case .shoulders: .indigo
+        case .arms: .yellow
+        case .upperBack: .mint
         }
     }
 }
 
 /// What a movement asks the trunk to do.
+///
+/// Core work only, and named so on purpose. A squat is not an anti-rotation
+/// exercise, it is not a weak one either — it simply does not answer this
+/// question, so it answers `nil` instead of being filed under whichever case
+/// fits worst. Coverage of these patterns is what a *core* session is measured
+/// on; a session that also trains the legs is measured on its areas as well.
 ///
 /// Muscle zones say which tissue is loaded; this says what job it is doing, and
 /// the two are not the same question. A session made only of crunches covers
@@ -252,6 +390,10 @@ enum WorkoutDifficulty: Int, CaseIterable, Codable, Identifiable, Comparable, Se
 /// several patterns, so neither can stand in for the other.
 enum MovementFamily: String, Codable, Sendable {
     case flexion, antiExtension, rotation, lateral, hipFlexion, posterior, locomotion
+    // Off the mat. Added rather than folded into the seven above: a squat and a
+    // glute bridge are both hip extension and they are not remotely the same
+    // shape, and adjacency is decided on shape.
+    case squat, hinge, press, pull
 }
 
 enum MotionKind: String, CaseIterable, Codable, Sendable {
@@ -262,6 +404,11 @@ enum MotionKind: String, CaseIterable, Codable, Sendable {
     case superman, bridge, bridgeMarch
     case sidePlankKnees, sideCrunch, hollowRock, vUp
     case singleLegBridge, swimmer, heelSlide, reversePlank
+    // Off the mat: the lower body, the pressing patterns, and the compound
+    // movements that visit several stances inside one repetition.
+    case squat, squatHold, lunge, lateralLunge, wallSit, calfRaise, goodMorning, donkeyKick
+    case pushUp, kneePushUp, wallPushUp, pikePushUp, floorDip, proneRow
+    case plankUpDown, squatThrust, burpee, jumpingJack
     case rest
 }
 
@@ -274,8 +421,11 @@ struct Exercise: Identifiable, Hashable, Codable, Sendable {
     let name: String
     let zones: Set<MuscleZone>
     let family: MovementFamily
-    /// What the trunk is being asked to do — the axis coverage is measured on.
-    let pattern: CorePattern
+    /// What the trunk is being asked to do — the axis core coverage is measured
+    /// on. Nil for movements that do not train the trunk as their job: a calf
+    /// raise has no honest answer here, and inventing one would let a session
+    /// claim core coverage it never earned.
+    let pattern: CorePattern?
     let minimumDifficulty: WorkoutDifficulty
     let impact: ExerciseImpact
     let motion: MotionKind
@@ -293,6 +443,25 @@ struct Exercise: Identifiable, Hashable, Codable, Sendable {
 }
 
 extension Exercise {
+    /// The parts of the body this movement trains, derived from its zones
+    /// rather than authored separately — two lists of the same fact drift.
+    var areas: Set<BodyArea> { Set(zones.map(\.area)) }
+
+    /// The area that stands for the movement, on the same "specific before
+    /// general" principle as `primaryZone`.
+    var primaryArea: BodyArea { primaryZone.area }
+
+    /// True when the movement spans the whole body rather than one part of it.
+    var isFullBody: Bool { areas.count >= BodyArea.allCases.count }
+
+    /// The colour that stands for this movement on screen.
+    ///
+    /// Trunk work is coloured by the job it asks of the trunk; everything else
+    /// by the part of the body it trains. Each movement is coloured by the
+    /// finest fact it actually has, rather than by a case chosen to fill a
+    /// non-optional field.
+    var accent: Color { pattern?.color ?? primaryArea.color }
+
     /// The group that stands for this movement wherever one icon has to speak
     /// for it.
     ///
@@ -310,6 +479,11 @@ extension Exercise {
 struct WorkoutPreferences: Codable, Hashable, Sendable {
     var durationMinutes: Int
     var difficulty: WorkoutDifficulty
+    /// The parts of the body the athlete trains at all. Guaranteed non-empty:
+    /// see `reconcile()`.
+    var trainedAreas: Set<BodyArea>
+    /// The groups to lean on inside those areas, or `[.fullCore]` for "no
+    /// priority, spread it".
     var focusZones: Set<MuscleZone>
     var apartmentFriendly: Bool
     var neckFriendly: Bool
@@ -330,12 +504,14 @@ struct WorkoutPreferences: Codable, Hashable, Sendable {
         apartmentFriendly: Bool,
         neckFriendly: Bool,
         extraRecovery: Bool,
+        trainedAreas: Set<BodyArea> = BodyArea.fallback,
         positionTransitions: Bool = true,
         adaptiveCoaching: Bool = true,
         excludedExerciseIDs: Set<String> = []
     ) {
         self.durationMinutes = durationMinutes
         self.difficulty = difficulty
+        self.trainedAreas = trainedAreas.isEmpty ? BodyArea.fallback : trainedAreas
         self.focusZones = focusZones
         self.apartmentFriendly = apartmentFriendly
         self.neckFriendly = neckFriendly
@@ -356,6 +532,11 @@ struct WorkoutPreferences: Codable, Hashable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         durationMinutes = try container.decode(Int.self, forKey: .durationMinutes)
         difficulty = try container.decodeIfPresent(WorkoutDifficulty.self, forKey: .difficulty) ?? .balanced
+        let areaNames = try container.decodeIfPresent([String].self, forKey: .trainedAreas) ?? []
+        let areas = Set(areaNames.compactMap(BodyArea.init(rawValue:)))
+        // Anyone who installed the app before it could train anything else was
+        // training the core, so that is what a missing key means.
+        trainedAreas = areas.isEmpty ? BodyArea.fallback : areas
         let zoneNames = try container.decodeIfPresent([String].self, forKey: .focusZones) ?? []
         let zones = Set(zoneNames.compactMap(MuscleZone.init(rawValue:)))
         focusZones = zones.isEmpty ? [.fullCore] : zones
@@ -368,12 +549,17 @@ struct WorkoutPreferences: Codable, Hashable, Sendable {
         // a later build must not keep a slot reserved in someone's exclusions.
         let excluded = try container.decodeIfPresent([String].self, forKey: .excludedExerciseIDs) ?? []
         excludedExerciseIDs = Set(excluded.filter { ExerciseCatalog.byID[$0] != nil })
+        // A focus stored while an area was on has to be dropped if the area
+        // came off in the meantime, or the engine would chase a zone it is no
+        // longer allowed to programme.
+        reconcile()
     }
 
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(durationMinutes, forKey: .durationMinutes)
         try container.encode(difficulty, forKey: .difficulty)
+        try container.encode(trainedAreas.map(\.rawValue).sorted(), forKey: .trainedAreas)
         try container.encode(focusZones.map(\.rawValue).sorted(), forKey: .focusZones)
         try container.encode(apartmentFriendly, forKey: .apartmentFriendly)
         try container.encode(neckFriendly, forKey: .neckFriendly)
@@ -384,10 +570,37 @@ struct WorkoutPreferences: Codable, Hashable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case durationMinutes, difficulty, focusZones
+        case durationMinutes, difficulty, trainedAreas, focusZones
         case apartmentFriendly, neckFriendly, extraRecovery, positionTransitions
         case adaptiveCoaching, excludedExerciseIDs
     }
+
+    /// Brings the rest of the settings back in line with the areas that are on.
+    ///
+    /// Turning an area off is a small instruction and must not become a large
+    /// one. Duration, level, rhythm, constraints and every exclusion survive
+    /// untouched; so does every focus zone that is still reachable. Only what
+    /// has become unreachable is dropped, and only if that leaves nothing at
+    /// all does the neutral focus step in. Rebuilding the whole preference set
+    /// from defaults would be the easy fix and the wrong one — it would throw
+    /// away a dozen decisions to answer one.
+    mutating func reconcile() {
+        if trainedAreas.isEmpty { trainedAreas = BodyArea.fallback }
+        let reachable = trainedAreas.reduce(into: Set<MuscleZone>()) { $0.formUnion($1.zones) }
+        let kept = focusZones.intersection(reachable)
+        // `.fullCore` is the neutral marker rather than a priority, so it is
+        // never what makes a focus worth keeping.
+        focusZones = kept.subtracting([.fullCore]).isEmpty ? [.fullCore] : kept
+    }
+
+    func reconciled() -> WorkoutPreferences {
+        var copy = self
+        copy.reconcile()
+        return copy
+    }
+
+    /// Whether the athlete named a priority, as opposed to leaving it neutral.
+    var explicitFocus: Set<MuscleZone> { focusZones.subtracting([.fullCore]) }
 
     static let recommended = WorkoutPreferences(
         durationMinutes: 7,
@@ -395,7 +608,8 @@ struct WorkoutPreferences: Codable, Hashable, Sendable {
         focusZones: [.fullCore],
         apartmentFriendly: true,
         neckFriendly: false,
-        extraRecovery: false
+        extraRecovery: false,
+        trainedAreas: BodyArea.fallback
     )
 }
 
@@ -496,9 +710,21 @@ struct WorkoutPlan: Identifiable, Hashable, Codable, Sendable {
 
     var exerciseCount: Int { movements.count }
 
+    /// What the movements in the plan actually train.
+    var areas: Set<BodyArea> {
+        movements.reduce(into: Set<BodyArea>()) { $0.formUnion($1.areas) }
+    }
+
+    /// Named after the priority when there is one, and after the parts of the
+    /// body being trained when there is not. Reading "Sangle abdominale" back
+    /// from a leg session was the old version's way of saying it only knew
+    /// about one kind of session.
     var focusDescription: String {
-        let zones = preferences.focusZones.filter { $0 != .fullCore }
-        return zones.isEmpty ? "Sangle abdominale" : zones.map(\.shortTitle).sorted().joined(separator: " · ")
+        let zones = preferences.explicitFocus
+        guard zones.isEmpty else {
+            return zones.map(\.shortTitle).sorted().joined(separator: " · ")
+        }
+        return BodyArea.describe(preferences.trainedAreas)
     }
 }
 
@@ -581,10 +807,19 @@ final class WorkoutRecord {
         }
     }
 
-    /// The jobs the trunk was asked to do. What a balanced week is measured on.
+    /// The jobs the trunk was asked to do. What a balanced week of core work is
+    /// measured on. Movements with no trunk job of their own contribute nothing
+    /// here rather than contributing noise.
     var trainedPatterns: Set<CorePattern> {
         exerciseIDs.reduce(into: Set<CorePattern>()) { patterns, id in
-            if let exercise = ExerciseCatalog.byID[id] { patterns.insert(exercise.pattern) }
+            if let pattern = ExerciseCatalog.byID[id]?.pattern { patterns.insert(pattern) }
+        }
+    }
+
+    /// The parts of the body the session touched, read back from the movements.
+    var trainedAreas: Set<BodyArea> {
+        exerciseIDs.reduce(into: Set<BodyArea>()) { areas, id in
+            if let exercise = ExerciseCatalog.byID[id] { areas.formUnion(exercise.areas) }
         }
     }
 }

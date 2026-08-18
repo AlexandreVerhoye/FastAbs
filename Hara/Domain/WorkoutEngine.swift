@@ -26,8 +26,16 @@ struct WorkoutEngine: Sendable {
         self.catalog = catalog
     }
 
-    /// The abdominal groups a complete session owes the athlete.
-    static let essentialZones: Set<MuscleZone> = [.upperAbs, .lowerAbs, .obliques, .deepCore]
+    /// The groups a complete session owes the athlete, given what they train.
+    ///
+    /// Was a constant naming the four abdominal groups, which is the right
+    /// answer only for as long as the abdomen is the only thing the app can
+    /// programme. Read from the areas instead, so switching the legs on adds a
+    /// promise rather than leaving the leg session measured against a
+    /// checklist of abdominal groups it can never tick.
+    static func essentialZones(for areas: Set<BodyArea>) -> Set<MuscleZone> {
+        areas.reduce(into: Set<MuscleZone>()) { $0.formUnion($1.essentialZones) }
+    }
 
     /// Seconds to change position between two movements of the same block.
     /// A doorway, not a rest: it is spent moving.
@@ -117,6 +125,12 @@ struct WorkoutEngine: Sendable {
 
     private func eligibleExercises(for preferences: WorkoutPreferences) -> [Exercise] {
         catalog.filter { exercise in
+            // Every area a movement trains has to be switched on, not just one
+            // of them. A burpee trains the chest whether or not you came for
+            // the chest, so an athlete who turned the upper body off has to
+            // stop seeing burpees — anything looser would quietly hand back the
+            // work they just declined.
+            exercise.areas.isSubset(of: preferences.trainedAreas) &&
             exercise.minimumDifficulty <= preferences.difficulty &&
             (!preferences.apartmentFriendly || exercise.impact == .quiet) &&
             (!preferences.neckFriendly || exercise.neckFriendly) &&
@@ -273,11 +287,13 @@ struct WorkoutEngine: Sendable {
         var recentFamilies: [MovementFamily] = []
         var coveredPatterns: Set<CorePattern> = []
         var coveredZones: Set<MuscleZone> = []
+        var coveredAreas: Set<BodyArea> = []
         var patternCounts: [CorePattern: Int] = [:]
+        var coreMovements = 0
         var focusMatches = 0
         var heldPairs = 0
 
-        let explicitFocus = preferences.focusZones.subtracting([.fullCore])
+        let explicitFocus = preferences.explicitFocus
 
         while slots.count < count {
             let remaining = count - slots.count
@@ -289,8 +305,10 @@ struct WorkoutEngine: Sendable {
                 recentFamilies: recentFamilies,
                 coveredPatterns: coveredPatterns,
                 coveredZones: coveredZones,
+                coveredAreas: coveredAreas,
                 patternCounts: patternCounts,
                 movementCount: chosenIDs.count,
+                coreMovements: coreMovements,
                 focusMatches: focusMatches,
                 explicitFocus: explicitFocus,
                 slotsRemaining: remaining,
@@ -311,9 +329,13 @@ struct WorkoutEngine: Sendable {
             chosenIDs.append(exercise.id)
             recentFamilies.append(exercise.family)
             if recentFamilies.count > 3 { recentFamilies.removeFirst() }
-            coveredPatterns.insert(exercise.pattern)
+            if let pattern = exercise.pattern {
+                coveredPatterns.insert(pattern)
+                patternCounts[pattern, default: 0] += 1
+                coreMovements += 1
+            }
             coveredZones.formUnion(exercise.zones)
-            patternCounts[exercise.pattern, default: 0] += 1
+            coveredAreas.formUnion(exercise.areas)
             if !explicitFocus.isEmpty, !exercise.zones.intersection(explicitFocus).isEmpty {
                 focusMatches += 1
             }
@@ -330,8 +352,10 @@ struct WorkoutEngine: Sendable {
         recentFamilies: [MovementFamily],
         coveredPatterns: Set<CorePattern>,
         coveredZones: Set<MuscleZone>,
+        coveredAreas: Set<BodyArea>,
         patternCounts: [CorePattern: Int],
         movementCount: Int,
+        coreMovements: Int,
         focusMatches: Int,
         explicitFocus: Set<MuscleZone>,
         slotsRemaining: Int,
@@ -357,6 +381,21 @@ struct WorkoutEngine: Sendable {
             pool = unused
         }
 
+        // The coarsest promise first: a session must touch every part of the
+        // body the athlete switched on. Left to the score alone, an eight-slot
+        // session drawn from a pool where four fifths of the movements are
+        // abdominal will spend every slot there and never reach the legs — and
+        // "I train my legs too" is a much louder instruction than any of the
+        // finer preferences below it.
+        let missingAreas = preferences.trainedAreas.subtracting(coveredAreas)
+        if !missingAreas.isEmpty {
+            let reaching = pool.filter { !$0.areas.isDisjoint(with: missingAreas) }
+            // Only while there are slots left for the areas still waiting.
+            if !reaching.isEmpty, slotsRemaining <= missingAreas.count + 1 {
+                pool = reaching
+            }
+        }
+
         // Coverage before preference: a session owes the athlete every job the
         // trunk does, and zone coverage alone is trivially satisfied by five
         // different crunches.
@@ -364,15 +403,20 @@ struct WorkoutEngine: Sendable {
             let missing = CorePattern.allCases.filter { pattern in
                 !coveredPatterns.contains(pattern) && pool.contains { $0.pattern == pattern }
             }
-            let covering = pool.filter { missing.contains($0.pattern) }
+            let covering = pool.filter { $0.pattern.map(missing.contains) ?? false }
             // How many jobs a session of this length can honestly promise. All
             // five in a seven-minute session means five or six movements — two
             // of which may be the halves of one held movement — every one of
             // them spoken for, and no room left to touch the abdominal groups
             // themselves. A coach covers the main jobs and rotates the rest
             // across the week rather than cramming them into one short session.
-            let promised = min(CorePattern.allCases.count, max(3, slotCount / 2))
-            if !covering.isEmpty, movementCount < promised { pool = covering }
+            // Counted over the core movements rather than over all of them: in
+            // a whole-body session half the slots are not trunk work at all, and
+            // measuring the promise against those would have the session chasing
+            // five trunk jobs it never had the slots for.
+            let coreShare = max(1, Int((Double(slotCount) * coreSlotShare(of: preferences)).rounded()))
+            let promised = min(CorePattern.allCases.count, max(2, coreShare / 2))
+            if !covering.isEmpty, coreMovements < promised { pool = covering }
         } else if focusMatches < 2 {
             let focused = pool.filter { !$0.zones.intersection(explicitFocus).isEmpty }
             if !focused.isEmpty { pool = focused }
@@ -398,16 +442,24 @@ struct WorkoutEngine: Sendable {
             let breadth = Double(exercise.zones.count)
             let compoundBonus = preferences.durationMinutes <= 8 ? breadth * 1.1 : breadth * 0.2
 
-            let patternGap = coveredPatterns.contains(exercise.pattern) ? 0.0 : 3.2
+            let patternGap: Double = if let pattern = exercise.pattern {
+                coveredPatterns.contains(pattern) ? 0.0 : 3.2
+            } else {
+                0.0
+            }
+            // What the athlete can see at a glance: whether the session went
+            // anywhere near the part of the body they asked for.
+            let areaGap = Double(exercise.areas.subtracting(coveredAreas).count) * 4.2
             // Patterns decide what a session covers; zones still decide what it
             // feels like. Weighted per untouched essential group rather than as
             // a flat bonus — with a wider catalog every pattern has several
             // candidates, and a flat nudge stopped deciding between them.
-            let missingZones = Self.essentialZones
+            let missingZones = Self.essentialZones(for: preferences.trainedAreas)
                 .subtracting(coveredZones)
                 .intersection(exercise.zones)
             let zoneGap = Double(missingZones.count) * 5.0
-            let share = Double(patternCounts[exercise.pattern] ?? 0) / Double(totalMovements)
+            let share = exercise.pattern
+                .map { Double(patternCounts[$0] ?? 0) / Double(totalMovements) } ?? 0
             let patternGlut = -25.0 * max(0, share - 0.45)
             // A held movement needs both its halves; it cannot take the last slot.
             let sideGate = exercise.sideMode == .heldPerSide && slotsRemaining < 2 ? -1_000.0 : 0
@@ -426,18 +478,32 @@ struct WorkoutEngine: Sendable {
             // untouched for a week; and a job the week has not asked for is
             // worth more than one it already has.
             let staleness = guidance.recentMovementIDs.contains(exercise.id) ? -3.4 : 0.0
-            let weeklyGap = guidance.underworkedPatterns.contains(exercise.pattern) ? 2.8 : 0.0
+            let weeklyGap = exercise.pattern.map(guidance.underworkedPatterns.contains) ?? false
+                ? 2.8 : 0.0
+            let weeklyAreaGap = exercise.areas.isDisjoint(with: guidance.underworkedAreas)
+                ? 0.0 : 2.4
 
             let jitter = Double.random(in: 0...1.6, using: &random)
             return (
                 exercise,
                 focusScore + levelScore + novelty + familyPenalty + fullCoreBonus
-                    + compoundBonus + patternGap + zoneGap + patternGlut + sideGate
-                    + heldGlut + staleness + weeklyGap + jitter
+                    + compoundBonus + patternGap + areaGap + zoneGap + patternGlut
+                    + sideGate + heldGlut + staleness + weeklyGap + weeklyAreaGap
+                    + jitter
             )
         }
 
         return scored.max { $0.1 < $1.1 }?.0 ?? pool[0]
+    }
+
+    /// The share of a session that trunk work should take.
+    ///
+    /// Not a third each when three areas are on: the core is what this app is,
+    /// and it also carries by far the deepest part of the catalog. Half the
+    /// session when it is one of several areas, all of it when it is alone.
+    private func coreSlotShare(of preferences: WorkoutPreferences) -> Double {
+        guard preferences.trainedAreas.contains(.core) else { return 0 }
+        return preferences.trainedAreas.count == 1 ? 1.0 : 0.5
     }
 
     // MARK: - Stage 3: ordering

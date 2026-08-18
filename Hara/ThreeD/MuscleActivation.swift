@@ -12,6 +12,14 @@ struct MuscleActivation: Equatable, Sendable {
     var rightOblique: Float = 0
     var deepCore: Float = 0
     var lowerBack: Float = 0
+    var glutes: Float = 0
+    var quadriceps: Float = 0
+    var hamstrings: Float = 0
+    var calves: Float = 0
+    var chest: Float = 0
+    var shoulders: Float = 0
+    var arms: Float = 0
+    var upperBack: Float = 0
 
     static let idle = MuscleActivation()
 
@@ -21,7 +29,9 @@ struct MuscleActivation: Equatable, Sendable {
         max(max(upperAbs, lowerAbs), max(max(leftOblique, rightOblique), deepCore))
     }
 
-    /// Peak intensity across every tracked group.
+    /// Peak intensity across every tracked group. Lower-body and pressing work
+    /// barely touches the abdominal wall, so `abdominal` alone would report a
+    /// squat as an athlete standing still.
     var overall: Float {
         MuscleZone.allCases.reduce(abdominal) { max($0, self[$1]) }
     }
@@ -34,6 +44,14 @@ struct MuscleActivation: Equatable, Sendable {
         case .obliques: max(leftOblique, rightOblique)
         case .deepCore: deepCore
         case .lowerBack: lowerBack
+        case .glutes: glutes
+        case .quadriceps: quadriceps
+        case .hamstrings: hamstrings
+        case .calves: calves
+        case .chest: chest
+        case .shoulders: shoulders
+        case .arms: arms
+        case .upperBack: upperBack
         }
     }
 
@@ -53,6 +71,14 @@ struct MuscleLoad: Equatable, Sendable {
     var obliques: Float = 0
     var deepCore: Float = 0
     var lowerBack: Float = 0
+    var glutes: Float = 0
+    var quadriceps: Float = 0
+    var hamstrings: Float = 0
+    var calves: Float = 0
+    var chest: Float = 0
+    var shoulders: Float = 0
+    var arms: Float = 0
+    var upperBack: Float = 0
 
     /// Baseline tension held even at the easiest point of the cycle. Isometric
     /// work never fully relaxes, so a plank should not flicker dark.
@@ -119,13 +145,28 @@ extension MuscleActivation {
             leftOblique: intensity(load.obliques, .obliques, side: leftShare),
             rightOblique: intensity(load.obliques, .obliques, side: rightShare),
             deepCore: intensity(load.deepCore, .deepCore),
-            lowerBack: intensity(load.lowerBack, .lowerBack)
+            lowerBack: intensity(load.lowerBack, .lowerBack),
+            glutes: intensity(load.glutes, .glutes),
+            quadriceps: intensity(load.quadriceps, .quadriceps),
+            hamstrings: intensity(load.hamstrings, .hamstrings),
+            calves: intensity(load.calves, .calves),
+            chest: intensity(load.chest, .chest),
+            shoulders: intensity(load.shoulders, .shoulders),
+            arms: intensity(load.arms, .arms),
+            upperBack: intensity(load.upperBack, .upperBack)
         )
     }
 
+    /// Groups outside the focus stay visible but dimmer.
+    ///
+    /// `.fullCore` stands for the whole abdominal wall, so it brightens the
+    /// core groups and says nothing about a quadriceps — reading it as "every
+    /// group in the body" would have made the focus meaningless on any movement
+    /// that leaves the mat.
     private static func emphasis(for zone: MuscleZone, focus: Set<MuscleZone>) -> Float {
         guard !focus.isEmpty else { return 1 }
-        if focus.contains(.fullCore) || focus.contains(zone) { return 1 }
+        if focus.contains(zone) { return 1 }
+        if focus.contains(.fullCore), zone.area == .core { return 1 }
         return 0.45
     }
 

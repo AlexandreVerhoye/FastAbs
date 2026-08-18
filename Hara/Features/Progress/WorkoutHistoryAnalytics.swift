@@ -55,6 +55,21 @@ struct PatternLoad: Identifiable, Hashable {
     var activeMinutes: Int { activeSeconds / 60 }
 }
 
+/// How much work each part of the body has taken.
+///
+/// The coarse companion to `PatternLoad`, and the one that answers the question
+/// an athlete training more than their abdomen actually asks: is this balanced
+/// across my body, not just across the jobs of my trunk. A week of nothing but
+/// abdominal work is perfectly balanced by every pattern measure.
+struct AreaLoad: Identifiable, Hashable {
+    let area: BodyArea
+    let sessions: Int
+    let activeSeconds: Int
+
+    var id: BodyArea { area }
+    var activeMinutes: Int { activeSeconds / 60 }
+}
+
 /// The best the athlete has managed, which is what a history is for.
 struct PersonalRecords: Hashable {
     let longestStreak: Int
@@ -195,6 +210,32 @@ struct WorkoutHistoryAnalytics {
         return CorePattern.allCases.compactMap { pattern in
             guard let count = sessions[pattern], count > 0 else { return nil }
             return PatternLoad(pattern: pattern, sessions: count, activeSeconds: seconds[pattern] ?? 0)
+        }
+        .sorted { $0.activeSeconds > $1.activeSeconds }
+    }
+
+    /// Work split across the parts of the body, from the movements performed.
+    ///
+    /// A session that trained two areas gives each half its time, the same
+    /// convention `patternLoad` uses — so the bars add up to the time actually
+    /// spent rather than counting one session several times over.
+    func areaLoad(records: [WorkoutRecord]) -> [AreaLoad] {
+        var sessions: [BodyArea: Int] = [:]
+        var seconds: [BodyArea: Int] = [:]
+
+        for record in qualifyingRecords(from: records) {
+            let areas = record.trainedAreas
+            guard !areas.isEmpty else { continue }
+            let share = max(0, record.activeDuration) / areas.count
+            for area in areas {
+                sessions[area, default: 0] += 1
+                seconds[area, default: 0] += share
+            }
+        }
+
+        return BodyArea.allCases.compactMap { area in
+            guard let count = sessions[area], count > 0 else { return nil }
+            return AreaLoad(area: area, sessions: count, activeSeconds: seconds[area] ?? 0)
         }
         .sorted { $0.activeSeconds > $1.activeSeconds }
     }

@@ -21,7 +21,7 @@ enum ExerciseCatalog {
     )
 
     static let all: [Exercise] = antiExtension + antiRotation + antiLateralFlexion
-        + dynamicFlexion + hipExtension
+        + dynamicFlexion + hipExtension + lowerBody + upperBody + wholeBody
 
     // MARK: - Anti-extension
     //
@@ -574,12 +574,255 @@ enum ExerciseCatalog {
            neck: true, intensity: 1.0)
     ]
 
+    // MARK: - Lower body
+    //
+    // Everything below the belt, and every one of them done with nothing but a
+    // mat: the load comes from the length of the lever and the depth of the
+    // range, which is exactly how bodyweight training has always worked.
+
+    private static let lowerBody: [Exercise] = [
+        ex("squat", "Squat", [.quadriceps, .glutes],
+           family: .squat, level: .beginner, motion: .squat,
+           setup: "Debout, pieds écartés largeur de bassin, pointes légèrement ouvertes.",
+           instruction: "Recule le bassin puis descends jusqu’à ce que les cuisses approchent l’horizontale, et remonte en poussant le sol.",
+           breathing: "Inspire en descendant, souffle en remontant.",
+           mistake: "Laisser les genoux rentrer vers l’intérieur, ou décoller les talons.",
+           tips: ["Pousse le bassin vers l’arrière avant de plier les genoux.",
+                  "Garde tout le pied au sol, talons compris.",
+                  "Les genoux suivent la ligne des pointes de pied.",
+                  "Descends aussi bas que le dos reste plat."],
+           neck: true, intensity: 1.15),
+
+        ex("squat-hold", "Squat tenu", [.quadriceps, .glutes],
+           family: .squat, level: .beginner, motion: .squatHold,
+           setup: "Descends en squat jusqu’à mi-hauteur, bras devant toi pour l’équilibre.",
+           instruction: "Tiens la position basse sans bouger, poids réparti sur tout le pied.",
+           breathing: "Respire calmement : c’est la respiration qui rend un gainage tenable.",
+           mistake: "Remonter petit à petit sans s’en rendre compte.",
+           tips: ["Choisis une hauteur que tu peux tenir jusqu’au bout.",
+                  "Serre les fessiers pour protéger le bas du dos.",
+                  "Regarde droit devant, pas vers le sol.",
+                  "Si les cuisses brûlent, c’est normal : c’est le but."],
+           neck: true, intensity: 1.2),
+
+        ex("reverse-lunge", "Fente arrière", [.quadriceps, .glutes, .hamstrings],
+           family: .squat, level: .beginner, motion: .lunge,
+           setup: "Debout, mains sur les hanches, regard loin devant pour l’équilibre.",
+           instruction: "Fais un grand pas en arrière et descends le genou arrière vers le sol, puis repousse pour revenir debout.",
+           breathing: "Inspire en descendant, souffle en poussant sur la jambe avant.",
+           mistake: "Pencher le buste vers l’avant pour compenser un pas trop court.",
+           tips: ["Le pas en arrière évite au genou avant de partir trop loin.",
+                  "Le buste reste vertical du début à la fin.",
+                  "Alterne les jambes à chaque répétition.",
+                  "Pose la pointe du pied arrière, pas le talon."],
+           side: .alternating, neck: true, intensity: 1.3),
+
+        ex("lateral-lunge", "Fente latérale", [.glutes, .quadriceps, .hamstrings],
+           family: .squat, level: .beginner, motion: .lateralLunge,
+           setup: "Debout, pieds serrés, mains devant la poitrine.",
+           instruction: "Fais un grand pas de côté, assieds le bassin sur la jambe qui plie en gardant l’autre tendue, puis reviens.",
+           breathing: "Inspire sur le pas de côté, souffle en revenant au centre.",
+           mistake: "Plier la jambe tendue, ce qui transforme le mouvement en squat large.",
+           tips: ["Le pied qui part reste bien à plat au sol.",
+                  "Le bassin recule en même temps qu’il descend.",
+                  "La jambe opposée reste tendue : c’est elle qui étire.",
+                  "Alterne les côtés."],
+           side: .alternating, neck: true, intensity: 1.25),
+
+        ex("wall-sit", "Chaise", [.quadriceps, .glutes],
+           family: .squat, level: .beginner, motion: .wallSit,
+           setup: "Dos contre un mur, descends jusqu’à ce que les cuisses soient à l’horizontale.",
+           instruction: "Tiens la position, dos plaqué au mur et poids sur les talons.",
+           breathing: "Respire lentement, sans bloquer sur la brûlure.",
+           mistake: "Remonter progressivement pour soulager les cuisses.",
+           tips: ["Genoux à l’aplomb des chevilles, pas plus loin.",
+                  "Tout le dos reste en contact avec le mur.",
+                  "Les mains ne s’appuient pas sur les cuisses.",
+                  "Compte ta respiration plutôt que les secondes."],
+           neck: true, intensity: 1.05),
+
+        ex("calf-raise", "Mollets debout", [.calves],
+           family: .posterior, level: .beginner, motion: .calfRaise,
+           setup: "Debout, pieds parallèles écartés largeur de bassin.",
+           instruction: "Monte lentement sur la pointe des pieds, marque un temps en haut, redescends encore plus lentement.",
+           breathing: "Souffle en montant, inspire en descendant.",
+           mistake: "Rebondir en bas au lieu de contrôler la descente.",
+           tips: ["Monte le plus haut possible : l’amplitude fait tout ici.",
+                  "Deux secondes pour redescendre, minimum.",
+                  "Garde le corps parfaitement vertical.",
+                  "Appuie-toi d’un doigt sur un mur si l’équilibre te gêne."],
+           neck: true, intensity: 0.7),
+
+        ex("donkey-kick", "Donkey kick", [.glutes, .hamstrings],
+           family: .posterior, level: .beginner, motion: .donkeyKick,
+           setup: "À quatre pattes, mains sous les épaules, genoux sous les hanches.",
+           instruction: "Pousse un talon vers le plafond en gardant le genou plié, puis reviens sans poser le genou.",
+           breathing: "Souffle en poussant, inspire au retour.",
+           mistake: "Ouvrir la hanche et rouler le bassin pour monter plus haut.",
+           tips: ["Le bassin ne bouge pas : c’est la seule règle qui compte.",
+                  "Pousse avec le talon, pas avec le bas du dos.",
+                  "Monte moins haut mais garde le bassin de face.",
+                  "Alterne les jambes."],
+           side: .alternating, neck: true, intensity: 0.85),
+
+        ex("good-morning", "Good morning", [.hamstrings, .glutes, .lowerBack],
+           family: .hinge, pattern: .hipExtension, level: .beginner, motion: .goodMorning,
+           setup: "Debout, mains derrière la tête, genoux très légèrement fléchis.",
+           instruction: "Bascule le buste vers l’avant depuis les hanches en gardant le dos parfaitement plat, puis redresse-toi.",
+           breathing: "Inspire en descendant, souffle en te redressant.",
+           mistake: "Arrondir le dos : la charnière est dans les hanches, pas dans les lombaires.",
+           tips: ["Pousse les fessiers vers l’arrière pendant que le buste avance.",
+                  "Descends seulement tant que le dos reste plat.",
+                  "Les jambes restent presque tendues, sans être verrouillées.",
+                  "Tu dois sentir l’étirement derrière les cuisses."],
+           neck: true, intensity: 0.95)
+    ]
+
+    // MARK: - Upper body
+    //
+    // Pressing and pulling with body weight. The push-up family is graded from
+    // a wall to a pike so the same movement is available at four levels rather
+    // than being an exercise you either can or cannot do.
+
+    private static let upperBody: [Exercise] = [
+        ex("wall-push-up", "Pompes au mur", [.chest, .arms],
+           family: .press, level: .beginner, motion: .wallPushUp,
+           setup: "Debout face à un mur, mains à hauteur d’épaules, un pas en arrière.",
+           instruction: "Plie les coudes pour amener la poitrine vers le mur, corps en une seule ligne, puis repousse.",
+           breathing: "Inspire en descendant, souffle en poussant.",
+           mistake: "Casser le bassin au lieu de garder le corps aligné.",
+           tips: ["Plus tu reculeras les pieds, plus ce sera dur.",
+                  "Les coudes partent en arrière, pas sur les côtés.",
+                  "Serre les fessiers pour tenir la ligne.",
+                  "Le nez arrive au mur, pas le front."],
+           neck: true, intensity: 0.8),
+
+        ex("knee-push-up", "Pompes genoux", [.chest, .arms, .shoulders],
+           family: .press, level: .beginner, motion: .kneePushUp,
+           setup: "Genoux au sol, mains un peu plus larges que les épaules, bassin dans l’alignement.",
+           instruction: "Descends la poitrine vers le sol en un bloc genoux-bassin-épaules, puis repousse.",
+           breathing: "Inspire en descendant, souffle en poussant.",
+           mistake: "Laisser le bassin partir en arrière et transformer le mouvement en flexion de hanche.",
+           tips: ["Ligne droite des genoux aux épaules, sans creuser.",
+                  "Les mains restent sous la poitrine, pas sous le visage.",
+                  "Descends jusqu’à frôler le sol si tu peux.",
+                  "Croise les pieds pour stabiliser le bassin."],
+           neck: true, intensity: 1.1),
+
+        ex("push-up", "Pompes", [.chest, .shoulders, .arms],
+           family: .press, level: .balanced, motion: .pushUp,
+           setup: "Position de planche haute, mains un peu plus larges que les épaules.",
+           instruction: "Descends le corps d’un bloc jusqu’à ce que la poitrine frôle le sol, puis repousse sans casser la ligne.",
+           breathing: "Inspire en descendant, souffle en poussant.",
+           mistake: "Laisser le bassin s’affaisser ou monter en pointe pendant la poussée.",
+           tips: ["Serre fessiers et cuisses : une pompe est une planche qui bouge.",
+                  "Les coudes filent vers l’arrière à 45°, jamais à l’équerre.",
+                  "Regarde le sol devant tes mains pour garder la nuque longue.",
+                  "Passe aux genoux dès que la ligne se casse."],
+           neck: true, intensity: 1.45),
+
+        ex("pike-push-up", "Pompes piquées", [.shoulders, .arms, .chest],
+           family: .press, level: .advanced, motion: .pikePushUp,
+           setup: "Depuis la planche haute, marche les pieds vers les mains jusqu’à former un V inversé.",
+           instruction: "Descends le sommet du crâne entre les mains en pliant les coudes, puis repousse jusqu’aux bras tendus.",
+           breathing: "Inspire en descendant, souffle en poussant.",
+           mistake: "Plier les hanches davantage pour descendre au lieu de plier les coudes.",
+           tips: ["Plus le bassin est haut, plus l’épaule travaille.",
+                  "Les coudes restent devant, pas ouverts sur les côtés.",
+                  "Descends lentement : c’est une épaule, pas un ressort.",
+                  "Garde les jambes tendues autant que possible."],
+           neck: true, intensity: 1.55),
+
+        ex("floor-dip", "Dips au sol", [.arms, .chest, .shoulders],
+           family: .press, level: .beginner, motion: .floorDip,
+           setup: "Assis, genoux fléchis, mains posées au sol juste derrière le bassin, doigts vers l’avant.",
+           instruction: "Décolle le bassin, plie les coudes pour descendre, puis repousse jusqu’aux bras presque tendus.",
+           breathing: "Inspire en descendant, souffle en poussant.",
+           mistake: "Laisser les épaules monter vers les oreilles pendant la descente.",
+           tips: ["Les coudes partent droit vers l’arrière, pas sur les côtés.",
+                  "Éloigne les épaules des oreilles pendant tout le mouvement.",
+                  "Le bassin reste près des mains, pas devant.",
+                  "Avance les pieds pour rendre l’exercice plus difficile."],
+           neck: true, intensity: 1.05),
+
+        ex("prone-row", "Tirage au sol", [.upperBack, .shoulders],
+           family: .pull, level: .beginner, motion: .proneRow,
+           setup: "Allongé sur le ventre, bras tendus devant, front juste au-dessus du sol.",
+           instruction: "Tire les coudes vers l’arrière en rapprochant les omoplates, décolle légèrement la poitrine, puis rallonge les bras.",
+           breathing: "Souffle en tirant, inspire en rallongeant.",
+           mistake: "Tirer avec la nuque en levant la tête au lieu des omoplates.",
+           tips: ["Serre les omoplates l’une vers l’autre, comme pour tenir un crayon.",
+                  "La nuque reste longue, le regard vers le sol.",
+                  "Va lentement : ce muscle ne répond qu’au contrôle.",
+                  "Décolle la poitrine de quelques centimètres seulement."],
+           neck: true, intensity: 0.8)
+    ]
+
+    // MARK: - Whole body
+    //
+    // Movements that cross the whole athlete inside one repetition. They are
+    // filed here rather than under a pattern because the trunk is only part of
+    // what they ask for — and the engine only ever programmes them when every
+    // area they touch is switched on.
+
+    private static let wholeBody: [Exercise] = [
+        ex("plank-up-down", "Planche montée-descente", [.deepCore, .shoulders, .chest],
+           family: .antiExtension, pattern: .antiExtension, level: .balanced, motion: .plankUpDown,
+           setup: "Planche sur les avant-bras, pieds écartés largeur de bassin.",
+           instruction: "Déroule un avant-bras pour venir sur la main, bras tendu, puis redescends — sans que le bassin bouge d’un centimètre.",
+           breathing: "Souffle à chaque poussée vers le haut.",
+           mistake: "Faire rouler le bassin d’un côté à l’autre pour libérer le bras.",
+           tips: ["Écarte les pieds : c’est ce qui empêche le bassin de rouler.",
+                  "Un bras à la fois, en alternant.",
+                  "Le bassin est le juge : s’il tourne, ralentis.",
+                  "Pose les genoux si la ligne se casse."],
+           side: .alternating, neck: true, intensity: 1.4),
+
+        ex("squat-thrust", "Squat thrust", [.deepCore, .quadriceps, .glutes, .shoulders],
+           family: .locomotion, pattern: .antiExtension, level: .balanced, motion: .squatThrust,
+           setup: "Debout, pieds largeur de bassin, regard devant.",
+           instruction: "Pose les mains au sol, envoie les pieds en arrière en planche, ramène-les sous le buste et redresse-toi.",
+           breathing: "Souffle à chaque retour des pieds.",
+           mistake: "Laisser le bassin s’affaisser au moment où les pieds arrivent en planche.",
+           tips: ["Le burpee sans le saut : même travail, zéro impact.",
+                  "Pose les mains bien à plat avant d’envoyer les pieds.",
+                  "Arrivée en planche = corps aligné, une seule ligne.",
+                  "Trouve un rythme régulier plutôt qu’un sprint."],
+           neck: true, intensity: 1.6),
+
+        ex("burpee", "Burpee", [.deepCore, .quadriceps, .glutes, .chest, .shoulders],
+           family: .locomotion, pattern: .antiExtension, level: .advanced, motion: .burpee,
+           impact: .dynamic,
+           setup: "Debout, pieds largeur de bassin, un espace dégagé devant toi.",
+           instruction: "Mains au sol, pieds en arrière en planche, une pompe, retour des pieds, et redresse-toi en tendant les bras vers le haut.",
+           breathing: "Souffle sur la pompe et sur le redressement.",
+           mistake: "Enchaîner si vite que le dos se creuse à l’arrivée en planche.",
+           tips: ["Ralentis la phase planche : c’est là que le dos se perd.",
+                  "Enlève la pompe si le rythme s’effondre.",
+                  "Amortis la réception, genoux souples.",
+                  "Régularité avant vitesse : un burpee propre vaut trois bâclés."],
+           neck: true, intensity: 1.9),
+
+        ex("jumping-jack", "Jumping jack", [.calves, .shoulders, .quadriceps],
+           family: .locomotion, level: .beginner, motion: .jumpingJack,
+           impact: .dynamic,
+           setup: "Debout, pieds serrés, bras le long du corps.",
+           instruction: "Écarte les jambes en montant les bras sur les côtés, puis reviens, en gardant un rythme régulier.",
+           breathing: "Respire en rythme, sans bloquer.",
+           mistake: "Retomber talons en premier, jambes tendues.",
+           tips: ["Réception sur l’avant du pied, genoux souples.",
+                  "Les bras montent jusqu’au-dessus de la tête.",
+                  "Cherche le rythme, pas la hauteur.",
+                  "Remplace par un pas chassé si les sauts te gênent."],
+           neck: true, intensity: 1.0)
+    ]
+
     private static func ex(
         _ id: String,
         _ name: String,
         _ zones: Set<MuscleZone>,
         family: MovementFamily,
-        pattern: CorePattern,
+        pattern: CorePattern? = nil,
         level: WorkoutDifficulty,
         motion: MotionKind,
         impact: ExerciseImpact = .quiet,

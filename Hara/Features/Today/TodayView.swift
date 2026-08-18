@@ -335,12 +335,12 @@ struct TodayView: View {
         // and a zone drawn from a `Set` was picking a different one between
         // launches, which is how two neighbouring rows ended up wearing the
         // same icon for no reason a reader could see.
-        let pattern = row.exercise.pattern
+        let accent = row.exercise.accent
 
         return HStack(spacing: 14) {
             ZStack {
-                Circle().fill(pattern.color.opacity(0.14))
-                Image(systemName: pattern.symbol).foregroundStyle(pattern.color)
+                Circle().fill(accent.opacity(0.14))
+                Image(systemName: CatalogSection.of(row.exercise).symbol).foregroundStyle(accent)
             }
             .frame(width: 42, height: 42)
 
@@ -426,7 +426,7 @@ struct TodayView: View {
 
             ScrollView(.horizontal) {
                 HStack(spacing: 14) {
-                    ForEach(WorkoutPlaylist.all) { playlist in
+                    ForEach(WorkoutPlaylist.available(for: appModel.preferences.trainedAreas)) { playlist in
                         PlaylistCard(playlist: playlist) {
                             Haptics.begin()
                             presentedPlan = WorkoutEngine().makePlan(

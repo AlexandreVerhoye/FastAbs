@@ -26,9 +26,16 @@ struct DailyBadge: Identifiable, Hashable {
     let tier: DailyBadgeTier
     /// What the day was mostly spent doing, so the medal records the work
     /// rather than being decoration drawn from the date.
-    let pattern: CorePattern
-    /// Every job the day touched, for the detail sheet.
+    ///
+    /// A section rather than a trunk pattern: a day of squats and push-ups has
+    /// no dominant trunk job, and the medal it earned should not have to borrow
+    /// one to have a face.
+    let section: CatalogSection
+    /// Every trunk job the day touched. Still measured on patterns, because
+    /// this is what `isComplete` means and that promise is about the trunk.
     let patterns: Set<CorePattern>
+    /// Everything the day touched, at the grain the detail sheet reads best.
+    let sections: [CatalogSection]
     let exerciseIDs: [String]
 
     var id: Date { day }
@@ -36,7 +43,7 @@ struct DailyBadge: Identifiable, Hashable {
     /// A day that covered every job the trunk does earns its own mark.
     var isComplete: Bool { patterns.count >= CorePattern.allCases.count }
 
-    var symbol: String { isComplete ? "medal.fill" : pattern.symbol }
+    var symbol: String { isComplete ? "medal.fill" : section.symbol }
 
     var movements: [Exercise] { exerciseIDs.compactMap { ExerciseCatalog.byID[$0] } }
 }
@@ -65,6 +72,7 @@ enum ChallengeUnit: Hashable, Sendable {
     case sessions
     case corePatterns
     case muscleZones
+    case bodyAreas
     /// A plain count of occurrences, for the rules that are not measured in any
     /// of the above — weeks touched, levels tried, sessions of a given shape.
     case times
@@ -77,6 +85,7 @@ enum ChallengeUnit: Hashable, Sendable {
         // Zero and one both take the singular in French.
         case .corePatterns: abs(value) < 2 ? "\(value) type" : "\(value) types"
         case .muscleZones: abs(value) < 2 ? "\(value) zone" : "\(value) zones"
+        case .bodyAreas: abs(value) < 2 ? "\(value) zone" : "\(value) zones"
         case .times: "\(value) fois"
         }
     }
@@ -529,7 +538,16 @@ struct RewardsEngine {
         analytics = WorkoutHistoryAnalytics(calendar: calendar)
     }
 
-    func summary(records: [WorkoutRecord], now: Date = .now) -> RewardsSummary {
+    /// - Parameter trainedAreas: what the athlete has switched on. The weekly
+    ///   balance goal is asked in those terms, so someone who trains their whole
+    ///   body is not judged on trunk jobs alone and someone who trains only
+    ///   their abdomen is not handed a goal they have switched off the means to
+    ///   reach.
+    func summary(
+        records: [WorkoutRecord],
+        trainedAreas: Set<BodyArea> = BodyArea.fallback,
+        now: Date = .now
+    ) -> RewardsSummary {
         let badges = dailyBadges(records: records)
         let today = calendar.startOfDay(for: now)
         let overview = analytics.overview(records: records, now: now)
@@ -539,7 +557,7 @@ struct RewardsEngine {
             longestStreak: overview.longestStreak,
             todayBadge: badges.first { calendar.isDate($0.day, inSameDayAs: today) },
             dailyBadges: badges.sorted { $0.day > $1.day },
-            weeklyBalance: weeklyBalance(records: records, now: now),
+            weeklyBalance: weeklyBalance(records: records, areas: trainedAreas, now: now),
             monthlyChallenge: monthlyChallenge(records: records, now: now),
             annualChallenge: annualChallenge(records: records, now: now),
             level: level(records: records),
@@ -559,14 +577,16 @@ struct RewardsEngine {
         return grouped.map { day, dayRecords in
             let seconds = dayRecords.reduce(0) { $0 + max(0, $1.activeDuration) }
             let patterns = dayRecords.reduce(into: Set<CorePattern>()) { $0.formUnion($1.trainedPatterns) }
+            let movements = dayRecords.flatMap(\.exerciseIDs)
             return DailyBadge(
                 day: day,
                 activeSeconds: seconds,
                 sessionCount: dayRecords.count,
                 tier: badgeTier(activeSeconds: seconds),
-                pattern: dominantPattern(of: dayRecords),
+                section: dominantSection(of: dayRecords),
                 patterns: patterns,
-                exerciseIDs: dayRecords.flatMap(\.exerciseIDs)
+                sections: sections(of: movements),
+                exerciseIDs: movements
             )
         }
     }
@@ -740,9 +760,33 @@ struct RewardsEngine {
     /// Streaks and minutes both reward showing up, and someone can show up
     /// every day for a month doing nothing but crunches. This is the one
     /// challenge that asks what you trained rather than how often.
-    func weeklyBalance(records: [WorkoutRecord], now: Date = .now) -> ChallengeProgress {
+    func weeklyBalance(
+        records: [WorkoutRecord],
+        areas: Set<BodyArea> = BodyArea.fallback,
+        now: Date = .now
+    ) -> ChallengeProgress {
         let week = calendar.dateInterval(of: .weekOfYear, for: now)
         let thisWeek = recordsWithin(week, from: analytics.qualifyingRecords(from: records))
+
+        // Once there is more than one part of the body in play, that is what a
+        // balanced week means. Five trunk jobs and nothing for the legs is a
+        // perfect score on the old measure and half an athlete trained.
+        if areas.count > 1 {
+            let touched = thisWeek.reduce(into: Set<BodyArea>()) { $0.formUnion($1.trainedAreas) }
+            return ChallengeProgress(
+                id: "balance-areas-\(dateComponentsID(for: week?.start ?? now))",
+                title: "Tout le corps",
+                detail: BodyArea.ordered(areas).map(\.title).joined(separator: ", ") + " dans la semaine.",
+                period: .week,
+                unit: .bodyAreas,
+                currentValue: touched.intersection(areas).count,
+                targetValue: areas.count,
+                startDate: week?.start ?? now,
+                endDate: week?.end ?? now,
+                symbol: "figure.mixed.cardio"
+            )
+        }
+
         let patterns = thisWeek.reduce(into: Set<CorePattern>()) { $0.formUnion($1.trainedPatterns) }
 
         return ChallengeProgress(
@@ -886,16 +930,23 @@ struct RewardsEngine {
 
     // MARK: - Private
 
-    /// The job a day is remembered by: whichever the most movements served.
-    /// Ties break on the pattern order so the same day always looks the same.
-    private func dominantPattern(of records: [WorkoutRecord]) -> CorePattern {
-        var counts: [CorePattern: Int] = [:]
+    /// The work a day is remembered by: whichever section the most movements
+    /// came from. Ties break on the section order so the same day always looks
+    /// the same.
+    private func dominantSection(of records: [WorkoutRecord]) -> CatalogSection {
+        var counts: [CatalogSection: Int] = [:]
         for id in records.flatMap(\.exerciseIDs) {
             guard let exercise = ExerciseCatalog.byID[id] else { continue }
-            counts[exercise.pattern, default: 0] += 1
+            counts[CatalogSection.of(exercise), default: 0] += 1
         }
-        let ranked = CorePattern.allCases.map { ($0, counts[$0] ?? 0) }
-        return ranked.max { lhs, rhs in lhs.1 < rhs.1 }?.0 ?? .antiExtension
+        let ranked = CatalogSection.all.map { ($0, counts[$0] ?? 0) }
+        return ranked.max { lhs, rhs in lhs.1 < rhs.1 }?.0 ?? .pattern(.antiExtension)
+    }
+
+    /// The sections a set of movements came from, in catalog order.
+    private func sections(of exerciseIDs: [String]) -> [CatalogSection] {
+        let touched = Set(exerciseIDs.compactMap { ExerciseCatalog.byID[$0] }.map(CatalogSection.of))
+        return CatalogSection.all.filter(touched.contains)
     }
 
     private func badgeTier(activeSeconds: Int) -> DailyBadgeTier {

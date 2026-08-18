@@ -61,22 +61,89 @@ extension BodyPose {
             fallback: SIMD3<Float>(0, 0, 1)
         )
         let length: Float = 0.148
-        var direction = BodyPose.normalised(forward * 0.98 + shin * 0.2, fallback: forward)
+        let blended = BodyPose.normalised(forward * 0.98 + shin * 0.2, fallback: forward)
 
         // A foot that would go through the mat tilts up to lie along it rather
-        // than being cut off at mat height, which left a backward stub instead
-        // of a foot. Letting the toes pull the whole athlete up instead made the
+        // than being cut off at mat height, which left a backward stub instead of
+        // a foot. Letting the toes pull the whole athlete up instead made the
         // body jump whenever a foot swung low, so the foot alone gives way.
-        if ankle.y + direction.y * length < BodyPose.matHeight {
-            let rise = min(max((BodyPose.matHeight - ankle.y) / length, -1), 1)
-            let flat = SIMD3<Float>(direction.x, 0, direction.z)
-            let flatLength = simd_length(flat)
-            let spread = (1 - rise * rise).squareRoot()
-            direction = flatLength > 1e-5
-                ? SIMD3<Float>(flat.x / flatLength * spread, rise, flat.z / flatLength * spread)
-                : SIMD3<Float>(0, rise, 0)
+        let natural = ankle.y + blended.y * length
+        let elevation = natural < BodyPose.matHeight
+            ? min(max((BodyPose.matHeight - ankle.y) / length, -1), 1)
+            : blended.y
+        // Eased, because the heading below turns with it and a heading that turns
+        // in three frames is a foot that visibly whips round.
+        let pressed = min(max((BodyPose.matHeight - natural) / (length * 1.2), 0), 1)
+        let onMat = pressed * pressed * (3 - 2 * pressed)
+
+        // Which way a foot lying on the mat points is a different question from
+        // which way it points in the air, and the blend above cannot answer it:
+        // in a plank the facing points at the mat and the shin nearly cancels
+        // what is left, so its horizontal part is the size of a rounding error,
+        // changes sign as the body moves, and swung the whole foot through 150°
+        // between two frames of a burpee.
+        //
+        // Two stable answers, chosen by where the feet are rather than by which
+        // vector happens to be longest. Feet under the body — standing, crouching,
+        // squatting — and the toes follow the way the athlete faces. Feet well
+        // behind the hips — a plank, a push-up — and they trail the body instead:
+        // toes tucked, pointing away from the head. Rotated between the two, and
+        // then rotated from the airborne heading by how hard the mat is pressing,
+        // because adding opposed directions has the same sign-crossing the whole
+        // problem started with.
+        let trail = SIMD3<Float>(ankle.x - pelvis.x, 0, ankle.z - pelvis.z)
+        let reach = simd_length(SIMD2<Float>(trail.x, trail.z))
+        // A wide ramp on purpose: the turn from "toes forward" to "toes tucked"
+        // is most of half a revolution, and it has to be spread across the whole
+        // time the feet spend travelling backwards. Squeezed into a narrow band
+        // of reach it becomes a foot spinning in four frames — which is what a
+        // burpee looked like at a third of this width.
+        let trailing = min(max((reach - 0.3) / 0.95, 0), 1)
+        let grounded = BodyPose.turned(
+            from: SIMD3<Float>(front.x, 0, front.z),
+            toward: trail,
+            fallback: trail,
+            by: trailing * trailing * (3 - 2 * trailing)
+        )
+        let azimuth = BodyPose.turned(
+            from: SIMD3<Float>(blended.x, 0, blended.z),
+            toward: grounded,
+            fallback: grounded,
+            by: onMat
+        )
+
+        let spread = (1 - elevation * elevation).squareRoot()
+        return ankle + SIMD3<Float>(azimuth.x * spread, elevation, azimuth.z * spread) * length
+    }
+
+    /// Rotates one ground-plane direction toward another, along the shorter arc.
+    ///
+    /// Interpolating the *angle* rather than the vectors, because two directions
+    /// that point opposite ways sum to nothing: any weighted blend of them passes
+    /// through zero length on the way, and a normalised zero is whichever way the
+    /// last rounding error fell. Rotating cannot do that. Either input may be
+    /// degenerate; `fallback` stands in for it when it is.
+    static func turned(
+        from: SIMD3<Float>,
+        toward: SIMD3<Float>,
+        fallback: SIMD3<Float>,
+        by amount: Float
+    ) -> SIMD3<Float> {
+        func angle(of vector: SIMD3<Float>) -> Float? {
+            let flat = SIMD2<Float>(vector.x, vector.z)
+            return simd_length(flat) > 0.02 ? atan2(flat.y, flat.x) : nil
         }
-        return ankle + direction * length
+
+        let spare = angle(of: fallback) ?? 0
+        let start = angle(of: from) ?? angle(of: toward) ?? spare
+        let end = angle(of: toward) ?? spare
+        // The shorter way round, so a foot never takes the long path between two
+        // headings that are almost the same.
+        var delta = (end - start).truncatingRemainder(dividingBy: 2 * .pi)
+        if delta > .pi { delta -= 2 * .pi }
+        if delta < -.pi { delta += 2 * .pi }
+        let heading = start + delta * min(max(amount, 0), 1)
+        return SIMD3<Float>(cos(heading), 0, sin(heading))
     }
 
     static func normalised(_ vector: SIMD3<Float>, fallback: SIMD3<Float>) -> SIMD3<Float> {

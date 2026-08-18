@@ -15,6 +15,29 @@ final class AppModel {
         didSet { save(preferences, key: Keys.preferences) }
     }
 
+    /// Switches a part of the body on or off, keeping every other setting.
+    ///
+    /// Returns false when the change was refused, which happens for exactly one
+    /// reason: something has to be trained. Everything else — the duration, the
+    /// level, the rhythm, the exclusions, and any priority that is still
+    /// reachable — survives untouched; only a focus that has become unreachable
+    /// is dropped. Rebuilding from the defaults would be the easy answer and
+    /// the wrong one: it would undo a dozen decisions to carry out one.
+    @discardableResult
+    func setArea(_ area: BodyArea, enabled: Bool) -> Bool {
+        var updated = preferences
+        if enabled {
+            updated.trainedAreas.insert(area)
+        } else {
+            guard updated.trainedAreas.count > 1 else { return false }
+            updated.trainedAreas.remove(area)
+        }
+        updated.reconcile()
+        guard updated != preferences else { return false }
+        preferences = updated
+        return true
+    }
+
     var appearance: AppAppearance {
         didSet { UserDefaults.standard.set(appearance.rawValue, forKey: Keys.appearance) }
     }
@@ -69,6 +92,9 @@ final class AppModel {
             String(components.day ?? 0),
             String(preferences.durationMinutes),
             String(preferences.difficulty.rawValue),
+            // Switching a part of the body on has to redraw the day, for the
+            // same reason banishing a movement does.
+            preferences.trainedAreas.map(\.rawValue).sorted().joined(separator: ","),
             preferences.focusZones.map(\.rawValue).sorted().joined(separator: ","),
             String(preferences.apartmentFriendly),
             String(preferences.neckFriendly),
@@ -109,8 +135,18 @@ final class AppModel {
     /// reasoning rather than quietly handing over a different session.
     private(set) var todayRecipe: SessionRecipe?
 
+    /// Puts the programme back to the recommended one — the duration, the
+    /// level, the rhythm, the constraints.
+    ///
+    /// Not the areas. What parts of the body someone trains is not part of "the
+    /// recommended programme"; taking the legs away because the athlete asked
+    /// for the default duration back would be a different, much larger answer
+    /// than the one the button offers.
     func restoreRecommendedPlan() {
-        preferences = .recommended
+        var restored = WorkoutPreferences.recommended
+        restored.trainedAreas = preferences.trainedAreas
+        restored.reconcile()
+        preferences = restored
     }
 
     private func save<T: Encodable>(_ value: T, key: String) {
