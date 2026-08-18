@@ -8,6 +8,9 @@ import SwiftUI
 struct ExerciseLibraryView: View {
     @State private var search = ""
     @State private var section: CatalogSection?
+    /// Ties a row to the page it opens: the movement grows out of the row
+    /// rather than the page arriving from the right over it.
+    @Namespace private var movements
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var query: String {
@@ -53,10 +56,12 @@ struct ExerciseLibraryView: View {
                                 ForEach(group.exercises) { exercise in
                                     NavigationLink {
                                         ExerciseDetailView(exercise: exercise)
+                                            .navigationTransition(.zoom(sourceID: exercise.id, in: movements))
                                     } label: {
                                         ExerciseRow(exercise: exercise)
                                     }
                                     .buttonStyle(.card)
+                                    .matchedTransitionSource(id: exercise.id, in: movements)
                                     // A NavigationLink has no action to hang a
                                     // haptic on, and every other control in the
                                     // app answers a touch.

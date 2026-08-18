@@ -22,7 +22,7 @@ Hara est la réécriture iOS native de [SevenAbs](https://github.com/AlexandreVe
 ## Stack
 
 - Swift 6 / SwiftUI
-- iOS 17+
+- iOS 18+
 - SceneKit pour les médailles, sans AR
 - SwiftData
 - Swift Charts

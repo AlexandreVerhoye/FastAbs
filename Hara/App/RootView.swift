@@ -6,22 +6,26 @@ struct RootView: View {
     @State private var showsWelcome = false
 
     var body: some View {
+        // The modern tab API rather than `.tabItem` + `.tag`: the tab is one
+        // declaration instead of a view wearing two modifiers that have to
+        // agree, and it is what gives the bar its current behaviour on iOS —
+        // including the sidebar it becomes on iPad and the search role.
         TabView(selection: $selectedTab) {
-            TodayView()
-                .tabItem { Label("Aujourd’hui", systemImage: "house.fill") }
-                .tag(AppTab.today)
+            Tab("Aujourd’hui", systemImage: "house.fill", value: AppTab.today) {
+                TodayView()
+            }
 
-            NavigationStack { ProgressDashboardView() }
-                .tabItem { Label("Progression", systemImage: "chart.xyaxis.line") }
-                .tag(AppTab.progress)
+            Tab("Progression", systemImage: "chart.xyaxis.line", value: AppTab.progress) {
+                NavigationStack { ProgressDashboardView() }
+            }
 
-            ExerciseLibraryView()
-                .tabItem { Label("Mouvements", systemImage: "figure.mixed.cardio") }
-                .tag(AppTab.library)
+            Tab("Mouvements", systemImage: "figure.mixed.cardio", value: AppTab.library) {
+                ExerciseLibraryView()
+            }
 
-            NavigationStack { RewardsView() }
-                .tabItem { Label("Récompenses", systemImage: "medal.fill") }
-                .tag(AppTab.rewards)
+            Tab("Récompenses", systemImage: "medal.fill", value: AppTab.rewards) {
+                NavigationStack { RewardsView() }
+            }
         }
         // The tab bar was the one control in the app that changed what you
         // were looking at and said nothing on the wrist.

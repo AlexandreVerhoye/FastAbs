@@ -928,6 +928,9 @@ struct BadgeGallery: View {
     @State private var selected: DailyBadge?
 
     private let columns = [GridItem(.adaptive(minimum: 72, maximum: 92), spacing: 14)]
+    /// Ties each medal to the sheet it opens, so the detail grows out of the
+    /// one that was tapped instead of sliding up over all of them.
+    @Namespace private var medals
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -954,6 +957,7 @@ struct BadgeGallery: View {
                             MiniBadgeView(badge: badge)
                         }
                         .buttonStyle(.card)
+                        .matchedTransitionSource(id: badge.id, in: medals)
                         .accessibilityAddTraits(.isButton)
                     }
                 }
@@ -963,6 +967,7 @@ struct BadgeGallery: View {
         }
         .sheet(item: $selected) { badge in
             BadgeDetailView(badge: badge)
+                .navigationTransition(.zoom(sourceID: badge.id, in: medals))
         }
     }
 }
