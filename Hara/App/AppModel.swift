@@ -94,9 +94,50 @@ final class AppModel {
         calendar: Calendar = .current,
         date: Date = .now
     ) -> WorkoutPlan {
+        let recipe = CoachAdvisor(calendar: calendar)
+            .recipe(records: records, base: preferences, now: date)
+        todayRecipe = recipe
+        let plan = WorkoutEngine().makePlan(
+            preferences: recipe.preferences,
+            seed: dailySeed(for: preferences, calendar: calendar, date: date),
+            guidance: recipe.guidance
+        )
+        activePlan = plan
+        return plan
+    }
+
+    /// The session a set of preferences would produce today, without adopting
+    /// them or touching anything.
+    ///
+    /// The last screen of the setup flow promises "your first session", and a
+    /// promise like that has to be the session that then starts — not a second
+    /// draw from a different seed that happens to land on a different movement
+    /// count. Same seed, same coach, same engine.
+    func previewTodayWorkout(
+        for preferences: WorkoutPreferences,
+        records: [WorkoutRecord] = [],
+        calendar: Calendar = .current,
+        date: Date = .now
+    ) -> WorkoutPlan {
+        let recipe = CoachAdvisor(calendar: calendar)
+            .recipe(records: records, base: preferences, now: date)
+        return WorkoutEngine().makePlan(
+            preferences: recipe.preferences,
+            seed: dailySeed(for: preferences, calendar: calendar, date: date),
+            guidance: recipe.guidance
+        )
+    }
+
+    /// Stable for a day and for a set of settings, so the day's session does not
+    /// change on a redraw and does change when a setting does.
+    private func dailySeed(
+        for preferences: WorkoutPreferences,
+        calendar: Calendar,
+        date: Date
+    ) -> UInt64 {
         var components = calendar.dateComponents([.year, .month, .day], from: date)
         components.timeZone = calendar.timeZone
-        let signature = [
+        return [
             String(components.year ?? 0),
             String(components.month ?? 0),
             String(components.day ?? 0),
@@ -115,17 +156,7 @@ final class AppModel {
             // stays put and the session only changes where the exclusion
             // happened to bite, which reads as the setting being ignored.
             preferences.excludedExerciseIDs.sorted().joined(separator: ",")
-        ].joined(separator: "|")
-        let recipe = CoachAdvisor(calendar: calendar)
-            .recipe(records: records, base: preferences, now: date)
-        todayRecipe = recipe
-        let plan = WorkoutEngine().makePlan(
-            preferences: recipe.preferences,
-            seed: signature.fnv1a64,
-            guidance: recipe.guidance
-        )
-        activePlan = plan
-        return plan
+        ].joined(separator: "|").fnv1a64
     }
 
     /// Stable per playlist per day, so tapping the same card twice in a row

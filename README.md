@@ -4,6 +4,7 @@ Hara est la réécriture iOS native de [SevenAbs](https://github.com/AlexandreVe
 
 ## Ce que contient la V1
 
+- Une mise en route en trois questions — zones du corps, durée, niveau — qui se termine sur la séance qu'elles produisent, pas sur une promesse.
 - Un programme du jour stable et immédiatement disponible.
 - 64 exercices : sangle abdominale, haut du corps, bas du corps et mouvements complets, tous au poids du corps avec un tapis pour seul matériel.
 - Trois zones du corps activables dans les réglages, que le coach respecte à la lettre.

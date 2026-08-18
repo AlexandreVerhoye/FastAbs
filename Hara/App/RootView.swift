@@ -28,7 +28,13 @@ struct RootView: View {
         .onChange(of: selectedTab) { _, _ in Haptics.selection() }
         .onAppear { showsWelcome = !appModel.hasSeenWelcome }
         .fullScreenCover(isPresented: $showsWelcome) {
-            WelcomeView {
+            // What comes back is what the athlete described. Skipping hands
+            // back the recommended settings rather than nothing, so the app is
+            // configured either way.
+            OnboardingView { preferences in
+                appModel.previewTodayWorkout(for: preferences)
+            } completion: { preferences in
+                appModel.preferences = preferences
                 appModel.hasSeenWelcome = true
                 showsWelcome = false
             }
